@@ -11,7 +11,7 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_DATABASE=TechZoneDb
+      MONGO_INITDB_DATABASE: "TechZoneDb"
     volumes:
       - mongo_data:/data/db
       - ./backups/mongodb:/mongo_backup
@@ -60,13 +60,13 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:5000
-      - MongoDbSettings__ConnectionString=mongodb://mongodb:27017
-      - MongoDbSettings__DatabaseName=TechZoneDb
-      - RedisSettings__ConnectionString=redis:6379
-      - RedisSettings__InstanceName=TechZone:
-      - RedisSettings__Enabled=true
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ASPNETCORE_URLS: "http://+:5000"
+      MongoDbSettings__ConnectionString: "mongodb://mongodb:27017"
+      MongoDbSettings__DatabaseName: "TechZoneDb"
+      RedisSettings__ConnectionString: "redis:6379"
+      RedisSettings__InstanceName: "TechZone:"
+      RedisSettings__Enabled: "true"
     volumes:
       - web_uploads:/app/uploads
       - ./backups/logs:/app/logs

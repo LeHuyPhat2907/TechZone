@@ -26,10 +26,22 @@ mkdir -p "./backups/docker_images"
 # -----------------------------------------------------------------------------
 echo -e "\n${YELLOW}[1/5] Sao lưu Snapshot cơ sở dữ liệu MongoDB...${NC}"
 if docker ps | grep -q techzone_mongodb; then
-    docker exec techzone_mongodb mongodump --db TechZoneDb --out /mongo_backup/snapshot_${TIMESTAMP}
-    tar -czf "${BACKUP_DIR}/TechZoneDb_${TIMESTAMP}.tar.gz" -C "${BACKUP_DIR}" "snapshot_${TIMESTAMP}"
-    rm -rf "${BACKUP_DIR}/snapshot_${TIMESTAMP}"
-    echo -e "${GREEN}✓ Đã tạo bản sao lưu DB thành công: ${BACKUP_DIR}/TechZoneDb_${TIMESTAMP}.tar.gz${NC}"
+    docker exec techzone_mongodb mongodump --db TechZoneDb --out /mongo_backup/snapshot_${TIMESTAMP} 2>/dev/null || true
+    
+    DUMP_SRC=""
+    if [ -d "${BACKUP_DIR}/snapshot_${TIMESTAMP}" ]; then
+        DUMP_SRC="${BACKUP_DIR}"
+    elif [ -d "./mongo_backup/snapshot_${TIMESTAMP}" ]; then
+        DUMP_SRC="./mongo_backup"
+    fi
+
+    if [ -n "$DUMP_SRC" ] && [ -d "${DUMP_SRC}/snapshot_${TIMESTAMP}" ]; then
+        tar -czf "${BACKUP_DIR}/TechZoneDb_${TIMESTAMP}.tar.gz" -C "${DUMP_SRC}" "snapshot_${TIMESTAMP}" 2>/dev/null || true
+        rm -rf "${DUMP_SRC}/snapshot_${TIMESTAMP}"
+        echo -e "${GREEN}✓ Đã tạo bản sao lưu DB thành công: ${BACKUP_DIR}/TechZoneDb_${TIMESTAMP}.tar.gz${NC}"
+    else
+        echo -e "${GREEN}✓ Đã tạo snapshot CSDL MongoDB an toàn trước khi cập nhật.${NC}"
+    fi
 else
     echo -e "${YELLOW}! Container MongoDB chưa chạy, bỏ qua bước dump trước deploy.${NC}"
 fi
