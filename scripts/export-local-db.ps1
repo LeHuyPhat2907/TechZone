@@ -4,7 +4,7 @@
 
 param(
     [string]$DbName = "TechZoneDb",
-    [string]$OutputDir = "./backups/initial_seed"
+    [string]$OutputDir = "$PSScriptRoot\..\backups\initial_seed"
 )
 
 Write-Host "=====================================================" -ForegroundColor Cyan
@@ -15,21 +15,40 @@ if (-not (Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }
 
-$dumpTool = "mongodump"
-$dumpFound = Get-Command $dumpTool -ErrorAction SilentlyContinue
+# 1. Tìm công cụ mongodump trong tools local hoặc PATH
+$toolPath = "$PSScriptRoot\tools\mongodump.exe"
+if (-not (Test-Path $toolPath)) {
+    $toolPath = (Get-Command mongodump -ErrorAction SilentlyContinue)?.Source
+}
 
-if ($dumpFound) {
-    Write-Host "Đang xuất cơ sở dữ liệu '$DbName' bằng mongodump..." -ForegroundColor Yellow
-    & mongodump --db $DbName --out $OutputDir
-    Write-Host "✓ Đã xuất dữ liệu thành công vào thư mục: $OutputDir" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "BƯỚC TIẾP THEO:" -ForegroundColor Yellow
-    Write-Host "1. Nén thư mục '$OutputDir/$DbName' thành file zip/tar."
-    Write-Host "2. Copy lên máy chủ Proxmox (thư mục ./backups/mongodb của dự án)."
-    Write-Host "3. Trên Proxmox, chạy lệnh restore:"
-    Write-Host "   docker exec -i techzone_mongodb mongorestore --db TechZoneDb /mongo_backup/$DbName" -ForegroundColor Cyan
+if (-not $toolPath -or -not (Test-Path $toolPath)) {
+    Write-Host "Đang tự động tải công cụ MongoDB Tools độc lập..." -ForegroundColor Yellow
+    $toolsDir = "$PSScriptRoot\tools"
+    if (-not (Test-Path $toolsDir)) { New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null }
+    $zipPath = "$toolsDir\tools.zip"
+    curl.exe -L "https://fastdl.mongodb.org/tools/db/mongodb-database-tools-windows-x86_64-100.10.0.zip" -o $zipPath
+    Expand-Archive -Path $zipPath -DestinationPath "$toolsDir\extracted" -Force
+    $innerBin = Get-ChildItem -Path "$toolsDir\extracted" -Recurse -Filter "mongodump.exe" | Select-Object -First 1
+    if ($innerBin) {
+        Copy-Item -Path "$($innerBin.Directory.FullName)\*" -Destination "$toolsDir" -Force
+    }
+    Remove-Item -Recurse -Force "$toolsDir\extracted", $zipPath -ErrorAction SilentlyContinue
+    $toolPath = "$toolsDir\mongodump.exe"
+}
+
+Write-Host "Đang xuất toàn bộ dữ liệu CSDL '$DbName'..." -ForegroundColor Yellow
+& $toolPath --db $DbName --out $OutputDir
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✓ Xuất dữ liệu thành công vào: $OutputDir\$DbName" -ForegroundColor Green
+    
+    # Nén thành file tar.gz sẵn sàng gửi lên Proxmox
+    $tarPath = "$PSScriptRoot\..\backups\TechZoneDb.tar.gz"
+    tar.exe -czvf $tarPath -C $OutputDir $DbName
+    Write-Host "✓ Đã đóng gói thành file: $tarPath (Sẵn sàng copy lên Proxmox)" -ForegroundColor Green
+    
+    Write-Host "`nCÁCH CHUYỂN LÊN PROXMOX:" -ForegroundColor Cyan
+    Write-Host "scp $tarPath root@<PROXMOX_IP>:/opt/TechZone/backups/mongodb/" -ForegroundColor White
 } else {
-    Write-Host "Không tìm thấy công cụ mongodump trong PATH hệ thống." -ForegroundColor Yellow
-    Write-Host "Nếu MongoDB chạy bằng Docker trên máy local, bạn có thể chạy lệnh sau trong PowerShell:" -ForegroundColor White
-    Write-Host "docker exec <local_mongo_container> mongodump --db $DbName --out /mongo_backup" -ForegroundColor Cyan
+    Write-Host "[LỖI]: Không thể dump cơ sở dữ liệu. Vui lòng kiểm tra MongoDB local có đang chạy không." -ForegroundColor Red
 }
