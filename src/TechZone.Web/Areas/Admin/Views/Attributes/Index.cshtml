@@ -1,0 +1,546 @@
+@model TechZone.Web.Areas.Admin.Models.AttributesViewModel
+@{
+    ViewData["Title"] = "Quản lý Bộ Thông Số Kỹ Thuật (attribute.manage)";
+    var isSuperAdmin = User.IsInRole("SuperAdmin");
+}
+
+<div class="container-fluid px-0">
+    <!-- Header Page -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge tz-badge-soft-primary px-2.5 py-1 rounded-pill">
+                    <i class="bi bi-sliders me-1"></i>Catalog & Specs (Mục 1.1)
+                </span>
+                <span class="badge bg-dark text-light rounded-pill px-2.5 py-1">attribute.manage</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-1">Quản Lý Bộ Thông Số Kỹ Thuật Đặc Thù Thiết Bị</h2>
+            <p class="text-secondary small mb-0">Cấu hình bộ chỉ số phần cứng (RAM, CPU, Dung lượng pin, Độ phân giải màn hình...), huy hiệu Highlight Specs và bộ khung mẫu theo ngành hàng.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/Admin/Product" class="btn btn-outline-secondary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-2xs">
+                <i class="bi bi-phone"></i>
+                <span>Quản lý Sản phẩm</span>
+            </a>
+            <a href="/Admin/Category" class="btn btn-outline-secondary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-2xs">
+                <i class="bi bi-diagram-3"></i>
+                <span>Danh mục & Hãng</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Đã cấu hình thông số</span>
+                    <div class="tz-admin-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 34px; height: 34px;">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-success">@Model.TotalProductsWithSpecs.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Sản phẩm có đầy đủ specs chi tiết</span>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Chưa có thông số</span>
+                    <div class="tz-admin-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; width: 34px; height: 34px;">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-warning">@Model.TotalProductsWithoutSpecs.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Cần bổ sung specs từ bộ mẫu chuẩn</span>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Khung mẫu chuẩn (Templates)</span>
+                    <div class="tz-admin-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; width: 34px; height: 34px;">
+                        <i class="bi bi-collection-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-primary">@Model.TotalStandardTemplates.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Điện thoại, Laptop, Tablet, Âm thanh...</span>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Thuộc tính phần cứng hỗ trợ</span>
+                    <div class="tz-admin-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; width: 34px; height: 34px;">
+                        <i class="bi bi-cpu-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-dark">50+ chỉ số</div>
+                <span class="text-muted" style="font-size: 0.72rem;">RAM, CPU, Pin, Màn hình, Sạc...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills gap-2 mb-3 bg-white p-2 rounded-4 shadow-2xs border">
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "product_specs" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Attributes", new { tab = "product_specs", productId = Model.SelectedProductId })">
+                <i class="bi bi-sliders"></i>
+                <span>Biên Tập Thông Số Kỹ Thuật Theo Thiết Bị</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "templates" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Attributes", new { tab = "templates" })">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+                <span>Bộ Mẫu Khung Thuộc Tính Chuẩn (Industry Schemas)</span>
+                <span class="badge @(Model.ActiveTab == "templates" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.TotalStandardTemplates</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- TAB 1: PRODUCT SPECS EDITOR -->
+    @if (Model.ActiveTab == "product_specs")
+    {
+        <div class="row g-4">
+            <!-- Left Column: Product Selection Sidebar -->
+            <div class="col-12 col-lg-4 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100">
+                    <h6 class="fw-bold text-dark mb-2">Chọn Thiết Bị</h6>
+                    <form method="get" class="mb-3">
+                        <input type="hidden" name="tab" value="product_specs" />
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="search" class="form-control bg-light rounded-start-pill ps-3" 
+                                   placeholder="Tìm tên hoặc SKU..." value="@Model.SearchKeyword" />
+                            <button type="submit" class="btn btn-primary rounded-end-pill px-3">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="list-group list-group-flush overflow-y-auto" style="max-height: 600px;">
+                        @if (!Model.Products.Any())
+                        {
+                            <div class="text-center py-4 text-muted small">Không tìm thấy sản phẩm.</div>
+                        }
+                        else
+                        {
+                            @foreach (var prod in Model.Products)
+                            {
+                                var isSel = prod.Id == Model.SelectedProductId;
+                                var hasSpecs = prod.Specifications != null && prod.Specifications.Any();
+                                <a href="@Url.Action("Index", "Attributes", new { tab = "product_specs", productId = prod.Id, search = Model.SearchKeyword })" 
+                                   class="list-group-item list-group-item-action border-0 rounded-3 mb-1 p-2.5 @(isSel ? "bg-primary text-white shadow-sm" : "bg-light text-dark")">
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (!string.IsNullOrEmpty(prod.ThumbnailUrl))
+                                        {
+                                            <img src="@prod.ThumbnailUrl" alt="@prod.Name" class="rounded object-fit-contain bg-white p-0.5 border" style="width: 32px; height: 32px;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="tz-admin-icon rounded" style="width: 32px; height: 32px; background: rgba(255,255,255,0.2);">
+                                                <i class="bi bi-phone"></i>
+                                            </div>
+                                        }
+                                        <div class="overflow-hidden" style="flex: 1;">
+                                            <div class="fw-bold text-truncate small @(isSel ? "text-white" : "text-dark")" title="@prod.Name">@prod.Name</div>
+                                            <div class="d-flex align-items-center justify-content-between mt-0.5">
+                                                <span class="font-monospace @(isSel ? "text-white-50" : "text-muted")" style="font-size: 0.68rem;">@prod.Sku</span>
+                                                @if (hasSpecs)
+                                                {
+                                                    <span class="badge @(isSel ? "bg-white text-primary" : "tz-badge-soft-success") rounded-pill" style="font-size: 0.62rem;">Đã có specs</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge @(isSel ? "bg-white text-danger" : "tz-badge-soft-warning") rounded-pill" style="font-size: 0.62rem;">Chưa có</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Specs Management Workspace -->
+            <div class="col-12 col-lg-8 col-xl-9">
+                @if (Model.SelectedProduct == null)
+                {
+                    <div class="card border-0 shadow-sm rounded-4 bg-white p-5 text-center">
+                        <i class="bi bi-arrow-left-circle fs-1 text-muted mb-2"></i>
+                        <h5 class="fw-bold text-dark">Vui lòng chọn một thiết bị từ danh sách bên trái</h5>
+                        <p class="text-secondary small mb-0">Chọn sản phẩm để bắt đầu cấu hình bộ thông số kỹ thuật đặc thù và huy hiệu nổi bật.</p>
+                    </div>
+                }
+                else
+                {
+                    var p = Model.SelectedProduct;
+
+                    <!-- Selected Product Header Card -->
+                    <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                @if (!string.IsNullOrEmpty(p.ThumbnailUrl))
+                                {
+                                    <img src="@p.ThumbnailUrl" alt="@p.Name" class="rounded-4 border p-2 bg-white object-fit-contain shadow-2xs" style="width: 64px; height: 64px;" />
+                                }
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge tz-badge-soft-primary font-monospace rounded-pill">SKU: @p.Sku</span>
+                                        <span class="badge bg-light text-secondary border rounded-pill">@p.CategoryName</span>
+                                        <span class="badge bg-light text-secondary border rounded-pill">@p.BrandName</span>
+                                    </div>
+                                    <h4 class="fw-bold text-dark mb-0">@p.Name</h4>
+                                </div>
+                            </div>
+
+                            <!-- 1-Click Apply Template Form -->
+                            <form asp-action="ApplyTemplate" method="post" class="d-flex align-items-center gap-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@p.Id" />
+                                <select name="templateSlug" class="form-select form-select-sm bg-light rounded-pill" style="min-width: 220px;" required>
+                                    <option value="">-- Áp dụng bộ mẫu chuẩn --</option>
+                                    @foreach (var t in Model.PredefinedTemplates)
+                                    {
+                                        <option value="@t.CategorySlug">@t.CategoryName</option>
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill px-3 text-nowrap fw-semibold" title="Áp dụng bộ khung thông số chuẩn mà vẫn giữ giá trị tương thích">
+                                    <i class="bi bi-magic me-1"></i>Áp Dụng Mẫu
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Specs Editor Form -->
+                    <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+                        <form asp-action="SaveProductSpecs" method="post" id="specsEditorForm">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="ProductId" value="@p.Id" />
+                            <input type="hidden" name="SpecsJson" id="specsJsonField" />
+
+                            <!-- Highlight Specs Pills Management -->
+                            <div class="mb-4 p-3 rounded-4 bg-light border">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <label class="form-label fw-bold small text-dark mb-0">
+                                            <i class="bi bi-stars text-warning me-1"></i>Huy Hiệu Thông Số Nổi Bật (Highlight Specs Pills)
+                                        </label>
+                                        <div class="text-muted" style="font-size: 0.72rem;">Xuất hiện dưới dạng thẻ tag nổi bật ngay đầu trang chi tiết sản phẩm và card Storefront (ngăn cách bởi dấu phẩy hoặc xuống dòng).</div>
+                                    </div>
+                                    <span class="badge bg-primary text-white rounded-pill">Tối đa 6-8 thông số</span>
+                                </div>
+                                <textarea name="HighlightSpecsText" class="form-control rounded-3 font-monospace small" rows="2" 
+                                          placeholder="VD: OLED 6.7 inch 120Hz, Apple A18 Pro 6 nhân, RAM 8GB, Camera 48MP Zoom 5x, Pin 4422 mAh">@(string.Join(", ", p.HighlightSpecs))</textarea>
+                            </div>
+
+                            <!-- Specification Groups Container -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-0">Bộ Thông Số Kỹ Thuật Chi Tiết</h5>
+                                    <span class="text-muted small">Phân nhóm thông số đặc thù: Màn hình, CPU/RAM, Camera, Pin/Sạc, Kháng nước...</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="addNewGroup()">
+                                    <i class="bi bi-folder-plus me-1"></i>Thêm Nhóm Thông Số Mới
+                                </button>
+                            </div>
+
+                            <div id="specGroupsContainer" class="d-flex flex-column gap-3 mb-4">
+                                @if (p.Specifications == null || !p.Specifications.Any())
+                                {
+                                    <div class="alert alert-warning rounded-4 border-0 p-4 text-center" id="emptySpecsNotice">
+                                        <i class="bi bi-info-circle-fill fs-3 d-block mb-2 text-warning"></i>
+                                        <strong>Thiết bị này chưa có bộ thông số kỹ thuật đặc thù!</strong>
+                                        <p class="small text-secondary mb-3">Hãy chọn bộ mẫu chuẩn ở trên (ví dụ: Điện thoại thông minh hoặc Laptop) để nạp sẵn khung thông số chỉ trong 1 click, hoặc bấm nút thêm nhóm thông số mới bên dưới.</p>
+                                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-4" onclick="addNewGroup()">
+                                            <i class="bi bi-plus-circle me-1"></i>Tạo nhóm thông số đầu tiên
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    @for (int gIdx = 0; gIdx < p.Specifications.Count; gIdx++)
+                                    {
+                                        var group = p.Specifications[gIdx];
+                                        <div class="card border rounded-4 bg-white p-3 spec-group-card shadow-2xs" data-group-index="@gIdx">
+                                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                                <div class="d-flex align-items-center gap-2" style="flex: 1; max-width: 380px;">
+                                                    <span class="tz-admin-icon rounded" style="width: 28px; height: 28px; background: rgba(2, 132, 199, 0.1); color: #0284c7; font-size: 0.85rem;">
+                                                        <i class="bi bi-tag-fill"></i>
+                                                    </span>
+                                                    <input type="text" class="form-control form-control-sm fw-bold text-dark group-name-input" value="@group.GroupName" placeholder="Tên nhóm (VD: Màn hình, CPU & RAM...)" required />
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <button type="button" class="btn btn-xs btn-outline-success rounded-pill px-2.5" onclick="addNewItemToGroup(@gIdx)">
+                                                        <i class="bi bi-plus me-1"></i>Thêm dòng
+                                                    </button>
+                                                    <button type="button" class="btn btn-xs btn-outline-danger rounded-pill px-2" onclick="removeGroup(this)" title="Xóa nhóm này">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-borderless align-middle mb-0">
+                                                    <thead>
+                                                        <tr class="text-secondary small fw-bold" style="font-size: 0.72rem;">
+                                                            <th style="width: 35%;">TÊN CHỈ SỐ / THÔNG SỐ (Key)</th>
+                                                            <th style="width: 55%;">GIÁ TRỊ THỰC TẾ (Value)</th>
+                                                            <th style="width: 10%;" class="text-end">XÓA</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="spec-items-tbody">
+                                                        @foreach (var item in group.Items)
+                                                        {
+                                                            <tr class="spec-item-row">
+                                                                <td>
+                                                                    <input type="text" class="form-control form-control-sm item-name-input rounded-2" value="@item.Name" placeholder="VD: RAM, Dung lượng pin..." required />
+                                                                </td>
+                                                                <td>
+                                                                    <input type="text" class="form-control form-control-sm item-value-input rounded-2 font-monospace" value="@item.Value" placeholder="VD: 16GB LPDDR5X, 5000 mAh..." required />
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <button type="button" class="btn btn-xs btn-link text-danger p-0" onclick="removeItemRow(this)">
+                                                                        <i class="bi bi-x-circle fs-6"></i>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+
+                            <!-- Submit Bar -->
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                <a href="@Url.Action("Index", "Product")" class="btn btn-sm btn-light border rounded-pill px-3">
+                                    <i class="bi bi-arrow-left me-1"></i>Trở lại danh sách sản phẩm
+                                </a>
+                                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">
+                                    <i class="bi bi-save-fill me-1.5"></i>Lưu Toàn Bộ Thông Số Kỹ Thuật
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- TAB 2: INDUSTRY TEMPLATES & SCHEMAS PREVIEW -->
+    @if (Model.ActiveTab == "templates")
+    {
+        <div class="row g-4 mb-4">
+            @foreach (var t in Model.PredefinedTemplates)
+            {
+                <div class="col-12 col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="tz-admin-icon rounded-3" style="width: 42px; height: 42px; background: rgba(2, 132, 199, 0.1); color: #0284c7; font-size: 1.25rem;">
+                                    <i class="bi @t.Icon"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-0">@t.CategoryName</h5>
+                                    <span class="text-muted small">@t.Groups.Count nhóm | @t.Groups.Sum(g => g.Items.Count) thông số chuẩn</span>
+                                </div>
+                            </div>
+                            <span class="badge tz-badge-soft-primary rounded-pill font-monospace">/@t.CategorySlug</span>
+                        </div>
+
+                        <p class="text-secondary small mb-3">@t.Description</p>
+
+                        <!-- Highlight Specs Suggested -->
+                        <div class="mb-3">
+                            <strong class="small text-dark d-block mb-1.5">Gợi ý Highlight Specs:</strong>
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach (var pill in t.SuggestedHighlightSpecs)
+                                {
+                                    <span class="badge bg-light text-primary border rounded-pill px-2.5 py-1 small font-monospace">@pill</span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Groups Accordion -->
+                        <div class="accordion accordion-flush" id="acc-@t.CategorySlug">
+                            @for (int gIdx = 0; gIdx < t.Groups.Count; gIdx++)
+                            {
+                                var grp = t.Groups[gIdx];
+                                var accId = $"item-{t.CategorySlug}-{gIdx}";
+                                <div class="accordion-item border rounded-3 mb-2 overflow-hidden">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-2 px-3 bg-light fw-semibold small text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#@accId">
+                                            <span>@grp.GroupName</span>
+                                            <span class="badge bg-secondary rounded-pill ms-2" style="font-size: 0.65rem;">@grp.Items.Count chỉ số</span>
+                                        </button>
+                                    </h2>
+                                    <div id="@accId" class="accordion-collapse collapse" data-bs-parent="#acc-@t.CategorySlug">
+                                        <div class="accordion-body p-2.5 small">
+                                            <ul class="list-unstyled mb-0">
+                                                @foreach (var itm in grp.Items)
+                                                {
+                                                    <li class="py-1 border-bottom d-flex justify-content-between">
+                                                        <span class="text-secondary">@itm.Name:</span>
+                                                        <strong class="text-dark font-monospace text-end" style="max-width: 60%;">@itm.Value</strong>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        let groupCounter = 100;
+
+        function addNewGroup() {
+            const notice = document.getElementById('emptySpecsNotice');
+            if (notice) notice.remove();
+
+            const container = document.getElementById('specGroupsContainer');
+            const gIdx = groupCounter++;
+
+            const groupHtml = `
+                <div class="card border rounded-4 bg-white p-3 spec-group-card shadow-2xs" data-group-index="${gIdx}">
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2" style="flex: 1; max-width: 380px;">
+                            <span class="tz-admin-icon rounded" style="width: 28px; height: 28px; background: rgba(2, 132, 199, 0.1); color: #0284c7; font-size: 0.85rem;">
+                                <i class="bi bi-tag-fill"></i>
+                            </span>
+                            <input type="text" class="form-control form-control-sm fw-bold text-dark group-name-input" placeholder="Tên nhóm mới (VD: Hiệu năng, Pin & Sạc...)" required />
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-xs btn-outline-success rounded-pill px-2.5" onclick="addNewItemToGroup(${gIdx})">
+                                <i class="bi bi-plus me-1"></i>Thêm dòng
+                            </button>
+                            <button type="button" class="btn btn-xs btn-outline-danger rounded-pill px-2" onclick="removeGroup(this)" title="Xóa nhóm này">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless align-middle mb-0">
+                            <thead>
+                                <tr class="text-secondary small fw-bold" style="font-size: 0.72rem;">
+                                    <th style="width: 35%;">TÊN CHỈ SỐ / THÔNG SỐ (Key)</th>
+                                    <th style="width: 55%;">GIÁ TRỊ THỰC TẾ (Value)</th>
+                                    <th style="width: 10%;" class="text-end">XÓA</th>
+                                </tr>
+                            </thead>
+                            <tbody class="spec-items-tbody">
+                                <tr class="spec-item-row">
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm item-name-input rounded-2" placeholder="VD: RAM" required />
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm item-value-input rounded-2 font-monospace" placeholder="VD: 16GB" required />
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-xs btn-link text-danger p-0" onclick="removeItemRow(this)">
+                                            <i class="bi bi-x-circle fs-6"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', groupHtml);
+        }
+
+        function addNewItemToGroup(groupIndex) {
+            const groupCard = document.querySelector(`.spec-group-card[data-group-index="${groupIndex}"]`);
+            if (!groupCard) return;
+
+            const tbody = groupCard.querySelector('.spec-items-tbody');
+            const rowHtml = `
+                <tr class="spec-item-row">
+                    <td>
+                        <input type="text" class="form-control form-control-sm item-name-input rounded-2" placeholder="Tên thông số (VD: CPU, Pin...)" required />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm item-value-input rounded-2 font-monospace" placeholder="Giá trị (VD: Apple M4, 5000 mAh...)" required />
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-xs btn-link text-danger p-0" onclick="removeItemRow(this)">
+                            <i class="bi bi-x-circle fs-6"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function removeGroup(btn) {
+            const card = btn.closest('.spec-group-card');
+            if (card && confirm('Bạn có chắc muốn xóa toàn bộ nhóm thông số này?')) {
+                card.remove();
+            }
+        }
+
+        function removeItemRow(btn) {
+            const row = btn.closest('.spec-item-row');
+            if (row) {
+                row.remove();
+            }
+        }
+
+        // Form submit serialization
+        const specsForm = document.getElementById('specsEditorForm');
+        if (specsForm) {
+            specsForm.addEventListener('submit', function (e) {
+                const groupCards = document.querySelectorAll('.spec-group-card');
+                const groups = [];
+
+                groupCards.forEach(card => {
+                    const groupNameInput = card.querySelector('.group-name-input');
+                    const groupName = groupNameInput ? groupNameInput.value.trim() : '';
+                    if (!groupName) return;
+
+                    const itemRows = card.querySelectorAll('.spec-item-row');
+                    const items = [];
+
+                    itemRows.forEach(row => {
+                        const nameInput = row.querySelector('.item-name-input');
+                        const valInput = row.querySelector('.item-value-input');
+                        const name = nameInput ? nameInput.value.trim() : '';
+                        const val = valInput ? valInput.value.trim() : '';
+
+                        if (name && val) {
+                            items.push({ name: name, value: val });
+                        }
+                    });
+
+                    if (items.length > 0) {
+                        groups.push({
+                            groupName: groupName,
+                            items: items
+                        });
+                    }
+                });
+
+                document.getElementById('specsJsonField').value = JSON.stringify(groups);
+            });
+        }
+    </script>
+}

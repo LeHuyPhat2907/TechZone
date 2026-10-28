@@ -1,0 +1,406 @@
+@model CheckoutViewModel
+@{
+    ViewData["Title"] = "Thanh Toán Đơn Hàng (Single-Page Checkout) - TechZone";
+}
+
+<div class="container my-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Cart" asp-action="Index" class="text-decoration-none text-muted">Giỏ hàng</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Thanh toán đơn hàng</li>
+        </ol>
+    </nav>
+
+    <h3 class="fw-bold text-dark mb-4"><i class="bi bi-shield-check text-primary me-2"></i>Thanh Toán Đơn Hàng An Toàn</h3>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger rounded-4 mb-4">
+            <div asp-validation-summary="All" class="text-danger small mb-0"></div>
+        </div>
+    }
+
+    <form asp-action="PlaceOrder" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-4">
+            <!-- Left: Checkout Information -->
+            <div class="col-lg-7">
+                <!-- 1. Customer Details -->
+                <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-bounding-box text-primary me-2"></i>1. Thông Tin Người Nhận</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Họ và tên người nhận <span class="text-danger">*</span></label>
+                            <input asp-for="Checkout.CustomerName" class="form-control" placeholder="Nguyễn Văn A" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Số điện thoại di động <span class="text-danger">*</span></label>
+                            <input asp-for="Checkout.CustomerPhone" class="form-control" placeholder="0901234567" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-secondary">Địa chỉ Email (Nhận thông báo đơn & bảo hành) <span class="text-danger">*</span></label>
+                            <input asp-for="Checkout.CustomerEmail" type="email" class="form-control" placeholder="email@domain.com" required />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Shipping Address -->
+                <!-- 2. Fulfillment / Shipping Method (FPT Shop Style: Home Delivery vs Store Pickup) -->
+                <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt text-primary me-2"></i>2. Hình Thức Nhận Hàng</h5>
+                    
+                    <div class="d-flex gap-2 mb-3">
+                        <label class="btn btn-outline-primary flex-fill fw-bold py-2 active" id="lblHomeDelivery" onclick="switchDeliveryType('HomeDelivery')">
+                            <input type="radio" asp-for="Checkout.DeliveryType" value="HomeDelivery" id="radHomeDelivery" class="d-none" checked />
+                            <i class="bi bi-truck me-1"></i> Giao Hàng Tận Nơi (GHN)
+                        </label>
+                        <label class="btn btn-outline-primary flex-fill fw-bold py-2" id="lblStorePickup" onclick="switchDeliveryType('StorePickup')">
+                            <input type="radio" asp-for="Checkout.DeliveryType" value="StorePickup" id="radStorePickup" class="d-none" />
+                            <i class="bi bi-shop me-1"></i> Nhận Tại Siêu Thị (Sau 30p)
+                        </label>
+                    </div>
+
+                    <!-- Home Delivery Address Inputs -->
+                    <div id="homeDeliverySection">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-secondary">Tỉnh / Thành phố <span class="text-danger">*</span></label>
+                                <input asp-for="Checkout.Province" id="inputProvince" class="form-control" placeholder="TP. Hồ Chí Minh" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-secondary">Quận / Huyện <span class="text-danger">*</span></label>
+                                <input asp-for="Checkout.District" id="inputDistrict" class="form-control" placeholder="Quận 1" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-secondary">Phường / Xã <span class="text-danger">*</span></label>
+                                <input asp-for="Checkout.Ward" id="inputWard" class="form-control" placeholder="Phường Bến Nghé" required />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-secondary">Số nhà, tên đường chi tiết <span class="text-danger">*</span></label>
+                                <input asp-for="Checkout.DetailAddress" id="inputDetailAddress" class="form-control" placeholder="Số 123 Đường Lê Lợi" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Store Pickup Selector -->
+                    <div id="storePickupSection" class="p-3 bg-light rounded-3" style="display: none;">
+                        <label class="form-label small fw-bold text-dark mb-2"><i class="bi bi-geo-fill text-danger me-1"></i>Chọn siêu thị TechZone gần nhất để nhận hàng:</label>
+                        <select asp-for="Checkout.PickupStoreAddress" id="selectPickupStore" class="form-select mb-2">
+                            <option value="TechZone 261 Khánh Hội, Phường 2, Quận 4, TP.HCM">TechZone 261 Khánh Hội, Phường 2, Quận 4, TP.HCM (Có sẵn hàng - Nhận sau 30p)</option>
+                            <option value="TechZone 136 Xuân Thủy, Phường Dịch Vọng Hậu, Quận Cầu Giấy, Hà Nội">TechZone 136 Xuân Thủy, Cầu Giấy, Hà Nội (Có sẵn hàng - Nhận sau 30p)</option>
+                            <option value="TechZone 45 Lê Duẩn, Phường Hải Châu 1, Quận Hải Châu, Đà Nẵng">TechZone 45 Lê Duẩn, Hải Châu, Đà Nẵng (Có sẵn hàng - Nhận sau 30p)</option>
+                            <option value="TechZone 98 Nguyễn Trãi, Phường 3, Quận 5, TP.HCM">TechZone 98 Nguyễn Trãi, Quận 5, TP.HCM (Có sẵn hàng - Nhận sau 30p)</option>
+                        </select>
+                        <div class="small text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Miễn phí vận chuyển 100% khi nhận tại siêu thị. Hỗ trợ kích hoạt, dán màn hình miễn phí.</div>
+                    </div>
+                </div>
+
+                <!-- 3. VAT Electronic Invoice (FPT Shop B2B e-Invoice) -->
+                <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="fw-bold text-dark m-0"><i class="bi bi-receipt-cutoff text-primary me-2"></i>3. Hóa Đơn Điện Tử VAT</h5>
+                        <div class="form-check form-switch m-0">
+                            <input class="form-check-input cursor-pointer" type="checkbox" asp-for="Checkout.RequireVatInvoice" id="vatToggle" onchange="toggleVatSection()" />
+                            <label class="form-check-label small fw-semibold cursor-pointer" for="vatToggle">Yêu cầu xuất hóa đơn VAT</label>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mb-3">Hóa đơn VAT điện tử sẽ được gửi về email của bạn trong vòng 24h sau khi nhận hàng thành công.</small>
+
+                    <div id="vatInvoiceSection" class="p-3 bg-light rounded-3" style="display: none;">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Tên công ty / Tổ chức <span class="text-danger">*</span></label>
+                                <input asp-for="Checkout.CompanyName" id="inputCompanyName" class="form-control form-control-sm" placeholder="CÔNG TY TNHH CÔNG NGHỆ ABC" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Mã số thuế (MST) <span class="text-danger">*</span></label>
+                                <input asp-for="Checkout.TaxId" id="inputTaxId" class="form-control form-control-sm" placeholder="0101234567" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Địa chỉ trụ sở công ty</label>
+                                <input asp-for="Checkout.CompanyAddress" class="form-control form-control-sm" placeholder="Số 10, Đường Hoa Mai, Quận Phú Nhuận, TP.HCM" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Email nhận hóa đơn điện tử e-Invoice</label>
+                                <input asp-for="Checkout.InvoiceEmail" type="email" class="form-control form-control-sm" placeholder="ketoan@domain.com" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Payment Method -->
+                <!-- 4. Payment Method (Khảo sát các cổng thanh toán hàng đầu VN: VNPAY, PayOS, MoMo, ZaloPay) -->
+                <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark m-0"><i class="bi bi-credit-card text-primary me-2"></i>4. Phương Thức Thanh Toán</h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 small">
+                            <i class="bi bi-shield-lock-fill me-1"></i>Bảo mật SSL 256-bit
+                        </span>
+                    </div>
+                    
+                    <div class="d-flex flex-column gap-3">
+                        <!-- VNPAY-QR (Ưu tiên số 1 theo khảo sát thị trường VN) -->
+                        <label class="border rounded-3 p-3 d-flex align-items-start gap-3 cursor-pointer border-danger border-opacity-50 bg-danger bg-opacity-10 position-relative">
+                            <input type="radio" asp-for="Checkout.PaymentMethod" value="@PaymentMethod.VnPay" class="form-check-input mt-1" checked />
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="fw-bold text-danger fs-6">
+                                        <i class="bi bi-qr-code-scan me-2"></i>Cổng thanh toán VNPAY-QR
+                                    </div>
+                                    <span class="badge bg-danger text-white small px-2 py-1"><i class="bi bi-star-fill me-1"></i>Ưu tiên - Phổ biến nhất</span>
+                                </div>
+                                <small class="text-muted d-block mt-1">Quét mã VNPAY-QR qua 40+ ứng dụng Ngân hàng (VCB, BIDV, Agribank, Techcombank, VPBank...) & Ví VNPAY.</small>
+                            </div>
+                        </label>
+
+                        <!-- PayOS (VietQR Chuyển khoản tức thì không phí) -->
+                        <label class="border rounded-3 p-3 d-flex align-items-start gap-3 cursor-pointer">
+                            <input type="radio" asp-for="Checkout.PaymentMethod" value="@PaymentMethod.PayOS" class="form-check-input mt-1" />
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="fw-bold text-primary fs-6">
+                                        <i class="bi bi-lightning-charge-fill me-2"></i>Chuyển khoản VietQR tức thì (PayOS)
+                                    </div>
+                                    <span class="badge bg-success bg-opacity-10 text-success small px-2 py-1"><i class="bi bi-check-circle me-1"></i>0% Phí GD</span>
+                                </div>
+                                <small class="text-muted d-block mt-1">Quét mã QR tự động điền đúng số tiền và nội dung đơn hàng Napas247, hệ thống kích hoạt tự động sau 3 giây.</small>
+                            </div>
+                        </label>
+
+                        <!-- MoMo E-Wallet -->
+                        <label class="border rounded-3 p-3 d-flex align-items-start gap-3 cursor-pointer">
+                            <input type="radio" asp-for="Checkout.PaymentMethod" value="@PaymentMethod.MoMo" class="form-check-input mt-1" />
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark fs-6" style="color: #ae2070 !important;">
+                                    <i class="bi bi-wallet-fill me-2"></i>Ví điện tử MoMo
+                                </div>
+                                <small class="text-muted d-block mt-1">Thanh toán một chạm qua App MoMo hoặc quét mã MoMo QR siêu tiện lợi.</small>
+                            </div>
+                        </label>
+
+                        <!-- ZaloPay E-Wallet -->
+                        <label class="border rounded-3 p-3 d-flex align-items-start gap-3 cursor-pointer">
+                            <input type="radio" asp-for="Checkout.PaymentMethod" value="@PaymentMethod.ZaloPay" class="form-check-input mt-1" />
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark fs-6" style="color: #0068ff !important;">
+                                    <i class="bi bi-chat-dots-fill me-2"></i>Ví điện tử ZaloPay
+                                </div>
+                                <small class="text-muted d-block mt-1">Thanh toán nhanh chóng trực tiếp qua ứng dụng Zalo hoặc ví ZaloPay liên kết thẻ quốc tế/ATM.</small>
+                            </div>
+                        </label>
+
+                        <!-- COD -->
+                        <label class="border rounded-3 p-3 d-flex align-items-start gap-3 cursor-pointer bg-light">
+                            <input type="radio" asp-for="Checkout.PaymentMethod" value="@PaymentMethod.COD" class="form-check-input mt-1" />
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-secondary fs-6">
+                                    <i class="bi bi-cash-stack me-2"></i>Thanh toán tiền mặt khi nhận hàng (COD)
+                                </div>
+                                <small class="text-muted d-block mt-1">Khách hàng được mở hộp đồng kiểm số serial máy và phụ kiện trước khi giao tiền cho shipper.</small>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 5. Customer Notes -->
+                <div class="card border-0 rounded-4 shadow-sm p-4 bg-white">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-chat-left-dots text-primary me-2"></i>5. Ghi Chú Giao Hàng (Tùy chọn)</h5>
+                    <textarea asp-for="Checkout.CustomerNotes" class="form-control" rows="2" placeholder="Ví dụ: Giao giờ hành chính, gọi điện trước khi đến 15 phút..."></textarea>
+                </div>
+            </div>
+
+            <!-- Right: Order Items, FPT Student Privilege & Available Vouchers -->
+            <div class="col-lg-5">
+                <div class="card border-0 rounded-4 shadow-sm p-4 bg-white sticky-top" style="top: 90px;">
+                    <h5 class="fw-bold text-dark mb-3">Đơn Hàng Của Bạn (@Model.Cart.TotalItems SP)</h5>
+
+                    <!-- Mini Cart List -->
+                    <div class="mb-3 overflow-auto" style="max-height: 220px;">
+                        @foreach (var item in Model.Cart.Items)
+                        {
+                            <div class="d-flex align-items-center gap-3 py-2 border-bottom">
+                                <img src="@item.ThumbnailUrl" alt="@item.ProductName" class="rounded-2 border p-1" style="width: 50px; height: 50px; object-fit: contain;" />
+                                <div class="flex-grow-1 small">
+                                    <div class="fw-bold text-dark text-truncate" style="max-width: 200px;">@item.ProductName</div>
+                                    <div class="text-muted">@item.VariantName x @item.Quantity</div>
+                                </div>
+                                <div class="fw-bold text-danger small">@item.LineTotal.ToString("N0")₫</div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- FPT Shop Student Privilege (Back to School) -->
+                    <div class="p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-3 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input cursor-pointer" type="checkbox" asp-for="Checkout.IsStudent" id="chkStudent" onchange="toggleStudentPrivilege(this)" />
+                            <label class="form-check-label fw-bold small text-danger cursor-pointer" for="chkStudent">
+                                <i class="bi bi-mortarboard-fill me-1"></i>Đặc quyền Học sinh - Sinh viên (HSSV)
+                            </label>
+                        </div>
+                        <small class="text-muted d-block mt-1 ps-4" style="font-size: 0.75rem;">
+                            Giảm thêm 300.000₫ cho đơn từ 3.000.000₫ & tặng thêm 1 năm bảo hành chính hãng.
+                        </small>
+                    </div>
+
+                    <!-- Available Vouchers Drawer / Quick Select (FPT Shop Style) -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary mb-2">
+                            <i class="bi bi-ticket-perforated-fill text-warning me-1"></i>Mã giảm giá có sẵn (Bấm để áp dụng):
+                        </label>
+                        <div class="d-flex flex-column gap-2 mb-3">
+                            <div class="p-2 border rounded-3 d-flex justify-content-between align-items-center bg-light small">
+                                <div>
+                                    <strong class="text-primary">TZTECH500</strong>
+                                    <span class="text-muted d-block" style="font-size: 0.72rem;">Giảm 500k cho đơn từ 10 triệu</span>
+                                </div>
+                                <button type="button" class="btn btn-xs btn-outline-primary fw-bold px-2 py-1" onclick="applyQuickVoucher('order', 'TZTECH500')">Áp dụng</button>
+                            </div>
+
+                            <div class="p-2 border rounded-3 d-flex justify-content-between align-items-center bg-light small">
+                                <div>
+                                    <strong class="text-success">FREESHIP</strong>
+                                    <span class="text-muted d-block" style="font-size: 0.72rem;">Miễn phí ship GHN toàn quốc</span>
+                                </div>
+                                <button type="button" class="btn btn-xs btn-outline-success fw-bold px-2 py-1" onclick="applyQuickVoucher('shipping', 'FREESHIP')">Áp dụng</button>
+                            </div>
+
+                            <div class="p-2 border rounded-3 d-flex justify-content-between align-items-center bg-light small">
+                                <div>
+                                    <strong class="text-danger">HSSV2026</strong>
+                                    <span class="text-muted d-block" style="font-size: 0.72rem;">Giảm 300k cho Học sinh - Sinh viên</span>
+                                </div>
+                                <button type="button" class="btn btn-xs btn-outline-danger fw-bold px-2 py-1" onclick="applyQuickVoucher('order', 'HSSV2026')">Áp dụng</button>
+                            </div>
+                        </div>
+
+                        <!-- Manual Voucher Inputs -->
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-secondary">Mã giảm giá đơn hàng</label>
+                            <input asp-for="Checkout.AppliedOrderCouponCode" id="appliedOrderCouponInput" class="form-control form-control-sm text-uppercase" placeholder="VD: TZTECH500, HSSV2026" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-secondary">Mã miễn phí vận chuyển</label>
+                            <input asp-for="Checkout.AppliedShippingCouponCode" id="appliedShippingCouponInput" class="form-control form-control-sm text-uppercase" placeholder="VD: FREESHIP" />
+                        </div>
+                    </div>
+
+                    <hr class="text-muted opacity-25" />
+
+                    <!-- Calculation breakdown -->
+                    <div class="d-flex justify-content-between mb-2 small text-secondary">
+                        <span>Tạm tính tiền hàng:</span>
+                        <span class="fw-bold text-dark">@Model.Cart.Subtotal.ToString("N0")₫</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2 small text-secondary">
+                        <span>Phí vận chuyển:</span>
+                        <span class="fw-bold @(Model.Cart.EstimatedShippingFee == 0 ? "text-success" : "text-dark")" id="shippingFeeText">
+                            @(Model.Cart.EstimatedShippingFee == 0 ? "Miễn phí" : Model.Cart.EstimatedShippingFee.ToString("N0") + "₫")
+                        </span>
+                    </div>
+
+                    <hr class="text-muted opacity-25" />
+
+                    <div class="d-flex justify-content-between align-items-baseline mb-4">
+                        <span class="fw-bold text-dark fs-6">Tổng tiền thanh toán:</span>
+                        <span class="fs-3 fw-bold text-danger" id="estimatedTotalText">@Model.Cart.EstimatedTotal.ToString("N0")₫</span>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger btn-lg w-100 fw-bold py-3 rounded-3 shadow-sm">
+                        <i class="bi bi-lock-fill me-2"></i>ĐẶT HÀNG NGAY
+                    </button>
+
+                    <div class="text-center mt-3 small text-muted">
+                        Bằng việc bấm đặt hàng, bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo hành điện tử của TechZone.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        function switchDeliveryType(type) {
+            const radHome = document.getElementById('radHomeDelivery');
+            const radStore = document.getElementById('radStorePickup');
+            const lblHome = document.getElementById('lblHomeDelivery');
+            const lblStore = document.getElementById('lblStorePickup');
+            const secHome = document.getElementById('homeDeliverySection');
+            const secStore = document.getElementById('storePickupSection');
+            const inProvince = document.getElementById('inputProvince');
+            const inDistrict = document.getElementById('inputDistrict');
+            const inWard = document.getElementById('inputWard');
+            const inDetail = document.getElementById('inputDetailAddress');
+            const feeText = document.getElementById('shippingFeeText');
+
+            if (type === 'StorePickup') {
+                radStore.checked = true;
+                lblStore.classList.add('active');
+                lblHome.classList.remove('active');
+                secHome.style.display = 'none';
+                secStore.style.display = 'block';
+
+                inProvince.removeAttribute('required');
+                inDistrict.removeAttribute('required');
+                inWard.removeAttribute('required');
+                inDetail.removeAttribute('required');
+
+                if (feeText) feeText.innerText = "Miễn phí (Nhận tại Shop)";
+            } else {
+                radHome.checked = true;
+                lblHome.classList.add('active');
+                lblStore.classList.remove('active');
+                secHome.style.display = 'block';
+                secStore.style.display = 'none';
+
+                inProvince.setAttribute('required', 'required');
+                inDistrict.setAttribute('required', 'required');
+                inWard.setAttribute('required', 'required');
+                inDetail.setAttribute('required', 'required');
+            }
+        }
+
+        function toggleVatSection() {
+            const chk = document.getElementById('vatToggle');
+            const sec = document.getElementById('vatInvoiceSection');
+            const comp = document.getElementById('inputCompanyName');
+            const tax = document.getElementById('inputTaxId');
+
+            if (chk.checked) {
+                sec.style.display = 'block';
+                comp.setAttribute('required', 'required');
+                tax.setAttribute('required', 'required');
+            } else {
+                sec.style.display = 'none';
+                comp.removeAttribute('required');
+                tax.removeAttribute('required');
+            }
+        }
+
+        function applyQuickVoucher(type, code) {
+            if (type === 'order') {
+                const el = document.getElementById('appliedOrderCouponInput');
+                if (el) el.value = code;
+                showToast(`Đã áp dụng mã giảm giá đơn hàng: ${code}!`, true);
+            } else if (type === 'shipping') {
+                const el = document.getElementById('appliedShippingCouponInput');
+                if (el) el.value = code;
+                showToast(`Đã áp dụng mã miễn phí vận chuyển: ${code}!`, true);
+            }
+        }
+
+        function toggleStudentPrivilege(chk) {
+            const input = document.getElementById('appliedOrderCouponInput');
+            if (chk.checked) {
+                if (input) input.value = "HSSV2026";
+                showToast('Đã kích hoạt đặc quyền Học sinh - Sinh viên (-300.000₫ & +1 năm bảo hành)!', true);
+            } else {
+                if (input && input.value === "HSSV2026") input.value = "";
+            }
+        }
+    </script>
+}

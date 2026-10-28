@@ -1,0 +1,1650 @@
+@using TechZone.Domain.Enums
+@model TechZone.Web.Areas.Admin.Models.TechnicianPortalViewModel
+@{
+    ViewData["Title"] = "Cổng Quản Trị Kỹ Thuật Viên & Bảo Hành Thiết Bị";
+}
+
+<div class="container-fluid px-0">
+    <!-- Header Page -->
+    <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge tz-badge-soft-warning px-2.5 py-1 rounded-pill">
+                    <i class="bi bi-tools me-1"></i>2. Technician / Support Hub
+                </span>
+                <span class="badge bg-dark text-light rounded-pill px-2.5 py-1">Kỹ Thuật &amp; Bảo Hành Chuyên Sâu</span>
+                <span class="badge bg-secondary text-light rounded-pill px-2 py-0.5 small">
+                    <i class="bi bi-person-fill me-1"></i>@Model.CurrentTechnicianName
+                </span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-1">Cổng Quản Trị Kỹ Thuật Viên &amp; Thẩm Định Thiết Bị</h2>
+            <p class="text-secondary small mb-0">Thẩm định ngoại quan, tra cứu vòng đời IMEI/Serial, quản lý quy trình sửa chữa 6 bước, điều phối linh kiện và báo giá dịch vụ.</p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Quick Search Bar -->
+            <form method="get" action="@Url.Action("Index", "Technician")" class="d-flex align-items-center">
+                <input type="hidden" name="tab" value="@Model.ActiveTab" />
+                <div class="input-group input-group-sm">
+                    <input type="text" name="search" class="form-control rounded-start-pill ps-3" placeholder="Tìm IMEI, mã RMA, khách..." value="@Model.SearchQuery" style="width: 200px;" />
+                    <button class="btn btn-outline-secondary rounded-end-pill px-3" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Quick Create RMA Modal Trigger -->
+            <button type="button" class="btn btn-primary rounded-pill px-3.5 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#createTicketModal">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span>Tiếp Nhận Máy Mới (RMA)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 6 KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Ca của tôi -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-primary">
+                <span class="text-secondary small fw-semibold">Ca của tôi</span>
+                <div class="fs-4 fw-bold text-primary mt-1 font-monospace">@Model.MyAssignedTicketsCount</div>
+                <a href="@Url.Action("Index", "Technician", new { tab = "tickets", myTickets = true })" class="text-muted small text-decoration-none" style="font-size: 0.72rem;">
+                    Đang phụ trách <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 2. Ca khẩn cấp -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-danger">
+                <span class="text-secondary small fw-semibold">Ca Khẩn Cấp / VIP</span>
+                <div class="fs-4 fw-bold text-danger mt-1 font-monospace">@Model.UrgentTicketsCount</div>
+                <span class="text-muted small" style="font-size: 0.72rem;">Ưu tiên xử lý ngay</span>
+            </div>
+        </div>
+
+        <!-- 3. Chờ duyệt báo giá -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-warning">
+                <span class="text-secondary small fw-semibold">Chờ Duyệt Báo Giá</span>
+                <div class="fs-4 fw-bold text-warning mt-1 font-monospace">@Model.PendingQuotationCount</div>
+                <a href="@Url.Action("Index", "Technician", new { tab = "quotations" })" class="text-muted small text-decoration-none" style="font-size: 0.72rem;">
+                    Xem báo giá <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 4. Chờ linh kiện / Đang sửa -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-info">
+                <span class="text-secondary small fw-semibold">Đang Sửa / Chờ Phụ Tùng</span>
+                <div class="fs-4 fw-bold text-info mt-1 font-monospace">@(Model.RepairingCount + Model.WaitingForPartsCount)</div>
+                <span class="text-muted small" style="font-size: 0.72rem;">@Model.WaitingForPartsCount ca chờ linh kiện</span>
+            </div>
+        </div>
+
+        <!-- 5. Chờ trả máy -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-success">
+                <span class="text-secondary small fw-semibold">Đã Test &amp; Chờ Trả</span>
+                <div class="fs-4 fw-bold text-success mt-1 font-monospace">@Model.ReadyForPickupCount</div>
+                <span class="text-muted small" style="font-size: 0.72rem;">Sẵn sàng bàn giao</span>
+            </div>
+        </div>
+
+        <!-- 6. Kho linh kiện cảnh báo -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 @(Model.LowStockPartsCount > 0 ? "border-danger" : "border-secondary")">
+                <span class="text-secondary small fw-semibold">Linh Kiện Sắp Hết</span>
+                <div class="fs-4 fw-bold @(Model.LowStockPartsCount > 0 ? "text-danger" : "text-dark") mt-1 font-monospace">@Model.LowStockPartsCount</div>
+                <a href="@Url.Action("Index", "Technician", new { tab = "spareparts" })" class="text-muted small text-decoration-none" style="font-size: 0.72rem;">
+                    Tra cứu kho <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs for Technician Sub-modules -->
+    <ul class="nav nav-pills gap-2 mb-4 p-1.5 bg-white border rounded-4 shadow-2xs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link rounded-3 px-3.5 py-2 fw-semibold @(Model.ActiveTab == "dashboard" ? "active" : "text-secondary")" href="@Url.Action("Index", "Technician", new { tab = "dashboard" })">
+                <i class="bi bi-speedometer2 me-1.5"></i>Tổng Quan Kỹ Thuật
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link rounded-3 px-3.5 py-2 fw-semibold @(Model.ActiveTab == "lookup" ? "active" : "text-secondary")" href="@Url.Action("Index", "Technician", new { tab = "lookup" })">
+                <i class="bi bi-upc-scan me-1.5"></i>2.1 Tra Cứu &amp; Thẩm Định Thiết Bị
+                <span class="badge bg-light text-dark ms-1 font-monospace" style="font-size: 0.7rem;">imei_serial.lookup</span>
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link rounded-3 px-3.5 py-2 fw-semibold @(Model.ActiveTab == "tickets" ? "active" : "text-secondary")" href="@Url.Action("Index", "Technician", new { tab = "tickets" })">
+                <i class="bi bi-clipboard2-pulse me-1.5"></i>2.2 Quản Lý Phiếu RMA &amp; Ca Sửa Chữa
+                <span class="badge bg-light text-dark ms-1 font-monospace" style="font-size: 0.7rem;">ticket.manage</span>
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link rounded-3 px-3.5 py-2 fw-semibold @(Model.ActiveTab == "spareparts" ? "active" : "text-secondary")" href="@Url.Action("Index", "Technician", new { tab = "spareparts" })">
+                <i class="bi bi-cpu me-1.5"></i>2.3 Quản Lý Linh Kiện &amp; Xuất Kho
+                <span class="badge bg-light text-dark ms-1 font-monospace" style="font-size: 0.7rem;">spare_parts</span>
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link rounded-3 px-3.5 py-2 fw-semibold @(Model.ActiveTab == "quotations" ? "active" : "text-secondary")" href="@Url.Action("Index", "Technician", new { tab = "quotations" })">
+                <i class="bi bi-receipt-cutoff me-1.5"></i>2.4 Báo Giá Dịch Vụ
+                @if (Model.PendingQuotationCount > 0)
+                {
+                    <span class="badge bg-warning text-dark rounded-pill ms-1 font-monospace">@Model.PendingQuotationCount</span>
+                }
+                <span class="badge bg-light text-dark ms-1 font-monospace" style="font-size: 0.7rem;">service_cost</span>
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link rounded-3 px-3.5 py-2 fw-semibold @(Model.ActiveTab == "vendor_rma" ? "active" : "text-secondary")" href="@Url.Action("Index", "Technician", new { tab = "vendor_rma" })">
+                <i class="bi bi-building-up me-1.5"></i>2.4 Điều Phối Hãng (Vendor RMA)
+                <span class="badge bg-light text-dark ms-1 font-monospace" style="font-size: 0.7rem;">vendor_rma</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- ======================================================== -->
+    <!-- TAB 1: DASHBOARD OVERVIEW -->
+    <!-- ======================================================== -->
+    @if (Model.ActiveTab == "dashboard")
+    {
+        <div class="row g-4 mb-4">
+            <!-- Active Tickets Queue -->
+            <div class="col-12 col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">Hàng Đợi Ca Sửa Chữa Cần Xử Lý Ngay</h5>
+                            <span class="text-muted small">Ưu tiên các ca khẩn cấp và thiết bị chờ linh kiện</span>
+                        </div>
+                        <a href="@Url.Action("Index", "Technician", new { tab = "tickets" })" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                            Xem tất cả ca <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr class="text-secondary small fw-bold">
+                                    <th class="ps-3 py-3">Mã RMA / Khách</th>
+                                    <th>Thiết Bị &amp; Serial</th>
+                                    <th>Độ Ưu Tiên</th>
+                                    <th>Trạng Thái 6 Bước</th>
+                                    <th class="text-end pe-3">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    var pendingTickets = Model.TicketsList
+                                        .Where(t => t.Status != RmaStatus.Completed && t.Status != RmaStatus.Rejected)
+                                        .Take(6)
+                                        .ToList();
+                                }
+                                @if (!pendingTickets.Any())
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-success fw-semibold">
+                                            <i class="bi bi-check-circle-fill me-1.5"></i>Không có ca sửa chữa nào đang tồn đọng. Hệ thống vận hành tối ưu!
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var t in pendingTickets)
+                                    {
+                                        <tr>
+                                            <td class="ps-3">
+                                                <a href="@Url.Action("Index", "Technician", new { tab = "tickets", selectedTicketId = t.Id })" class="fw-bold font-monospace text-primary text-decoration-none">@t.RmaCode</a>
+                                                <div class="text-dark small fw-semibold">@t.CustomerName</div>
+                                                <span class="text-muted" style="font-size: 0.72rem;">@t.CustomerPhone</span>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold text-dark">@t.ProductName</div>
+                                                <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.7rem;">@t.SerialNumber</span>
+                                            </td>
+                                            <td>
+                                                @if (t.Priority == "Urgent" || t.Priority == "VIP")
+                                                {
+                                                    <span class="badge bg-danger rounded-pill px-2.5 py-1">
+                                                        <i class="bi bi-fire me-1"></i>@t.Priority
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1">Bình thường</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge tz-badge-soft-primary rounded-pill px-2.5 py-1">@t.Status</span>
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="@Url.Action("Index", "Technician", new { tab = "tickets", selectedTicketId = t.Id })" class="btn btn-outline-primary" title="Xử lý ca">
+                                                        <i class="bi bi-wrench-adjustable"></i>
+                                                    </a>
+                                                    <a href="@Url.Action("PrintReceipt", "Technician", new { ticketId = t.Id })" target="_blank" class="btn btn-outline-secondary" title="In phiếu biên nhận">
+                                                        <i class="bi bi-printer"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Technician Actions & Knowledge Base -->
+            <div class="col-12 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <h6 class="fw-bold text-dark mb-3">
+                        <i class="bi bi-lightning-charge-fill text-warning me-1.5"></i>Thao Tác Kỹ Thuật Nhanh
+                    </h6>
+                    <div class="d-flex flex-column gap-2 mb-4">
+                        <button type="button" class="btn btn-light border text-start p-2.5 rounded-3 d-flex align-items-center gap-3" data-bs-toggle="modal" data-bs-target="#createTicketModal">
+                            <div class="tz-admin-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; width: 36px; height: 36px;">
+                                <i class="bi bi-file-earmark-plus"></i>
+                            </div>
+                            <div>
+                                <strong class="d-block text-dark small">Tiếp nhận máy mới (ticket.create)</strong>
+                                <span class="text-muted" style="font-size: 0.72rem;">Ghi nhận ngoại quan, phụ kiện và cấp mã nhận máy</span>
+                            </div>
+                        </button>
+
+                        <a href="@Url.Action("Index", "Technician", new { tab = "lookup" })" class="btn btn-light border text-start p-2.5 rounded-3 d-flex align-items-center gap-3 text-decoration-none">
+                            <div class="tz-admin-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 36px; height: 36px;">
+                                <i class="bi bi-search"></i>
+                            </div>
+                            <div>
+                                <strong class="d-block text-dark small">Tra cứu IMEI/Serial (imei_serial.lookup)</strong>
+                                <span class="text-muted" style="font-size: 0.72rem;">Kiểm tra kích hoạt, hạn bảo hành và lịch sử máy</span>
+                            </div>
+                        </a>
+
+                        <button type="button" class="btn btn-light border text-start p-2.5 rounded-3 d-flex align-items-center gap-3" data-bs-toggle="modal" data-bs-target="#requestSparePartModal">
+                            <div class="tz-admin-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; width: 36px; height: 36px;">
+                                <i class="bi bi-cpu"></i>
+                            </div>
+                            <div>
+                                <strong class="d-block text-dark small">Xuất linh kiện ca sửa (spare_parts.request)</strong>
+                                <span class="text-muted" style="font-size: 0.72rem;">Yêu cầu màn hình, pin, mainboard từ kho kỹ thuật</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 border">
+                        <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-shield-lock-fill text-danger me-1"></i>Giới Hạn Quyền Hạn KTV:</h6>
+                        <ul class="mb-0 text-muted ps-3" style="font-size: 0.75rem;">
+                            <li>Không được sửa đổi giá bán niêm yết thương mại.</li>
+                            <li>Không được tự duyệt hoàn tiền cho khách.</li>
+                            <li>Không được chỉnh sửa tồn kho máy mới nguyên seal.</li>
+                            <li>Thông tin thanh toán của khách bị làm mờ bảo mật.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- ======================================================== -->
+    <!-- TAB 2: 2.1 DEVICE LOOKUP & VERIFICATION -->
+    <!-- ======================================================== -->
+    @if (Model.ActiveTab == "lookup")
+    {
+        <!-- Lookup Search Box -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+            <h5 class="fw-bold text-dark mb-1">
+                <i class="bi bi-upc-scan text-primary me-2"></i>Tra Cứu &amp; Thẩm Định Vòng Đời Thiết Bị
+            </h5>
+            <p class="text-secondary small mb-3">Nhập số Serial / IMEI để truy xuất lịch sử nhập kho, kích hoạt bảo hành, thời hạn còn lại và đơn hàng gốc.</p>
+
+            <form method="get" action="@Url.Action("Index", "Technician")" class="row g-2 align-items-center">
+                <input type="hidden" name="tab" value="lookup" />
+                <div class="col-12 col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-qr-code-scan text-primary"></i></span>
+                        <input type="text" name="lookupSerial" class="form-control border-start-0 font-monospace" placeholder="Nhập IMEI (15 số) hoặc Serial Number thiết bị..." value="@Model.LookupSerialQuery" required />
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <button type="submit" class="btn btn-primary rounded-3 w-100 fw-semibold">
+                        <i class="bi bi-search me-1"></i>Tra Cứu Vòng Đời Máy
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        @if (Model.LookupLifecycleResult != null)
+        {
+            var lc = Model.LookupLifecycleResult;
+            <!-- Device Lifecycle Result Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-primary">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3 border-bottom pb-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge @(lc.IsWarrantyActive ? "bg-success" : "bg-danger") rounded-pill px-3 py-1">
+                                <i class="bi @(lc.IsWarrantyActive ? "bi-check-circle" : "bi-x-circle") me-1"></i>
+                                @(lc.IsWarrantyActive ? "CÒN HẠN BẢO HÀNH" : "HẾT HẠN BẢO HÀNH")
+                            </span>
+                            <span class="badge bg-light text-dark border font-monospace">@lc.SerialNumber</span>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-0">@lc.ProductName</h4>
+                        <span class="text-muted small">Phiên bản SKU: <strong>@lc.VariantSku</strong></span>
+                    </div>
+                    <div class="text-md-end">
+                        <div class="fs-4 fw-bold @(lc.IsWarrantyActive ? "text-success" : "text-danger") font-monospace">
+                            @lc.DaysRemaining ngày còn lại
+                        </div>
+                        <span class="text-muted small">Hạn đến: @(lc.WarrantyEndDate.HasValue ? lc.WarrantyEndDate.Value.ToLocalTime().ToString("dd/MM/yyyy") : "Chưa kích hoạt")</span>
+                    </div>
+                </div>
+
+                <!-- 4 Lifecycle Steps -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 text-center">
+                            <span class="text-muted small">Ngày Nhập Kho</span>
+                            <div class="fw-bold text-dark mt-1 font-monospace">
+                                @(lc.ReceivedDate.HasValue ? lc.ReceivedDate.Value.ToLocalTime().ToString("dd/MM/yyyy") : "Đang cập nhật")
+                            </div>
+                            <span class="badge bg-white text-secondary border rounded-pill mt-1" style="font-size: 0.65rem;">Kho Tổng</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 text-center">
+                            <span class="text-muted small">Ngày Bán Hàng</span>
+                            <div class="fw-bold text-dark mt-1 font-monospace">
+                                @(lc.OrderDate.HasValue ? lc.OrderDate.Value.ToLocalTime().ToString("dd/MM/yyyy") : "Chưa bán")
+                            </div>
+                            <span class="badge bg-white text-secondary border rounded-pill mt-1" style="font-size: 0.65rem;">Đơn: @(string.IsNullOrWhiteSpace(lc.OrderCode) ? "Chưa có" : lc.OrderCode)</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 text-center">
+                            <span class="text-muted small">Kích Hoạt Bảo Hành</span>
+                            <div class="fw-bold text-dark mt-1 font-monospace">
+                                @(lc.WarrantyStartDate.HasValue ? lc.WarrantyStartDate.Value.ToLocalTime().ToString("dd/MM/yyyy") : "Chưa kích hoạt")
+                            </div>
+                            <span class="badge bg-white text-success border rounded-pill mt-1" style="font-size: 0.65rem;">Gói: @lc.WarrantyMonths Tháng</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 text-center">
+                            <span class="text-muted small">Số Ca Đã Sửa (RMA)</span>
+                            <div class="fw-bold text-primary mt-1 font-monospace">@lc.RmaTickets.Count ca</div>
+                            <span class="badge bg-white text-secondary border rounded-pill mt-1" style="font-size: 0.65rem;">Lịch sử thiết bị</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Original Order Info with Security Masking: order.lookup_history -->
+                @if (Model.MaskedOriginalOrder != null)
+                {
+                    var o = Model.MaskedOriginalOrder;
+                    <div class="p-3 border rounded-3 bg-light mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                            <div>
+                                <span class="badge tz-badge-soft-primary rounded-pill me-1">order.lookup_history</span>
+                                <strong class="text-dark">Hóa Đơn Mua Hàng Gốc: <span class="font-monospace text-primary">@o.OrderCode</span></strong>
+                            </div>
+                            <span class="badge bg-white text-secondary border">Thông tin thanh toán đã làm mờ theo chính sách KTV</span>
+                        </div>
+                        <div class="row g-2 small">
+                            <div class="col-12 col-md-4">
+                                <span class="text-muted">Khách hàng:</span>
+                                <strong class="text-dark">@o.MaskedCustomerName</strong>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <span class="text-muted">Số điện thoại:</span>
+                                <strong class="text-dark font-monospace">@o.MaskedPhone</strong>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <span class="text-muted">Email:</span>
+                                <strong class="text-dark">@o.MaskedEmail</strong>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <span class="text-muted">Địa chỉ nhận hàng:</span>
+                                <span class="text-secondary">@o.MaskedAddress</span>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <span class="text-muted">Phương thức thanh toán:</span>
+                                <span class="text-dark fw-semibold">@o.MaskedPaymentMethod</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Warranty Policies Reference Table: warranty_policy.view -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">Chính Sách Bảo Hành Áp Dụng Theo Dòng Thiết Bị &amp; Linh Kiện</h6>
+                    <span class="text-muted small">Tiêu chuẩn hãng AASP, ROG Asus, Synnex FPT &amp; Quy định DOA 1 đổi 1</span>
+                </div>
+                <span class="badge tz-badge-soft-primary rounded-pill">warranty_policy.view</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold">
+                            <th class="ps-3 py-3">Mã &amp; Nhóm Thiết Bị</th>
+                            <th>Thời Hạn Chuẩn</th>
+                            <th>DOA 1 Đổi 1</th>
+                            <th>Điểm Chết Màn Hình</th>
+                            <th>Ngưỡng Chai Pin</th>
+                            <th>Điều Kiện Bảo Hành Hợp Lệ</th>
+                            <th class="pe-3">Trường Hợp Từ Chối</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pol in Model.WarrantyPolicies)
+                        {
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="fw-bold text-dark">@pol.PolicyName</div>
+                                    <span class="badge bg-light text-secondary border font-monospace">@pol.CategoryGroup</span>
+                                </td>
+                                <td>
+                                    <strong class="text-primary font-monospace">@pol.StandardWarrantyMonths tháng</strong>
+                                </td>
+                                <td>
+                                    <span class="badge tz-badge-soft-success rounded-pill font-monospace">@pol.DoaPeriodDays ngày</span>
+                                </td>
+                                <td>
+                                    <span class="small font-monospace">Từ @pol.ScreenDeadPixelThreshold điểm</span>
+                                </td>
+                                <td>
+                                    <span class="small font-monospace">&lt; @pol.BatteryHealthThreshold%</span>
+                                </td>
+                                <td>
+                                    <span class="small text-secondary">@pol.TermsAndConditions</span>
+                                </td>
+                                <td class="pe-3">
+                                    <span class="small text-danger">@pol.ExclusionClauses</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- ======================================================== -->
+    <!-- TAB 3: 2.2 RMA & SERVICE TICKETS -->
+    <!-- ======================================================== -->
+    @if (Model.ActiveTab == "tickets")
+    {
+        <!-- Tickets Filter & Actions Row -->
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <a href="@Url.Action("Index", "Technician", new { tab = "tickets", myTickets = false })" class="btn btn-sm rounded-pill px-3 @(!Model.ShowOnlyMyTickets ? "btn-primary" : "btn-light text-secondary border")">Tất cả ca</a>
+                    <a href="@Url.Action("Index", "Technician", new { tab = "tickets", myTickets = true })" class="btn btn-sm rounded-pill px-3 @(Model.ShowOnlyMyTickets ? "btn-primary" : "btn-light text-secondary border")">Ca của tôi (@Model.MyAssignedTicketsCount)</a>
+                    
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill dropdown-toggle px-3" type="button" data-bs-toggle="dropdown">
+                            Trạng thái: @(string.IsNullOrWhiteSpace(Model.TicketFilterStatus) ? "Tất cả" : Model.TicketFilterStatus)
+                        </button>
+                        <ul class="dropdown-menu shadow-sm">
+                            <li><a class="dropdown-item small" href="@Url.Action("Index", "Technician", new { tab = "tickets", myTickets = Model.ShowOnlyMyTickets })">Tất cả trạng thái</a></li>
+                            <li><a class="dropdown-item small" href="@Url.Action("Index", "Technician", new { tab = "tickets", status = "DeviceReceived", myTickets = Model.ShowOnlyMyTickets })">Tiếp nhận máy</a></li>
+                            <li><a class="dropdown-item small" href="@Url.Action("Index", "Technician", new { tab = "tickets", status = "Inspecting", myTickets = Model.ShowOnlyMyTickets })">Đang kiểm tra</a></li>
+                            <li><a class="dropdown-item small" href="@Url.Action("Index", "Technician", new { tab = "tickets", status = "WaitingForParts", myTickets = Model.ShowOnlyMyTickets })">Chờ linh kiện</a></li>
+                            <li><a class="dropdown-item small" href="@Url.Action("Index", "Technician", new { tab = "tickets", status = "Repairing", myTickets = Model.ShowOnlyMyTickets })">Đang sửa chữa</a></li>
+                            <li><a class="dropdown-item small" href="@Url.Action("Index", "Technician", new { tab = "tickets", status = "TestedQC", myTickets = Model.ShowOnlyMyTickets })">Đã test QC</a></li>
+                            <li><a class="dropdown-item small" href="@Url.Action("Index", "Technician", new { tab = "tickets", status = "ReadyForPickup", myTickets = Model.ShowOnlyMyTickets })">Chờ trả máy</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary rounded-pill px-3.5 py-1.5 btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#createTicketModal">
+                    <i class="bi bi-plus-circle me-1"></i>Tiếp Nhận Máy Mới
+                </button>
+            </div>
+        </div>
+
+        <!-- Tickets Master-Detail Layout -->
+        <div class="row g-4 mb-4">
+            <!-- Tickets List Table -->
+            <div class="@(Model.SelectedTicket != null ? "col-12 col-xl-7" : "col-12")">
+                <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden h-100">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold text-dark mb-0">Danh Sách Phiếu Tiếp Nhận &amp; Ca Sửa Chữa (@Model.TicketsList.Count)</h6>
+                        <span class="badge bg-light text-secondary border font-monospace">ticket.view_assigned</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr class="text-secondary small fw-bold">
+                                    <th class="ps-3 py-3">Mã Phiếu / Ngày</th>
+                                    <th>Thiết Bị &amp; Serial</th>
+                                    <th>Khách Hàng</th>
+                                    <th>Tiến Độ 6 Bước</th>
+                                    <th>KTV Phụ Trách</th>
+                                    <th class="text-end pe-3">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.TicketsList.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy ca sửa chữa nào phù hợp với bộ lọc.</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var t in Model.TicketsList)
+                                    {
+                                        <tr class="@(Model.SelectedTicket?.Id == t.Id ? "table-active" : "")">
+                                            <td class="ps-3">
+                                                <a href="@Url.Action("Index", "Technician", new { tab = "tickets", selectedTicketId = t.Id })" class="fw-bold font-monospace text-primary text-decoration-none">@t.RmaCode</a>
+                                                <div class="text-muted" style="font-size: 0.72rem;">@t.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</div>
+                                                <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.65rem;">Mã nhận: @t.PickupCode</span>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold text-dark text-truncate" style="max-width: 180px;">@t.ProductName</div>
+                                                <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.68rem;">@t.SerialNumber</span>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold text-dark">@t.CustomerName</div>
+                                                <span class="text-muted small">@t.CustomerPhone</span>
+                                            </td>
+                                            <td>
+                                                @{
+                                                    var stColor = t.Status switch
+                                                    {
+                                                        RmaStatus.Completed => "tz-badge-soft-success",
+                                                        RmaStatus.ReadyForPickup => "tz-badge-soft-success",
+                                                        RmaStatus.TestedQC => "tz-badge-soft-primary",
+                                                        RmaStatus.Repairing => "tz-badge-soft-primary",
+                                                        RmaStatus.WaitingForParts => "tz-badge-soft-warning",
+                                                        RmaStatus.QuotationPending => "tz-badge-soft-warning",
+                                                        RmaStatus.Inspecting => "tz-badge-soft-info",
+                                                        RmaStatus.DeviceReceived => "tz-badge-soft-secondary",
+                                                        RmaStatus.Rejected => "tz-badge-soft-danger",
+                                                        _ => "tz-badge-soft-secondary"
+                                                    };
+                                                }
+                                                <span class="badge @stColor rounded-pill px-2.5 py-1">@t.Status</span>
+                                            </td>
+                                            <td>
+                                                <span class="small text-secondary">
+                                                    @(string.IsNullOrWhiteSpace(t.AssignedTechnicianName) ? "Chưa gán KTV" : t.AssignedTechnicianName)
+                                                </span>
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="@Url.Action("Index", "Technician", new { tab = "tickets", selectedTicketId = t.Id })" class="btn btn-outline-primary" title="Xem chi tiết & chẩn đoán">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <a href="@Url.Action("PrintReceipt", "Technician", new { ticketId = t.Id })" target="_blank" class="btn btn-outline-secondary" title="In phiếu biên nhận">
+                                                        <i class="bi bi-printer"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Pane (if ticket is selected) -->
+            @if (Model.SelectedTicket != null)
+            {
+                var cur = Model.SelectedTicket;
+                <div class="col-12 col-xl-5">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-3 border-bottom pb-3">
+                            <div>
+                                <span class="badge tz-badge-soft-primary font-monospace mb-1">@cur.RmaCode</span>
+                                <h5 class="fw-bold text-dark mb-0">@cur.ProductName</h5>
+                                <span class="text-muted small">IMEI/Serial: <strong class="font-monospace text-dark">@cur.SerialNumber</strong></span>
+                            </div>
+                            <div class="text-end">
+                                <a href="@Url.Action("PrintReceipt", "Technician", new { ticketId = cur.Id })" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                    <i class="bi bi-printer me-1"></i>In Phiếu
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- 6-Step Workflow Status Bar -->
+                        <div class="mb-3 p-3 bg-light rounded-3">
+                            <span class="text-secondary small fw-bold text-uppercase d-block mb-2">Quy Trình Xử Lý 6 Bước:</span>
+                            <div class="d-flex justify-content-between align-items-center position-relative text-center small" style="font-size: 0.72rem;">
+                                <div class="px-1 @(cur.Status >= RmaStatus.DeviceReceived ? "text-primary fw-bold" : "text-muted")">
+                                    <i class="bi bi-box-arrow-in-down d-block fs-6"></i>1. Tiếp nhận
+                                </div>
+                                <div class="px-1 @(cur.Status >= RmaStatus.Inspecting ? "text-primary fw-bold" : "text-muted")">
+                                    <i class="bi bi-search d-block fs-6"></i>2. Kiểm tra
+                                </div>
+                                <div class="px-1 @(cur.Status >= RmaStatus.WaitingForParts ? "text-warning fw-bold" : "text-muted")">
+                                    <i class="bi bi-cpu d-block fs-6"></i>3. Chờ LK
+                                </div>
+                                <div class="px-1 @(cur.Status >= RmaStatus.Repairing ? "text-primary fw-bold" : "text-muted")">
+                                    <i class="bi bi-wrench d-block fs-6"></i>4. Đang sửa
+                                </div>
+                                <div class="px-1 @(cur.Status >= RmaStatus.TestedQC ? "text-success fw-bold" : "text-muted")">
+                                    <i class="bi bi-check2-circle d-block fs-6"></i>5. Đã test
+                                </div>
+                                <div class="px-1 @(cur.Status >= RmaStatus.ReadyForPickup ? "text-success fw-bold" : "text-muted")">
+                                    <i class="bi bi-person-check d-block fs-6"></i>6. Chờ trả
+                                </div>
+                            </div>
+
+                            <!-- Status Update Trigger Button -->
+                            <div class="mt-3 text-center">
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-4 fw-semibold" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Chuyển Tiến Độ 6 Bước
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Diagnosis Conclusion Section -->
+                        <div class="p-3 border rounded-3 mb-3 bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold small text-dark"><i class="bi bi-clipboard2-check text-primary me-1"></i>Kết Luận Chẩn Đoán Kỹ Thuật:</span>
+                                <button type="button" class="btn btn-xs btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#updateDiagnosisModal">
+                                    Cập nhật chẩn đoán
+                                </button>
+                            </div>
+                            @if (string.IsNullOrWhiteSpace(cur.DiagnosisConclusion))
+                            {
+                                <div class="text-muted small fst-italic">Chưa có kết luận chẩn đoán. Vui lòng kiểm tra ngoại quan, quỳ tím và vi mạch.</div>
+                            }
+                            else
+                            {
+                                <div class="badge tz-badge-soft-primary mb-1">
+                                    @(cur.DiagnosisConclusion switch
+                                    {
+                                        "ManufacturerFault" => "Lỗi Nhà Sản Xuất (Miễn phí 100%)",
+                                        "UserFault_Drop" => "Lỗi Rơi Vỡ / Cấn Móp (Có phí)",
+                                        "UserFault_Water" => "Ẩm Nước / Quỳ Tím Đổi Màu (Có phí)",
+                                        "OutOfWarranty" => "Hết Hạn Bảo Hành (Dịch vụ tính phí)",
+                                        _ => cur.DiagnosisConclusion
+                                    })
+                                </div>
+                                <div class="small text-secondary mt-1">@cur.DiagnosisDetails</div>
+                            }
+                        </div>
+
+                        <!-- Evidence Photos / Media Section: ticket.upload_evidence -->
+                        <div class="p-3 border rounded-3 mb-3 bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold small text-dark"><i class="bi bi-images text-success me-1"></i>Bằng Chứng Hình Ảnh/Video:</span>
+                                <button type="button" class="btn btn-xs btn-outline-success rounded-pill" data-bs-toggle="modal" data-bs-target="#uploadEvidenceModal">
+                                    <i class="bi bi-upload me-1"></i>Thêm ảnh
+                                </button>
+                            </div>
+                            @if (!cur.EvidenceMediaUrls.Any())
+                            {
+                                <div class="text-muted small fst-italic">Chưa tải ảnh bằng chứng (tem vỡ, cấn móp, quỳ tím).</div>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    @foreach (var img in cur.EvidenceMediaUrls)
+                                    {
+                                        <a href="@img" target="_blank" class="border rounded-2 p-1 d-inline-block bg-light">
+                                            <img src="@img" alt="Bằng chứng" style="width: 60px; height: 60px; object-fit: cover;" class="rounded" />
+                                        </a>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Replaced Spare Parts Section -->
+                        <div class="p-3 border rounded-3 mb-3 bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold small text-dark"><i class="bi bi-cpu text-warning me-1"></i>Linh Kiện Thay Thế Cho Ca Sửa:</span>
+                                <button type="button" class="btn btn-xs btn-outline-warning rounded-pill" data-bs-toggle="modal" data-bs-target="#requestSparePartModal">
+                                    <i class="bi bi-plus me-1"></i>Xuất thêm LK
+                                </button>
+                            </div>
+                            @if (!cur.ReplacedPartsList.Any())
+                            {
+                                <div class="text-muted small fst-italic">Chưa có linh kiện nào được xuất cho ca này.</div>
+                            }
+                            else
+                            {
+                                <div class="list-group list-group-flush gap-1">
+                                    @foreach (var p in cur.ReplacedPartsList)
+                                    {
+                                        <div class="list-group-item bg-light border-0 rounded-2 p-2 d-flex justify-content-between align-items-center small">
+                                            <div>
+                                                <strong class="text-dark">@p.PartName</strong>
+                                                <div class="text-muted" style="font-size: 0.72rem;">SL: @p.Quantity | Bảo hành: @p.WarrantyMonths tháng</div>
+                                            </div>
+                                            <span class="font-monospace text-primary fw-semibold">@p.SubTotal.ToString("N0")₫</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Customer Communications History: customer_note.add -->
+                        <div class="p-3 border rounded-3 mb-3 bg-light">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold small text-dark"><i class="bi bi-chat-left-dots text-info me-1"></i>Nhật Ký Trao Đổi Khách Hàng:</span>
+                                <button type="button" class="btn btn-xs btn-outline-info rounded-pill" data-bs-toggle="modal" data-bs-target="#addCustomerNoteModal">
+                                    Ghi chú mới
+                                </button>
+                            </div>
+                            @if (!cur.CustomerNotesHistory.Any())
+                            {
+                                <div class="text-muted small fst-italic">Chưa có ghi chú trao đổi hoặc hẹn trả máy.</div>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column gap-2 mt-2">
+                                    @foreach (var n in cur.CustomerNotesHistory.OrderByDescending(n => n.CreatedAt))
+                                    {
+                                        <div class="p-2 bg-white rounded-2 border small">
+                                            <div class="d-flex justify-content-between text-muted" style="font-size: 0.7rem;">
+                                                <span><strong>@n.StaffName</strong></span>
+                                                <span>@n.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                                            </div>
+                                            <div class="text-dark mt-1">@n.Content</div>
+                                            @if (n.PromisedReturnDate.HasValue)
+                                            {
+                                                <span class="badge bg-light text-primary border font-monospace mt-1" style="font-size: 0.68rem;">
+                                                    <i class="bi bi-calendar-event me-1"></i>Hẹn trả máy: @n.PromisedReturnDate.Value.ToString("dd/MM/yyyy HH:mm")
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- ======================================================== -->
+    <!-- TAB 4: 2.3 SPARE PARTS & INVENTORY -->
+    <!-- ======================================================== -->
+    @if (Model.ActiveTab == "spareparts")
+    {
+        <!-- Action Row -->
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <a href="@Url.Action("Index", "Technician", new { tab = "spareparts" })" class="btn btn-sm rounded-pill px-3 @(string.IsNullOrWhiteSpace(Model.PartFilterCategory) ? "btn-primary" : "btn-light text-secondary border")">Tất cả linh kiện</a>
+                    <a href="@Url.Action("Index", "Technician", new { tab = "spareparts", category = "Màn hình" })" class="btn btn-sm rounded-pill px-3 @(Model.PartFilterCategory == "Màn hình" ? "btn-primary" : "btn-light text-secondary border")">Màn hình</a>
+                    <a href="@Url.Action("Index", "Technician", new { tab = "spareparts", category = "Pin" })" class="btn btn-sm rounded-pill px-3 @(Model.PartFilterCategory == "Pin" ? "btn-primary" : "btn-light text-secondary border")">Pin</a>
+                    <a href="@Url.Action("Index", "Technician", new { tab = "spareparts", category = "Bo mạch chủ" })" class="btn btn-sm rounded-pill px-3 @(Model.PartFilterCategory == "Bo mạch chủ" ? "btn-primary" : "btn-light text-secondary border")">Bo mạch chủ</a>
+                    <a href="@Url.Action("Index", "Technician", new { tab = "spareparts", category = "Cụm sạc" })" class="btn btn-sm rounded-pill px-3 @(Model.PartFilterCategory == "Cụm sạc" ? "btn-primary" : "btn-light text-secondary border")">Cụm sạc</a>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-primary rounded-pill px-3 py-1.5 btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#requestSparePartModal">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Xuất Linh Kiện Cho Ca Sửa
+                    </button>
+                    <button type="button" class="btn btn-outline-danger rounded-pill px-3 py-1.5 btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#returnDefectivePartModal">
+                        <i class="bi bi-arrow-return-left me-1"></i>Trả Linh Kiện Hỏng Cũ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spare Parts Stock Table -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">Tồn Kho Linh Kiện Sửa Chữa (Kho Kỹ Thuật Nội Bộ)</h6>
+                    <span class="text-muted small">Tra cứu số lượng tồn khả dụng, vị trí ngăn tủ kỹ thuật và đơn giá</span>
+                </div>
+                <span class="badge tz-badge-soft-primary rounded-pill">spare_parts.view_stock</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold">
+                            <th class="ps-3 py-3">Mã &amp; Tên Linh Kiện</th>
+                            <th>Nhóm / Dòng Tương Thích</th>
+                            <th>Vị Trí Tủ Kỹ Thuật</th>
+                            <th class="text-center">Tồn Khả Dụng</th>
+                            <th class="text-center">Xác Hỏng Thu Hồi</th>
+                            <th class="text-end">Giá Dịch Vụ</th>
+                            <th>Hạn BH</th>
+                            <th class="text-end pe-3">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.SparePartsList.Any())
+                        {
+                            <tr><td colspan="8" class="text-center py-4 text-muted">Chưa có linh kiện trong danh mục này.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var sp in Model.SparePartsList)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="fw-bold text-dark">@sp.PartName</div>
+                                        <span class="badge bg-light text-secondary border font-monospace">@sp.PartCode</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-secondary small">@sp.Category</div>
+                                        <span class="text-muted" style="font-size: 0.72rem;">@string.Join(", ", sp.CompatibleModels)</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1 text-primary"></i>@sp.WarehouseLocation</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (sp.StockQuantity <= sp.MinStockAlert)
+                                        {
+                                            <span class="badge bg-danger rounded-pill px-2.5 py-1 font-monospace">@sp.StockQuantity (Sắp hết)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success rounded-pill px-2.5 py-1 font-monospace">@sp.StockQuantity cái</span>
+                                        }
+                                    </td>
+                                    <td class="text-center font-monospace text-secondary">
+                                        @sp.DefectiveQuantity
+                                    </td>
+                                    <td class="text-end font-monospace fw-bold text-primary">
+                                        @sp.ServicePrice.ToString("N0")₫
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark font-monospace border">@sp.WarrantyMonths tháng</span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5" onclick="openRequestPartModal('@sp.Id', '@sp.PartCode', '@sp.PartName')">
+                                            Xuất ca sửa
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recent Requests & Returns History -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="p-3 border-bottom">
+                <h6 class="fw-bold text-dark mb-0">Nhật Ký Yêu Cầu Xuất &amp; Trả Linh Kiện Gần Đây</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold">
+                            <th class="ps-3 py-3">Mã Phiếu / Thời Gian</th>
+                            <th>Linh Kiện</th>
+                            <th>Loại Giao Dịch</th>
+                            <th class="text-center">Số Lượng</th>
+                            <th>KTV Yêu Cầu</th>
+                            <th class="pe-3">Mã RMA / Ghi Chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.PartRequestsList.Any())
+                        {
+                            <tr><td colspan="6" class="text-center py-4 text-muted">Chưa có giao dịch linh kiện.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var pr in Model.PartRequestsList)
+                            {
+                                <tr>
+                                    <td class="ps-3 font-monospace small">
+                                        <span class="fw-bold text-dark">@pr.RequestCode</span>
+                                        <div class="text-muted" style="font-size: 0.72rem;">@pr.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">@pr.PartName</div>
+                                        <span class="text-muted small font-monospace">@pr.PartCode</span>
+                                    </td>
+                                    <td>
+                                        @if (pr.Type == "ExportForRepair")
+                                        {
+                                            <span class="badge tz-badge-soft-primary rounded-pill">Xuất sửa chữa RMA</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge tz-badge-soft-danger rounded-pill">Trả xác linh kiện hỏng</span>
+                                        }
+                                    </td>
+                                    <td class="text-center font-monospace fw-bold">@pr.Quantity</td>
+                                    <td><span class="small text-secondary">@pr.TechnicianName</span></td>
+                                    <td class="pe-3 small text-secondary">
+                                        @(string.IsNullOrWhiteSpace(pr.TicketCode) ? pr.Notes : $"{pr.TicketCode}: {pr.Notes}")
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- ======================================================== -->
+    <!-- TAB 5: 2.4 SERVICE COST ESTIMATE & QUOTATIONS -->
+    <!-- ======================================================== -->
+    @if (Model.ActiveTab == "quotations")
+    {
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">Danh Sách Ca Sửa Chữa Có Báo Giá Dịch Vụ (Máy Hết Hạn / Lỗi Người Dùng)</h6>
+                    <span class="text-muted small">Dự toán chi phí linh kiện, tiền công thợ và gửi khách hàng phê duyệt</span>
+                </div>
+                <span class="badge tz-badge-soft-warning rounded-pill">service_cost</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold">
+                            <th class="ps-3 py-3">Mã RMA / Thiết Bị</th>
+                            <th>Khách Hàng &amp; Liên Hệ</th>
+                            <th class="text-end">Tiền Linh Kiện</th>
+                            <th class="text-end">Công Thợ</th>
+                            <th class="text-end">Tổng Dự Toán</th>
+                            <th>Trạng Thái Báo Giá</th>
+                            <th class="text-end pe-3">Phê Duyệt / Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.QuotationTicketsList.Any())
+                        {
+                            <tr><td colspan="7" class="text-center py-4 text-muted">Không có ca sửa chữa nào cần báo giá dịch vụ.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var q in Model.QuotationTicketsList)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <a href="@Url.Action("Index", "Technician", new { tab = "tickets", selectedTicketId = q.Id })" class="fw-bold font-monospace text-primary text-decoration-none">@q.RmaCode</a>
+                                        <div class="fw-semibold text-dark">@q.ProductName</div>
+                                        <span class="text-muted small font-monospace">@q.SerialNumber</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">@q.CustomerName</div>
+                                        <span class="text-muted small">@q.CustomerPhone</span>
+                                    </td>
+                                    <td class="text-end font-monospace">@q.PartsCost.ToString("N0")₫</td>
+                                    <td class="text-end font-monospace">@q.LaborCost.ToString("N0")₫</td>
+                                    <td class="text-end font-monospace fw-bold text-danger">@q.TotalCost.ToString("N0")₫</td>
+                                    <td>
+                                        @if (q.QuotationStatus == "ApprovedByCustomer")
+                                        {
+                                            <span class="badge tz-badge-soft-success rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-check-circle me-1"></i>Khách đã duyệt
+                                            </span>
+                                        }
+                                        else if (q.QuotationStatus == "RejectedByCustomer")
+                                        {
+                                            <span class="badge tz-badge-soft-danger rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-x-circle me-1"></i>Khách từ chối
+                                            </span>
+                                        }
+                                        else if (q.QuotationStatus == "SubmittedToCustomer")
+                                        {
+                                            <span class="badge tz-badge-soft-warning rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-hourglass-split me-1"></i>Chờ khách duyệt
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1">Bản nháp</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary" onclick="openEstimateModal('@q.Id', '@q.RmaCode', @q.PartsCost, @q.LaborCost, @q.DiscountAmount, '@q.QuotationNotes')" title="Lập dự toán">
+                                                <i class="bi bi-calculator"></i>
+                                            </button>
+                                            @if (q.QuotationStatus == "SubmittedToCustomer" || q.QuotationStatus == "Draft")
+                                            {
+                                                <form method="post" action="@Url.Action("UpdateQuotationApproval", "Technician")" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="ticketId" value="@q.Id" />
+                                                    <input type="hidden" name="isApproved" value="true" />
+                                                    <button type="submit" class="btn btn-outline-success" title="Khách đồng ý sửa">
+                                                        <i class="bi bi-check-lg"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="post" action="@Url.Action("UpdateQuotationApproval", "Technician")" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="ticketId" value="@q.Id" />
+                                                    <input type="hidden" name="isApproved" value="false" />
+                                                    <button type="submit" class="btn btn-outline-danger" title="Khách từ chối">
+                                                        <i class="bi bi-x-lg"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- ======================================================== -->
+    <!-- TAB 6: 2.4 VENDOR RMA (ĐIỀU PHỐI HÃNG) -->
+    <!-- ======================================================== -->
+    @if (Model.ActiveTab == "vendor_rma")
+    {
+        <!-- Action Row -->
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">Quản Lý Phiếu Điều Phối Hãng (Vendor RMA)</h6>
+                    <span class="text-muted small">Theo dõi máy gửi về TTBH ủy quyền: Apple AASP, Asus ROG, Samsung...</span>
+                </div>
+                <button type="button" class="btn btn-primary rounded-pill px-3 py-1.5 btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#createVendorRmaModal">
+                    <i class="bi bi-send-plus me-1"></i>Lập Phiếu Gửi Hãng
+                </button>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold">
+                            <th class="ps-3 py-3">Mã Gửi Hãng / Ngày</th>
+                            <th>Mã RMA Nội Bộ &amp; Serial</th>
+                            <th>TTBH Hãng Tiếp Nhận</th>
+                            <th>Đơn Vị VC &amp; Vận Đơn</th>
+                            <th>Dự Kiến Trả</th>
+                            <th>Trạng Thái Hãng</th>
+                            <th class="text-end pe-3">Cập Nhật</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.VendorRmaList.Any())
+                        {
+                            <tr><td colspan="7" class="text-center py-4 text-muted">Chưa có phiếu gửi bảo hành hãng nào.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var vr in Model.VendorRmaList)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <strong class="font-monospace text-primary">@vr.VendorRmaCode</strong>
+                                        <div class="text-muted" style="font-size: 0.72rem;">@vr.SentDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">@vr.ProductName</div>
+                                        <span class="badge bg-light text-secondary border font-monospace">@vr.SerialNumber</span>
+                                        <div class="text-muted" style="font-size: 0.72rem;">Phiếu: @vr.TicketCode</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge tz-badge-soft-primary rounded-pill">@vr.VendorName</span>
+                                        @if (!string.IsNullOrWhiteSpace(vr.VendorTrackingCode))
+                                        {
+                                            <div class="small font-monospace text-muted">Code Hãng: @vr.VendorTrackingCode</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold text-dark">@vr.CarrierName</div>
+                                        <span class="font-monospace small text-muted">@(vr.CarrierTrackingNumber ?? "Chưa có")</span>
+                                    </td>
+                                    <td>
+                                        <span class="small font-monospace">
+                                            @(vr.ExpectedReturnDate.HasValue ? vr.ExpectedReturnDate.Value.ToString("dd/MM/yyyy") : "Đang cập nhật")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var vBadge = vr.Status switch
+                                            {
+                                                "Completed" => "tz-badge-soft-success",
+                                                "ReceivedBack" => "tz-badge-soft-success",
+                                                "VendorRepaired" => "tz-badge-soft-primary",
+                                                "VendorInspecting" => "tz-badge-soft-warning",
+                                                _ => "tz-badge-soft-secondary"
+                                            };
+                                        }
+                                        <span class="badge @vBadge rounded-pill px-2.5 py-1">@vr.Status</span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        @if (vr.Status != "Completed" && vr.Status != "ReceivedBack")
+                                        {
+                                            <button type="button" class="btn btn-xs btn-outline-success rounded-pill px-2.5" onclick="openUpdateVendorRmaModal('@vr.Id', '@vr.VendorRmaCode')">
+                                                Đã nhận máy về
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success small fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Đã thu hồi máy</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODALS -->
+<!-- ========================================================================= -->
+
+<!-- 1. Modal: Create RMA Ticket (ticket.create) -->
+<div class="modal fade" id="createTicketModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-clipboard2-plus me-2 text-primary"></i>Lập Phiếu Tiếp Nhận Máy Bảo Hành &amp; Sửa Chữa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="@Url.Action("CreateTicket", "Technician")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Tên Khách Hàng <span class="text-danger">*</span></label>
+                            <input type="text" name="customerName" class="form-control rounded-3" placeholder="Nguyễn Văn A" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Số Điện Thoại <span class="text-danger">*</span></label>
+                            <input type="text" name="customerPhone" class="form-control rounded-3" placeholder="0901234567" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Tên Thiết Bị / Model <span class="text-danger">*</span></label>
+                            <input type="text" name="productName" class="form-control rounded-3" placeholder="iPhone 15 Pro Max 256GB" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Số Serial / IMEI Thiết Bị</label>
+                            <input type="text" name="serialNumber" class="form-control rounded-3 font-monospace" placeholder="F17XXXXXX hoặc 356789..." />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Mã Đơn Hàng Gốc (Nếu có)</label>
+                            <input type="text" name="orderCode" class="form-control rounded-3 font-monospace" placeholder="ORD-2026..." />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Phân Loại Yêu Cầu</label>
+                            <select name="reasonType" class="form-select rounded-3">
+                                <option value="HardwareDefect">Lỗi phần cứng trong hạn bảo hành</option>
+                                <option value="DOA">DOA 1 đổi 1 (Trong 30 ngày)</option>
+                                <option value="ScreenFault">Lỗi màn hình / Điểm chết / Sọc</option>
+                                <option value="BatteryIssue">Chai pin / Phồng pin</option>
+                                <option value="LiquidDamage">Ẩm nước / Vào nước (Có phí)</option>
+                                <option value="DamagedInTransit">Cấn móp / Rơi vỡ (Có phí)</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Ngoại Quan Máy Tiếp Nhận</label>
+                            <input type="text" name="physicalConditionNotes" class="form-control rounded-3" value="Máy đẹp 98%, viền trầy nhẹ, kính lưng nguyên vẹn" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Phụ Kiện Nhận Kèm</label>
+                            <input type="text" name="accessoriesIncluded" class="form-control rounded-3" value="Thân máy, hộp zin, cáp sạc" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Độ Ưu Tiên Xử Lý</label>
+                            <select name="priority" class="form-select rounded-3">
+                                <option value="Normal">Bình thường (1-3 ngày)</option>
+                                <option value="Urgent">Gấp (Xử lý trong ngày)</option>
+                                <option value="VIP">Khách Hàng VIP</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Ảnh Chụp Ngoại Quan Tiếp Nhận (URL)</label>
+                            <input type="url" name="evidenceImageUrl" class="form-control rounded-3" placeholder="https://... ảnh tem/ngoại quan" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-secondary">Mô Tả Lỗi Chi Tiết Của Khách</label>
+                            <textarea name="customerDescription" class="form-control rounded-3" rows="3" placeholder="Ví dụ: Máy dùng nóng nhanh, sập nguồn ngẫu nhiên khi pin còn 20%, màn hình thỉnh thoảng chớp xanh..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-check2-circle me-1"></i>Lập Phiếu &amp; Sinh Mã Nhận Máy
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Modal: Update Diagnosis (ticket.update_diagnosis) -->
+<div class="modal fade" id="updateDiagnosisModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-clipboard2-check me-2 text-primary"></i>Cập Nhật Chẩn Đoán Kỹ Thuật
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="@Url.Action("UpdateDiagnosis", "Technician")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ticketId" value="@Model.SelectedTicket?.Id" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Kết Luận Thẩm Định</label>
+                        <select name="diagnosisConclusion" class="form-select rounded-3">
+                            <option value="ManufacturerFault">Lỗi Nhà Sản Xuất (Bảo hành 100% Miễn Phí)</option>
+                            <option value="UserFault_Drop">Lỗi Người Dùng - Rơi vỡ / Cấn móp góc (Có phí)</option>
+                            <option value="UserFault_Water">Lỗi Người Dùng - Ẩm nước / Quỳ tím đổi màu đỏ (Có phí)</option>
+                            <option value="OutOfWarranty">Hết Hạn Bảo Hành (Dịch vụ tính phí)</option>
+                            <option value="NoFaultFound">Không Phát Hiện Lỗi (NFF - Hoạt động bình thường)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Chi Tiết Kiểm Tra &amp; Chẩn Đoán Của KTV</label>
+                        <textarea name="diagnosisDetails" class="form-control rounded-3" rows="4" placeholder="Kiểm tra đo dòng thấy chạm IC nguồn U2, quỳ tím camera còn trắng, socket màn hình nguyên vẹn..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Lưu Kết Luận Chẩn Đoán</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Modal: Update 6-Step Status (ticket.update_status) -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-arrow-repeat me-2 text-primary"></i>Cập Nhật Tiến Độ Quy Trình 6 Bước
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="@Url.Action("UpdateTicketStatus", "Technician")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ticketId" value="@Model.SelectedTicket?.Id" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Trạng Thái Bước Tiếp Theo</label>
+                        <select name="newStatus" class="form-select rounded-3">
+                            <option value="DeviceReceived">1. Tiếp nhận máy (DeviceReceived)</option>
+                            <option value="Inspecting">2. Đang kiểm tra / Chẩn đoán (Inspecting)</option>
+                            <option value="WaitingForParts">3. Chờ xuất linh kiện từ kho (WaitingForParts)</option>
+                            <option value="Repairing">4. Đang sửa chữa / Thay thế (Repairing)</option>
+                            <option value="TestedQC">5. Đã test chức năng đạt chuẩn QC (TestedQC)</option>
+                            <option value="ReadyForPickup">6. Sẵn sàng chờ trả máy cho khách (ReadyForPickup)</option>
+                            <option value="Completed">Hoàn tất (Đã bàn giao máy)</option>
+                            <option value="Rejected">Từ chối bảo hành (Do lỗi người dùng)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Ghi Chú Tiến Độ</label>
+                        <input type="text" name="staffNotes" class="form-control rounded-3" placeholder="Đã test camera, wifi, pin chạy ổn định qua bài test 2h..." />
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Xác Nhận Chuyển Trạng Thái</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Modal: Upload Evidence (ticket.upload_evidence) -->
+<div class="modal fade" id="uploadEvidenceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-camera me-2 text-primary"></i>Tải Lên Bằng Chứng Thẩm Định Thiết Bị
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="@Url.Action("UploadEvidence", "Technician")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ticketId" value="@Model.SelectedTicket?.Id" />
+                <div class="modal-body p-4">
+                    <p class="text-muted small">Tải lên URL ảnh chụp tem vỡ, vết cấn móp, quỳ tím đổi màu nước hoặc video kiểm tra chức năng.</p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">URL Hình Ảnh / Video Bằng Chứng</label>
+                        <input type="url" name="mediaUrl" class="form-control rounded-3" placeholder="https://domain.com/uploads/quy-tim-do.jpg" required />
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold">Lưu Bằng Chứng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Modal: Request Spare Part (spare_parts.request) -->
+<div class="modal fade" id="requestSparePartModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-box-arrow-up-right me-2 text-warning"></i>Phiếu Yêu Cầu Xuất Kho Linh Kiện
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="@Url.Action("RequestSparePart", "Technician")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Chọn Ca Sửa Chữa (RMA Ticket)</label>
+                        <select name="ticketId" class="form-select rounded-3" required>
+                            @foreach (var t in Model.TicketsList.Where(t => t.Status != RmaStatus.Completed && t.Status != RmaStatus.Rejected))
+                            {
+                                <option value="@t.Id" selected="@(Model.SelectedTicket?.Id == t.Id)">@t.RmaCode - @t.ProductName (@t.CustomerName)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Linh Kiện Cần Xuất</label>
+                        <select name="partId" id="modalPartSelect" class="form-select rounded-3" required>
+                            @foreach (var p in Model.SparePartsList.Where(p => p.StockQuantity > 0))
+                            {
+                                <option value="@p.Id">@p.PartName (Tồn: @p.StockQuantity | @p.ServicePrice.ToString("N0")₫)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Số Lượng Xuất</label>
+                        <input type="number" name="quantity" class="form-control rounded-3" value="1" min="1" max="10" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Ghi Chú</label>
+                        <input type="text" name="notes" class="form-control rounded-3" placeholder="Xuất thay thế màn hình nứt theo yêu cầu khách" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-warning text-dark rounded-pill px-4 fw-semibold">Xác Nhận Xuất Linh Kiện</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 6. Modal: Return Defective Part (spare_parts.return_defective) -->
+<div class="modal fade" id="returnDefectivePartModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-arrow-return-left me-2 text-danger"></i>Phiếu Trả Linh Kiện Hỏng Cũ Về Kho
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="@Url.Action("ReturnDefectivePart", "Technician")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Linh Kiện Lỗi Thu Hồi</label>
+                        <select name="partId" class="form-select rounded-3" required>
+                            @foreach (var p in Model.SparePartsList)
+                            {
+                                <option value="@p.Id">@p.PartName (@p.PartCode)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Số Lượng Xác Hỏng Trả Kho</label>
+                        <input type="number" name="quantity" class="form-control rounded-3" value="1" min="1" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Lý Do Thu Hồi / Hướng Xử Lý</label>
+                        <select name="reason" class="form-select rounded-3">
+                            <option value="Pin phồng rách màng - Lưu kho chờ tiêu hủy an toàn">Pin phồng rách màng - Lưu kho chờ tiêu hủy an toàn</option>
+                            <option value="Màn hình chảy mực vỡ kính - Trả hãng đổi bảo hành">Màn hình chảy mực vỡ kính - Trả hãng đổi bảo hành</option>
+                            <option value="Mainboard chập cháy IC - Trả nhà phân phối">Mainboard chập cháy IC - Trả nhà phân phối</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Xác Nhận Trả Xác Về Kho</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 7. Modal: Estimate Service Cost (service_cost.estimate) -->
+<div class="modal fade" id="estimateCostModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-calculator me-2 text-primary"></i>Lập Bảng Dự Toán Chi Phí Sửa Chữa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="@Url.Action("EstimateServiceCost", "Technician")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ticketId" id="estimateTicketId" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mã Phiếu</label>
+                        <input type="text" id="estimateTicketCode" class="form-control rounded-3 font-monospace bg-light" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Tiền Công Kỹ Thuật (Labor Cost)</label>
+                        <input type="number" name="laborCost" id="estimateLaborCost" class="form-control rounded-3 font-monospace" value="150000" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Giảm Giá / Khuyến Mãi Hỗ Trợ (VND)</label>
+                        <input type="number" name="discountAmount" id="estimateDiscount" class="form-control rounded-3 font-monospace" value="0" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Ghi Chú Báo Giá</label>
+                        <input type="text" name="quotationNotes" id="estimateNotes" class="form-control rounded-3" placeholder="Đã bao gồm công vệ sinh và dán keo chống nước" />
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="submitForApproval" value="true" id="submitCheck" checked>
+                        <label class="form-check-label small fw-semibold text-dark" for="submitCheck">Gửi duyệt báo giá ngay cho khách hàng</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Lưu &amp; Gửi Dự Toán</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 8. Modal: Add Customer Note (customer_note.add) -->
+<div class="modal fade" id="addCustomerNoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-chat-left-dots me-2 text-info"></i>Ghi Chú Trao Đổi &amp; Hẹn Ngày Trả Máy
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="@Url.Action("AddCustomerNote", "Technician")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ticketId" value="@Model.SelectedTicket?.Id" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Nội Dung Trao Đổi Với Khách Hàng</label>
+                        <textarea name="content" class="form-control rounded-3" rows="3" placeholder="Đã gọi điện lúc 10h15, báo khách tình trạng màn hình lỗi, khách đồng ý thay màn chính hãng..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Hẹn Ngày Trả Máy (Nếu có)</label>
+                        <input type="datetime-local" name="promisedReturnDate" class="form-control rounded-3" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-info text-white rounded-pill px-4 fw-semibold">Lưu Ghi Chú Trao Đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 9. Modal: Create Vendor RMA (vendor_rma.create) -->
+<div class="modal fade" id="createVendorRmaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-building-up me-2 text-primary"></i>Lập Phiếu Điều Phối Gửi TTBH Ủy Quyền Của Hãng
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="@Url.Action("CreateVendorRma", "Technician")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Chọn Ca Sửa Chữa (RMA Ticket)</label>
+                            <select name="ticketId" class="form-select rounded-3" required>
+                                @foreach (var t in Model.TicketsList.Where(t => t.Status != RmaStatus.Completed && t.Status != RmaStatus.Rejected))
+                                {
+                                    <option value="@t.Id">@t.RmaCode - @t.ProductName (@t.SerialNumber)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Trung Tâm Bảo Hành Hãng Ủy Quyền</label>
+                            <select name="vendorName" class="form-select rounded-3">
+                                <option value="Apple Authorized Service Provider (Thakral One)">Apple Authorized Service Provider (Thakral One)</option>
+                                <option value="Trung Tâm Bảo Hành ASUS ROG Việt Nam">Trung Tâm Bảo Hành ASUS ROG Việt Nam</option>
+                                <option value="Samsung Authorized Service Center">Samsung Authorized Service Center</option>
+                                <option value="Synnex FPT Distribution RMA">Synnex FPT Distribution RMA</option>
+                                <option value="Dell ProSupport Vietnam">Dell ProSupport Vietnam</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Mã Tiếp Nhận Của Hãng (Nếu có)</label>
+                            <input type="text" name="vendorTrackingCode" class="form-control rounded-3 font-monospace" placeholder="AP-RMA-98765..." />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Đơn Vị Vận Chuyển</label>
+                            <input type="text" name="carrierName" class="form-control rounded-3" value="Giao Hàng Nhanh (GHN)" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Mã Vận Đơn Gửi Hãng</label>
+                            <input type="text" name="carrierTrackingNumber" class="form-control rounded-3 font-monospace" placeholder="GHN123456789" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Dự Kiến Ngày Nhận Lại</label>
+                            <input type="date" name="expectedReturnDate" class="form-control rounded-3" value="@DateTime.UtcNow.AddDays(7).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-secondary">Ghi Chú Yêu Cầu Hãng Thẩm Định</label>
+                            <input type="text" name="notes" class="form-control rounded-3" placeholder="Đề nghị hãng đổi mới cụm màn hình do lỗi sọc sọc xanh nhà sản xuất..." />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Lập Phiếu Gửi Hãng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 10. Modal: Update Vendor RMA Status -->
+<div class="modal fade" id="updateVendorRmaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-box-seam me-2 text-success"></i>Cập Nhật Kết Quả Từ Trung Tâm Hãng
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="@Url.Action("UpdateVendorRmaStatus", "Technician")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="vendorRmaId" id="updateVendorRmaId" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mã Phiếu Hãng</label>
+                        <input type="text" id="updateVendorRmaCode" class="form-control rounded-3 font-monospace bg-light" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Trạng Thái Xử Lý</label>
+                        <select name="newStatus" class="form-select rounded-3">
+                            <option value="ReceivedBack">Đã nhận máy về từ Hãng (Sẵn sàng test lại QC)</option>
+                            <option value="VendorRepaired">Hãng đã sửa xong (Đang chuyển phát về shop)</option>
+                            <option value="VendorInspecting">Hãng đang kiểm tra</option>
+                            <option value="Completed">Hoàn tất quy trình bảo hành hãng</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Kết Luận Của Hãng</label>
+                        <input type="text" name="vendorDiagnosis" class="form-control rounded-3" value="Xác nhận lỗi panel màn hình từ NSX" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Phương Án Hãng Đã Giải Quyết</label>
+                        <select name="vendorResolution" class="form-select rounded-3">
+                            <option value="ReplacedNewDevice">Hãng đổi nguyên cây máy mới</option>
+                            <option value="ReplacedPart">Hãng đã thay linh kiện chính hãng mới</option>
+                            <option value="RejectedFault">Hãng từ chối do vào nước/lỗi người dùng</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold">Xác Nhận Nhận Máy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openRequestPartModal(partId, partCode, partName) {
+            var select = document.getElementById("modalPartSelect");
+            if (select) {
+                select.value = partId;
+            }
+            var modal = new bootstrap.Modal(document.getElementById("requestSparePartModal"));
+            modal.show();
+        }
+
+        function openEstimateModal(ticketId, ticketCode, partsCost, laborCost, discount, notes) {
+            document.getElementById("estimateTicketId").value = ticketId;
+            document.getElementById("estimateTicketCode").value = ticketCode;
+            document.getElementById("estimateLaborCost").value = laborCost || 150000;
+            document.getElementById("estimateDiscount").value = discount || 0;
+            document.getElementById("estimateNotes").value = notes || "";
+            var modal = new bootstrap.Modal(document.getElementById("estimateCostModal"));
+            modal.show();
+        }
+
+        function openUpdateVendorRmaModal(id, code) {
+            document.getElementById("updateVendorRmaId").value = id;
+            document.getElementById("updateVendorRmaCode").value = code;
+            var modal = new bootstrap.Modal(document.getElementById("updateVendorRmaModal"));
+            modal.show();
+        }
+    </script>
+}

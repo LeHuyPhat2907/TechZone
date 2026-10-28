@@ -1,0 +1,518 @@
+@model OrderDto
+@{
+    ViewData["Title"] = $"Chi Tiết Đơn Hàng #{Model.OrderCode}";
+    var carriers = ViewBag.ShippingCarriers as List<ShippingCarrierConfig> ?? new();
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary rounded-pill px-3 mb-2">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách đơn
+        </a>
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="fw-bold text-dark m-0">Chi Tiết Đơn Hàng <span class="text-primary font-monospace">#@Model.OrderCode</span></h3>
+            @if (Model.IsManualOrder || Model.SourceChannel != "Website")
+            {
+                <span class="badge bg-warning text-dark border">
+                    <i class="bi bi-telephone-fill me-1"></i>Kênh: @Model.SourceChannel
+                </span>
+            }
+            else
+            {
+                <span class="badge bg-primary text-white border">
+                    <i class="bi bi-globe me-1"></i>Kênh: Website Online
+                </span>
+            }
+        </div>
+        <small class="text-muted">Khởi tạo lúc: @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge @(Model.OrderStatus == OrderStatus.Delivered ? "bg-success" : (Model.OrderStatus == OrderStatus.Cancelled ? "bg-danger" : (Model.OrderStatus == OrderStatus.Shipping ? "bg-info text-dark" : "bg-primary"))) fs-6 px-3 py-2 rounded-3">
+            Trạng thái: @Model.OrderStatus
+        </span>
+    </div>
+</div>
+
+<!-- Refund Banner (if active) -->
+@if (Model.RefundStatus == "Requested")
+{
+    <div class="alert alert-warning border-0 rounded-4 shadow-sm p-3 mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="fw-bold text-dark m-0"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>ĐƠN HÀNG CÓ YÊU CẦU ĐỔI TRẢ / HOÀN TIỀN</h6>
+            <div class="small text-secondary mt-1">
+                Số tiền yêu cầu hoàn: <strong class="text-danger">@(Model.RefundAmount?.ToString("N0") ?? Model.TotalAmount.ToString("N0"))₫</strong> | 
+                Lý do: <em>@(Model.RefundReason ?? "Khách hàng yêu cầu trả hàng")</em>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success btn-sm rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#approveRefundDetailModal">
+                <i class="bi bi-check-lg me-1"></i>Duyệt Hoàn Tiền
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#rejectRefundDetailModal">
+                <i class="bi bi-x-lg me-1"></i>Từ Chối
+            </button>
+        </div>
+    </div>
+}
+else if (Model.RefundStatus == "Refunded" || Model.OrderStatus == OrderStatus.Returned)
+{
+    <div class="alert alert-success border-0 rounded-4 shadow-sm p-3 mb-4">
+        <h6 class="fw-bold text-success m-0"><i class="bi bi-check-circle-fill me-2"></i>ĐƠN HÀNG ĐÃ HOÀN TIỀN / TRẢ HÀNG THÀNH CÔNG</h6>
+        <div class="small text-secondary mt-1">
+            Số tiền đã hoàn: <strong class="text-danger">@((Model.RefundAmount ?? Model.TotalAmount).ToString("N0"))₫</strong> | 
+            Hình thức: <strong>@(Model.RefundMethod ?? "Chuyển khoản")</strong> | 
+            Người duyệt: <strong>@(Model.RefundApprovedBy ?? "Admin")</strong> lúc @Model.RefundApprovedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+        </div>
+    </div>
+}
+
+<div class="row g-4">
+    <!-- Left Column: Items, Serial/IMEI, VAT, and Logs -->
+    <div class="col-lg-8">
+        <!-- Items in Order -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-box-seam text-primary me-2"></i>Sản Phẩm Trong Đơn Hàng</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>Đơn giá</th>
+                            <th>Số lượng</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="@(string.IsNullOrEmpty(item.ThumbnailUrl) ? "/images/placeholder.png" : item.ThumbnailUrl)" alt="@item.ProductName" style="width: 48px; height: 48px; object-fit: contain;" class="rounded border p-1" />
+                                        <div>
+                                            <div class="fw-bold text-dark">@item.ProductName</div>
+                                            <span class="text-muted small">Phiên bản: @item.VariantName | Bảo hành @item.WarrantyMonths tháng</span>
+                                            @if (item.AssignedSerialNumbers.Count > 0)
+                                            {
+                                                <div class="mt-1">
+                                                    <span class="badge bg-info-subtle text-info-emphasis border small">
+                                                        <i class="bi bi-upc-scan me-1"></i>Serial/IMEI: @string.Join(", ", item.AssignedSerialNumbers)
+                                                    </span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@item.UnitPrice.ToString("N0")₫</td>
+                                <td>@item.Quantity</td>
+                                <td class="text-end fw-bold text-danger">@item.TotalPrice.ToString("N0")₫</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="border-top">
+                        <tr>
+                            <td colspan="3" class="text-muted">Tạm tính sản phẩm:</td>
+                            <td class="text-end fw-semibold">@Model.Subtotal.ToString("N0")₫</td>
+                        </tr>
+                        @if (Model.OrderDiscountAmount > 0)
+                        {
+                            <tr class="text-success">
+                                <td colspan="3">Giảm giá khuyến mãi / Chiết khấu:</td>
+                                <td class="text-end">-@Model.OrderDiscountAmount.ToString("N0")₫</td>
+                            </tr>
+                        }
+                        <tr>
+                            <td colspan="3" class="text-muted">Phí vận chuyển (@Model.CarrierName):</td>
+                            <td class="text-end">@(Model.ShippingFee == 0 ? "0₫ (Miễn phí)" : Model.ShippingFee.ToString("N0") + "₫")</td>
+                        </tr>
+                        <tr class="fs-6 fw-bold">
+                            <td colspan="3" class="text-dark">Tổng tiền thanh toán:</td>
+                            <td class="text-end text-danger fs-5">@Model.TotalAmount.ToString("N0")₫</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- B2B Electronic VAT Invoice Card -->
+        @if (Model.RequireVatInvoice)
+        {
+            <div class="card border-danger border-opacity-25 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark m-0"><i class="bi bi-receipt text-danger me-2"></i>Yêu Cầu Hóa Đơn Điện Tử (VAT) Doanh Nghiệp</h5>
+                    <span class="badge bg-danger-subtle text-danger border">Bắt buộc xuất HĐĐT</span>
+                </div>
+                <div class="p-3 bg-light rounded-3 small mb-3">
+                    <div class="row g-2">
+                        <div class="col-md-6"><strong>Tên doanh nghiệp:</strong> @Model.CompanyName</div>
+                        <div class="col-md-6"><strong>Mã số thuế (MST):</strong> <code class="fs-6 fw-bold text-primary">@Model.TaxId</code></div>
+                        <div class="col-12"><strong>Địa chỉ công ty:</strong> @Model.CompanyAddress</div>
+                        <div class="col-12"><strong>Email nhận HĐĐT:</strong> <span class="text-primary">@Model.InvoiceEmail</span></div>
+                    </div>
+                </div>
+
+                <form asp-action="IssueVatInvoice" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="orderId" value="@Model.Id" />
+                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-4 fw-semibold" onclick="return confirm('Xác nhận phát hành Hóa đơn VAT điện tử (kết nối MISA meInvoice) cho đơn này?')">
+                        <i class="bi bi-send-check me-1"></i>Phát Hành Hóa Đơn Điện Tử Tự Động
+                    </button>
+                </form>
+            </div>
+        }
+
+        <!-- Status History Audit Logs -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history text-primary me-2"></i>Nhật Ký Xử Lý Đơn Hàng (Audit Logs)</h5>
+            <ul class="list-group list-group-flush small">
+                @foreach (var log in Model.StatusHistory.OrderByDescending(h => h.Timestamp))
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-start px-0">
+                        <div>
+                            <span class="badge bg-secondary me-2">@log.Status</span>
+                            <strong>@log.Note</strong>
+                            <div class="text-muted mt-1 small">Thực hiện bởi: <em>@log.ChangedBy</em></div>
+                        </div>
+                        <span class="text-muted text-nowrap">@log.Timestamp.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <!-- Right Column: Status Update, Carrier Integration, Customer Info -->
+    <div class="col-lg-4">
+        <!-- Status Transition Action Box -->
+        <div class="card border-primary border-opacity-50 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <h5 class="fw-bold text-primary mb-3"><i class="bi bi-gear-fill me-2"></i>Cập Nhật Trạng Thái Đơn</h5>
+            <form asp-action="UpdateStatus" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="orderId" value="@Model.Id" />
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-dark">Chuyển sang trạng thái:</label>
+                    <select name="newStatus" class="form-select small">
+                        @foreach (OrderStatus s in Enum.GetValues(typeof(OrderStatus)))
+                        {
+                            <option value="@s" selected="@(Model.OrderStatus == s)">@s</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-dark">Ghi chú xử lý nội bộ:</label>
+                    <textarea name="note" class="form-control small" rows="2" placeholder="Ví dụ: Đã scan IMEI nguyên seal, đóng gói bàn giao bưu tá..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill py-2 shadow-sm mb-2">
+                    <i class="bi bi-arrow-repeat me-1"></i>Lưu Trạng Thái Mới
+                </button>
+            </form>
+
+            <div class="d-flex gap-2 mt-2 pt-2 border-top">
+                @if (Model.OrderStatus != OrderStatus.Cancelled && Model.OrderStatus != OrderStatus.Delivered)
+                {
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill w-50" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
+                        <i class="bi bi-x-circle me-1"></i>Hủy đơn
+                    </button>
+                }
+                @if (Model.RefundStatus == "None" && Model.OrderStatus != OrderStatus.Cancelled)
+                {
+                    <button type="button" class="btn btn-outline-warning text-dark btn-sm rounded-pill w-50" data-bs-toggle="modal" data-bs-target="#requestRefundModal">
+                        <i class="bi bi-arrow-return-left me-1"></i>Y/c Hoàn tiền
+                    </button>
+                }
+            </div>
+
+            @if (User.IsInRole("SuperAdmin"))
+            {
+                <div class="mt-3 pt-2 border-top">
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill w-100 fw-semibold" data-bs-toggle="modal" data-bs-target="#forceDeleteModal">
+                        <i class="bi bi-trash3-fill me-1"></i>Xóa Vĩnh Viễn (Đơn Rác/Ảo)
+                    </button>
+                </div>
+            }
+        </div>
+
+        <!-- Shipping & Carrier Integration Box -->
+        <div class="card border-info border-opacity-50 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark m-0"><i class="bi bi-truck text-info me-2"></i>Vận Đơn & Hãng Giao</h5>
+                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 small">API GHN / GHTK / VTP</span>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.TrackingNumber))
+            {
+                <div class="p-3 bg-light rounded-3 mb-3 border">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Đơn vị vận chuyển:</span>
+                        <span class="badge bg-primary">@Model.CarrierName</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Mã vận đơn:</span>
+                        <code class="fw-bold fs-6 text-danger">@Model.TrackingNumber</code>
+                    </div>
+                    @if (Model.CarrierName.Contains("GHN"))
+                    {
+                        <div class="mt-2 text-end">
+                            <a href="https://donhang.ghn.vn/?order_code=@Model.TrackingNumber" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Tra cứu trên Portal GHN
+                            </a>
+                        </div>
+                    }
+                    else if (Model.CarrierName.Contains("GHTK"))
+                    {
+                        <div class="mt-2 text-end">
+                            <a href="https://giaohangtietkiem.vn" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Tra cứu trên Portal GHTK
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mt-2 text-end">
+                            <a href="https://tracking.viettelpost.com.vn/" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Tra cứu trên Viettel Post
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (Model.DeliveryType != "StorePickup" && Model.OrderStatus != OrderStatus.Delivered && Model.OrderStatus != OrderStatus.Cancelled)
+            {
+                <form asp-action="AssignCarrier" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="orderId" value="@Model.Id" />
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Chọn đối tác vận chuyển:</label>
+                        <select name="carrierName" class="form-select small">
+                            @if (carriers.Count > 0)
+                            {
+                                @foreach (var c in carriers)
+                                {
+                                    <option value="@c.CarrierName" selected="@(Model.CarrierName.Contains(c.CarrierCode))">
+                                        @c.CarrierName (@c.EstimatedDeliveryTime)
+                                    </option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="Giao Hàng Nhanh (GHN)">Giao Hàng Nhanh (GHN)</option>
+                                <option value="Giao Hàng Tiết Kiệm (GHTK)">Giao Hàng Tiết Kiệm (GHTK)</option>
+                                <option value="Viettel Post">Viettel Post</option>
+                                <option value="GrabExpress (Hỏa Tốc 2H)">GrabExpress (Hỏa Tốc 2H)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Mã vận đơn (Để trống để tự sinh chuẩn hãng):</label>
+                        <input type="text" name="trackingNumber" value="@Model.TrackingNumber" class="form-control form-control-sm text-uppercase font-monospace" placeholder="VD: GHN89271829 / S22.9281928" />
+                    </div>
+
+                    <button type="submit" class="btn btn-outline-info text-dark w-100 fw-bold rounded-pill py-2 shadow-sm">
+                        <i class="bi bi-send-check-fill text-info me-1"></i>Tạo Vận Đơn & Bàn Giao Hãng
+                    </button>
+                </form>
+            }
+        </div>
+
+        <!-- Customer & Delivery Card -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-circle text-primary me-2"></i>Thông Tin Khách Hàng</h5>
+            <div class="small text-secondary d-flex flex-column gap-2">
+                <div><strong>Họ tên:</strong> @Model.CustomerName</div>
+                <div>
+                    <strong>Số điện thoại:</strong> 
+                    @if (User.IsInRole("Technician"))
+                    {
+                        <code class="text-muted">@(Model.CustomerPhone.Length > 6 ? Model.CustomerPhone.Substring(0, 3) + "****" + Model.CustomerPhone.Substring(Model.CustomerPhone.Length - 3) : "••••••••")</code>
+                        <span class="badge bg-light text-muted border ms-1" style="font-size: 0.65rem;">PII Masking</span>
+                    }
+                    else
+                    {
+                        <code>@Model.CustomerPhone</code>
+                    }
+                </div>
+                <div><strong>Email:</strong> @Model.CustomerEmail</div>
+                <hr class="my-1 opacity-25" />
+                <div>
+                    <strong>Hình thức nhận:</strong>
+                    @if (Model.DeliveryType == "StorePickup")
+                    {
+                        <span class="badge bg-success-subtle text-success border ms-1"><i class="bi bi-shop me-1"></i>Nhận tại siêu thị</span>
+                        <div class="text-dark fw-semibold mt-1">@Model.PickupStoreAddress</div>
+                    }
+                    else
+                    {
+                        <span class="badge bg-primary-subtle text-primary border ms-1"><i class="bi bi-truck me-1"></i>Giao tận nơi</span>
+                        <div class="text-dark mt-1">@Model.FullAddress</div>
+                    }
+                </div>
+                <hr class="my-1 opacity-25" />
+                <div>
+                    <strong>Phương thức thanh toán:</strong> 
+                    <span>@Model.PaymentMethod</span>
+                </div>
+                <div>
+                    <strong>Trạng thái thanh toán:</strong> 
+                    <span class="badge @(Model.PaymentStatus == PaymentStatus.Completed ? "bg-success" : (Model.PaymentStatus == PaymentStatus.Refunded ? "bg-danger" : "bg-warning text-dark"))">
+                        @Model.PaymentStatus
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Cancel Order -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="CancelOrder" method="post" class="modal-content rounded-4 border-0 shadow">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="orderId" value="@Model.Id" />
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Hủy Đơn Hàng #@Model.OrderCode</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">
+                    Hệ thống TechZone sẽ tự động hoàn lại số lượng tồn kho khả dụng (Available Quantity) cho tất cả sản phẩm trong đơn.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Lý do hủy đơn <span class="text-danger">*</span>:</label>
+                    <textarea name="reason" class="form-control" rows="3" placeholder="Nhập lý do hủy đơn hàng..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Xác Nhận Hủy Đơn</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Request Refund -->
+<div class="modal fade" id="requestRefundModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="RequestRefund" method="post" class="modal-content rounded-4 border-0 shadow">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="orderId" value="@Model.Id" />
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-arrow-return-left text-warning me-2"></i>Tạo Yêu Cầu Hoàn Tiền / Đổi Trả</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Số tiền yêu cầu hoàn (₫):</label>
+                    <input type="number" name="amount" class="form-control fw-bold text-danger" value="@Model.TotalAmount" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Lý do yêu cầu đổi trả / hoàn tiền:</label>
+                    <textarea name="reason" class="form-control" rows="3" placeholder="Máy lỗi nguồn, đổi ý muốn đổi sang dòng máy khác..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Bỏ qua</button>
+                <button type="submit" class="btn btn-warning text-dark rounded-pill px-4 fw-bold">Gửi Yêu Cầu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Approve Refund -->
+<div class="modal fade" id="approveRefundDetailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="ApproveRefund" method="post" class="modal-content rounded-4 border-0 shadow">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="orderId" value="@Model.Id" />
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-success"><i class="bi bi-check2-circle me-2"></i>Phê Duyệt Hoàn Tiền #@Model.OrderCode</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Số tiền thực tế hoàn (₫):</label>
+                    <input type="number" name="refundAmount" class="form-control fw-bold text-danger fs-5" value="@(Model.RefundAmount ?? Model.TotalAmount)" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Hình thức hoàn tiền:</label>
+                    <select name="refundMethod" class="form-select">
+                        <option value="BankTransfer">Chuyển khoản Ngân hàng (VietQR)</option>
+                        <option value="OriginalPaymentMethod">Cổng thanh toán gốc (VNPay/MoMo)</option>
+                        <option value="StoreCredit">Voucher tích lũy mua hàng TechZone</option>
+                        <option value="Cash">Tiền mặt tại Quầy Showroom</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Ghi chú phê duyệt:</label>
+                    <textarea name="reason" class="form-control" rows="2">@(Model.RefundReason ?? "Đã kiểm tra máy nguyên vẹn, duyệt hoàn tiền theo quy định")</textarea>
+                </div>
+                <div class="form-check form-switch p-2 bg-light rounded-3 border">
+                    <input class="form-check-input ms-0 me-2" type="checkbox" name="restockInventory" value="true" id="modalRestockCheckDetail" checked>
+                    <label class="form-check-label small fw-semibold" for="modalRestockCheckDetail">
+                        Thu hồi máy & Nhập lại kho vật lý (Tăng Stock & Available Quantity)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold">Phê Duyệt Hoàn Tiền</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Reject Refund -->
+<div class="modal fade" id="rejectRefundDetailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="RejectRefund" method="post" class="modal-content rounded-4 border-0 shadow">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="orderId" value="@Model.Id" />
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-circle-fill me-2"></i>Từ Chối Yêu Cầu Hoàn Tiền</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Lý do từ chối:</label>
+                    <textarea name="reason" class="form-control" rows="3" placeholder="Sản phẩm bị móp méo, trầy xước không đủ điều kiện đổi trả..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Từ Chối</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Force Delete Order (SuperAdmin) -->
+<div class="modal fade" id="forceDeleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="ForceDelete" method="post" class="modal-content rounded-4 border-0 shadow">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="orderId" value="@Model.Id" />
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-shield-slash-fill me-2"></i>Xóa Vĩnh Viễn Đơn Rác</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger border-0 rounded-3 small mb-3">
+                    <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                    <strong>CẢNH BÁO SUPERADMIN:</strong> Thao tác xóa vĩnh viễn đơn hàng #@Model.OrderCode khỏi MongoDB không thể hoàn tác. Dữ liệu sẽ bị thanh lọc hoàn toàn và ghi nhật ký SecurityAuditLog.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Lý do xóa:</label>
+                    <input name="reason" class="form-control" placeholder="Đơn ảo / đơn spam rác..." />
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Xác Nhận Xóa Vĩnh Viễn</button>
+            </div>
+        </form>
+    </div>
+</div>

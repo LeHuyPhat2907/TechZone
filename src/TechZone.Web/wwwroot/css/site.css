@@ -1,0 +1,985 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ==========================================================================
+   1. DESIGN TOKENS & COLOR PALETTES (Task 13 - Ant Design & Material UI 3)
+   ========================================================================== */
+:root {
+    /* Brand & Accent Colors */
+    --tz-primary: #0284c7;
+    --tz-primary-hover: #0369a1;
+    --tz-primary-light: #e0f2fe;
+    --tz-secondary: #0f172a;
+    --tz-accent: #ef4444;
+    --tz-accent-orange: #f97316;
+    --tz-success: #10b981;
+    --tz-warning: #f59e0b;
+
+    /* Light Mode Surface & Neutrals */
+    --tz-bg: #f8fafc;
+    --tz-card-bg: #ffffff;
+    --tz-navbar-bg: #ffffff;
+    --tz-catbar-bg: #ffffff;
+    --tz-border: #e2e8f0;
+    --tz-text-main: #1e293b;
+    --tz-text-muted: #64748b;
+    --tz-input-bg: #f8fafc;
+    --tz-surface-hover: #f1f5f9;
+
+    /* Elevation & Shapes */
+    --tz-radius: 12px;
+    --tz-radius-sm: 8px;
+    --tz-radius-pill: 50px;
+    --tz-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --tz-shadow-hover: 0 12px 24px -4px rgb(0 0 0 / 0.12), 0 4px 8px -4px rgb(0 0 0 / 0.06);
+    --tz-bottom-nav-bg: rgba(255, 255, 255, 0.92);
+}
+
+/* Dark Mode Tokens (Deep Navy Charcoal - WCAG 2.1 AA Compliant) */
+[data-theme="dark"] {
+    --tz-bg: #090d16;
+    --tz-card-bg: #111827;
+    --tz-navbar-bg: #0d131f;
+    --tz-catbar-bg: #0b111e;
+    --tz-border: #1f293d;
+    --tz-text-main: #f1f5f9;
+    --tz-text-muted: #94a3b8;
+    --tz-input-bg: #141c2e;
+    --tz-surface-hover: #1e293b;
+    --tz-primary-light: rgba(2, 132, 199, 0.2);
+    --tz-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    --tz-shadow-hover: 0 14px 28px rgba(0, 0, 0, 0.7);
+    --tz-bottom-nav-bg: rgba(17, 24, 39, 0.92);
+}
+
+/* ==========================================================================
+   2. GLOBAL TYPOGRAPHY & BASE RESETS
+   ========================================================================== */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--tz-bg);
+    color: var(--tz-text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+main {
+    flex: 1;
+}
+
+/* ==========================================================================
+   3. HEADER & TOPBAR STYLES
+   ========================================================================== */
+.tz-topbar {
+    background-color: #0b111e;
+    color: #94a3b8;
+    font-size: 0.825rem;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tz-topbar a {
+    color: #cbd5e1;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.tz-topbar a:hover {
+    color: #38bdf8;
+}
+
+.tz-navbar {
+    background-color: var(--tz-navbar-bg);
+    border-bottom: 1px solid var(--tz-border);
+    padding: 12px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    box-shadow: var(--tz-shadow);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.tz-brand {
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--tz-text-main);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s;
+}
+
+.tz-brand span.zone {
+    color: var(--tz-primary);
+}
+
+.tz-search-box {
+    position: relative;
+    max-width: 550px;
+    width: 100%;
+}
+
+.tz-search-input {
+    border-radius: var(--tz-radius-pill);
+    padding-left: 20px;
+    padding-right: 48px;
+    height: 44px;
+    border: 1.5px solid var(--tz-border);
+    background-color: var(--tz-input-bg);
+    color: var(--tz-text-main);
+    transition: all 0.2s ease-in-out;
+}
+
+.tz-search-input:focus {
+    background-color: var(--tz-card-bg);
+    border-color: var(--tz-primary);
+    color: var(--tz-text-main);
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15);
+}
+
+.tz-search-btn {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    height: 36px;
+    width: 36px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--tz-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.tz-search-btn:hover {
+    background-color: var(--tz-primary-hover);
+    transform: scale(1.05);
+}
+
+.tz-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: var(--tz-radius-sm);
+    color: var(--tz-text-main);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.tz-nav-btn:hover {
+    background-color: var(--tz-surface-hover);
+    color: var(--tz-primary);
+}
+
+.tz-badge {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    background-color: var(--tz-accent);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 20px;
+    transition: transform 0.2s;
+}
+
+/* Theme Toggle Button (Light/Dark Switcher) */
+.tz-theme-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid var(--tz-border);
+    background-color: var(--tz-card-bg);
+    color: var(--tz-text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    padding: 0;
+}
+
+.tz-theme-toggle-btn:hover {
+    border-color: var(--tz-primary);
+    transform: scale(1.08);
+    box-shadow: 0 0 12px rgba(2, 132, 199, 0.25);
+}
+
+.tz-theme-toggle-btn:active {
+    transform: scale(0.92);
+}
+
+/* Light mode icon display */
+:root .theme-icon-sun {
+    display: none;
+}
+:root .theme-icon-moon {
+    display: inline-block;
+    color: #0284c7;
+}
+
+/* Dark mode icon display */
+[data-theme="dark"] .theme-icon-sun {
+    display: inline-block;
+    color: #f59e0b;
+}
+[data-theme="dark"] .theme-icon-moon {
+    display: none;
+}
+
+/* Category Navigation Bar */
+.tz-cat-bar {
+    background-color: var(--tz-catbar-bg);
+    border-bottom: 1px solid var(--tz-border);
+    padding: 8px 0;
+    transition: background-color 0.3s ease;
+}
+
+.tz-cat-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    color: var(--tz-text-muted);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.tz-cat-link:hover, .tz-cat-link.active {
+    background-color: var(--tz-primary-light);
+    color: var(--tz-primary);
+}
+
+/* ==========================================================================
+   4. PRODUCT CARDS & MICRO-INTERACTIONS
+   ========================================================================== */
+.tz-product-card {
+    background: var(--tz-card-bg);
+    border: 1px solid var(--tz-border);
+    border-radius: var(--tz-radius);
+    padding: 16px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.tz-product-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--tz-shadow-hover);
+    border-color: rgba(2, 132, 199, 0.35);
+}
+
+.tz-card-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: var(--tz-accent);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    z-index: 2;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.tz-installment-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--tz-card-bg);
+    border: 1px solid var(--tz-border);
+    color: var(--tz-text-main);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    z-index: 2;
+    box-shadow: var(--tz-shadow);
+}
+
+.tz-product-img-wrapper {
+    position: relative;
+    padding-top: 85%;
+    overflow: hidden;
+    margin-bottom: 12px;
+    border-radius: var(--tz-radius-sm);
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.tz-product-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tz-product-card:hover .tz-product-img {
+    transform: scale(1.08);
+}
+
+.tz-product-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--tz-text-main);
+    line-height: 1.4;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 2.7em;
+}
+
+.tz-product-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.tz-product-title a:hover {
+    color: var(--tz-primary);
+}
+
+.tz-specs-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 10px;
+    min-height: 24px;
+}
+
+.tz-spec-pill {
+    background: var(--tz-surface-hover);
+    color: var(--tz-text-muted);
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--tz-border);
+}
+
+.tz-price-current {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--tz-accent);
+}
+
+.tz-price-old {
+    font-size: 0.825rem;
+    text-decoration: line-through;
+    color: var(--tz-text-muted);
+    margin-left: 6px;
+}
+
+.tz-rating-stars {
+    color: var(--tz-warning);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tz-card-footer {
+    margin-top: auto;
+    padding-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ==========================================================================
+   5. MICRO-INTERACTIONS (ANIMATIONS & FEEDBACK)
+   ========================================================================== */
+@keyframes tz-cart-bounce {
+    0%, 100% { transform: scale(1); }
+    20% { transform: scale(1.35) rotate(-12deg); }
+    40% { transform: scale(1.25) rotate(12deg); }
+    60% { transform: scale(1.1) rotate(-6deg); }
+    80% { transform: scale(1.05) rotate(2deg); }
+}
+
+.tz-cart-bounce {
+    animation: tz-cart-bounce 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tz-badge-pop {
+    0% { transform: scale(0.5); }
+    50% { transform: scale(1.5); }
+    100% { transform: scale(1); }
+}
+
+.tz-badge-pop {
+    animation: tz-badge-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tz-heartbeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.3); }
+    50% { transform: scale(0.95); }
+    75% { transform: scale(1.15); }
+}
+
+.tz-heartbeat {
+    animation: tz-heartbeat 0.5s ease-in-out;
+}
+
+/* Tactile Active Press Effect on all clickable buttons */
+.btn, .tz-nav-btn, .tz-search-btn, .btn-tz-primary, .btn-tz-accent, .tz-bottom-nav-item {
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+}
+
+.btn:active, .tz-nav-btn:active, .btn-tz-primary:active, .btn-tz-accent:active {
+    transform: scale(0.96);
+}
+
+/* ==========================================================================
+   6. SKELETON LOADING UI (Shimmer Placeholder Effect)
+   ========================================================================== */
+.skeleton {
+    background: linear-gradient(90deg, var(--tz-border) 25%, rgba(255, 255, 255, 0.6) 50%, var(--tz-border) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: var(--tz-radius-sm);
+    display: inline-block;
+}
+
+[data-theme="dark"] .skeleton {
+    background: linear-gradient(90deg, #1f293d 25%, #2d3b55 50%, #1f293d 75%);
+    background-size: 200% 100%;
+}
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-img { width: 100%; height: 180px; border-radius: var(--tz-radius-sm); margin-bottom: 12px; }
+.skeleton-title { width: 85%; height: 16px; margin-bottom: 8px; }
+.skeleton-subtitle { width: 60%; height: 13px; margin-bottom: 12px; }
+.skeleton-price { width: 45%; height: 20px; margin-bottom: 14px; }
+.skeleton-btn { width: 100%; height: 38px; border-radius: var(--tz-radius-pill); }
+
+.skeleton-card {
+    background: var(--tz-card-bg);
+    border: 1px solid var(--tz-border);
+    border-radius: var(--tz-radius);
+    padding: 16px;
+}
+
+/* ==========================================================================
+   7. MOBILE-FIRST BOTTOM NAVIGATION BAR (Thumb Zone UX)
+   ========================================================================== */
+.tz-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--tz-bottom-nav-bg);
+    border-top: 1px solid var(--tz-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 1040;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tz-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--tz-text-muted);
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 500;
+    flex: 1;
+    height: 100%;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.tz-bottom-nav-item i {
+    font-size: 1.25rem;
+    margin-bottom: 2px;
+    transition: transform 0.2s ease;
+}
+
+.tz-bottom-nav-item.active,
+.tz-bottom-nav-item:hover {
+    color: var(--tz-primary);
+}
+
+.tz-bottom-nav-item.active i {
+    transform: translateY(-2px);
+}
+
+.tz-bottom-nav-badge {
+    position: absolute;
+    top: 6px;
+    right: calc(50% - 18px);
+    background-color: var(--tz-accent);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    border-radius: 50px;
+    text-align: center;
+    padding: 0 4px;
+    transition: transform 0.2s;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 68px; /* Avoid mobile content overlap with bottom nav */
+    }
+}
+
+/* ==========================================================================
+   8. COMPREHENSIVE DARK MODE OVERRIDES (Bootstrap & Components)
+   ========================================================================== */
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .card {
+    background-color: var(--tz-card-bg) !important;
+    border-color: var(--tz-border) !important;
+    color: var(--tz-text-main) !important;
+}
+
+[data-theme="dark"] .bg-light {
+    background-color: #0b111e !important;
+}
+
+[data-theme="dark"] .text-dark {
+    color: var(--tz-text-main) !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--tz-text-muted) !important;
+}
+
+[data-theme="dark"] .border,
+[data-theme="dark"] .border-top,
+[data-theme="dark"] .border-bottom,
+[data-theme="dark"] .border-start,
+[data-theme="dark"] .border-end {
+    border-color: var(--tz-border) !important;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background-color: var(--tz-input-bg);
+    border-color: var(--tz-border);
+    color: var(--tz-text-main);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    background-color: #1a2234;
+    border-color: var(--tz-primary);
+    color: var(--tz-text-main);
+}
+
+[data-theme="dark"] .dropdown-menu {
+    background-color: #141c2e;
+    border-color: var(--tz-border);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .dropdown-item {
+    color: var(--tz-text-main);
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+    background-color: #1e293b;
+    color: #38bdf8;
+}
+
+[data-theme="dark"] .dropdown-divider {
+    border-color: var(--tz-border);
+}
+
+[data-theme="dark"] .table {
+    color: var(--tz-text-main);
+    border-color: var(--tz-border);
+}
+
+[data-theme="dark"] .table > :not(caption) > * > * {
+    background-color: transparent;
+    border-bottom-color: var(--tz-border);
+    color: var(--tz-text-main);
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: var(--tz-card-bg);
+    border-color: var(--tz-border);
+    color: var(--tz-text-main);
+}
+
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+    border-color: var(--tz-border);
+}
+
+/* Feature Boxes */
+.tz-feature-box {
+    background: var(--tz-card-bg);
+    border: 1px solid var(--tz-border);
+    border-radius: var(--tz-radius);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tz-feature-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--tz-primary-light);
+    color: var(--tz-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+/* Stepper for Order Tracking */
+.tz-stepper {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin: 30px 0;
+}
+
+.tz-stepper::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    right: 40px;
+    height: 4px;
+    background: var(--tz-border);
+    z-index: 1;
+}
+
+.tz-step-item {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    flex: 1;
+}
+
+.tz-step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--tz-border);
+    color: var(--tz-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px auto;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.tz-step-item.active .tz-step-circle {
+    background: var(--tz-primary);
+    color: white;
+    box-shadow: 0 0 0 4px var(--tz-primary-light);
+}
+
+.tz-step-item.completed .tz-step-circle {
+    background: var(--tz-success);
+    color: white;
+}
+
+.tz-step-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--tz-text-muted);
+}
+
+.tz-step-item.active .tz-step-label {
+    color: var(--tz-primary);
+}
+
+/* Footer */
+.tz-footer {
+    background-color: #0b111e;
+    color: #e2e8f0;
+    padding-top: 50px;
+    padding-bottom: 25px;
+    margin-top: 60px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tz-footer h6 {
+    color: #ffffff;
+    font-weight: 700;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+}
+
+.tz-footer-desc {
+    color: #cbd5e1 !important;
+    line-height: 1.65;
+}
+
+.tz-footer-contact {
+    color: #e2e8f0 !important;
+}
+
+.tz-footer-contact a {
+    color: #e2e8f0;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.tz-footer-contact a:hover {
+    color: #38bdf8;
+    text-decoration: underline;
+}
+
+.tz-footer-badge {
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.tz-footer-label {
+    color: #cbd5e1 !important;
+    font-weight: 500;
+}
+
+.tz-footer .text-muted {
+    color: #94a3b8 !important;
+}
+
+.tz-footer ul {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+.tz-footer ul li {
+    margin-bottom: 10px;
+}
+
+.tz-footer ul li a {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.tz-footer ul li a:hover {
+    color: #38bdf8;
+    transform: translateX(3px);
+}
+
+.tz-footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 20px;
+    margin-top: 40px;
+    font-size: 0.825rem;
+    color: #94a3b8;
+}
+
+.tz-footer-arch {
+    color: #94a3b8;
+}
+
+/* Primary and Accent Action Buttons */
+.btn-tz-primary {
+    background-color: var(--tz-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: var(--tz-radius-sm);
+    border: none;
+    padding: 10px 20px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-tz-primary:hover {
+    background-color: var(--tz-primary-hover);
+    color: white;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+.btn-tz-accent {
+    background-color: var(--tz-accent);
+    color: white;
+    font-weight: 600;
+    border-radius: var(--tz-radius-sm);
+    border: none;
+    padding: 10px 20px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-tz-accent:hover {
+    background-color: #dc2626;
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+/* ==========================================================================
+   Rating Filter & Sidebar Micro-interactions (Task 13 & 15 UX Upgrade)
+   ========================================================================== */
+.tz-rating-filter-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+    background-color: #ffffff;
+    color: var(--tz-text-main, #0f172a);
+    text-decoration: none !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .tz-rating-filter-card {
+    background-color: var(--tz-surface, #1e293b);
+    border-color: var(--tz-border, #334155);
+}
+
+.tz-rating-filter-card:hover {
+    background-color: #f8fafc;
+    border-color: #f59e0b;
+    transform: translateX(5px);
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.16);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .tz-rating-filter-card:hover {
+    background-color: var(--tz-surface-hover, #334155);
+    border-color: #f59e0b;
+    color: #f8fafc;
+}
+
+.tz-rating-filter-card:active {
+    transform: scale(0.97);
+}
+
+.tz-rating-filter-card.active {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(245, 158, 11, 0.12) 100%);
+    border-color: #0284c7;
+    color: #0284c7 !important;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.18);
+}
+
+/* Star Group & Staggered Pop Animation */
+.tz-rating-stars-animated {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.tz-rating-stars-animated i {
+    color: #f59e0b;
+    display: inline-block;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-size: 0.95rem;
+}
+
+/* Staggered Pop Animation on Hover */
+.tz-rating-filter-card:hover .tz-rating-stars-animated i {
+    animation: tzStarPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.tz-rating-filter-card:hover .tz-rating-stars-animated i:nth-child(1) { animation-delay: 0.02s; }
+.tz-rating-filter-card:hover .tz-rating-stars-animated i:nth-child(2) { animation-delay: 0.06s; }
+.tz-rating-filter-card:hover .tz-rating-stars-animated i:nth-child(3) { animation-delay: 0.10s; }
+.tz-rating-filter-card:hover .tz-rating-stars-animated i:nth-child(4) { animation-delay: 0.14s; }
+.tz-rating-filter-card:hover .tz-rating-stars-animated i:nth-child(5) { animation-delay: 0.18s; }
+
+@keyframes tzStarPop {
+    0% {
+        transform: scale(1) rotate(0deg);
+    }
+    50% {
+        transform: scale(1.4) rotate(-14deg);
+        filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.8));
+    }
+    100% {
+        transform: scale(1.15) rotate(0deg);
+        filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5));
+    }
+}
+
+/* Active Star Glow */
+.tz-rating-filter-card.active .tz-rating-stars-animated i {
+    filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
+}
+
+/* Animated Checkmark Indicator */
+.tz-rating-check {
+    font-size: 0.9rem;
+    color: #0284c7;
+    opacity: 0;
+    transform: scale(0.4) rotate(-20deg);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tz-rating-filter-card.active .tz-rating-check {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+/* Sidebar General Category & Price Filter Links Hover */
+.tz-sidebar-filter-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    border-radius: 10px;
+    text-decoration: none !important;
+    color: var(--tz-text-main, #334155);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.875rem;
+}
+
+.tz-sidebar-filter-link:hover {
+    background-color: var(--tz-surface-hover, #f1f5f9);
+    color: #0284c7 !important;
+    transform: translateX(4px);
+}
+
+.tz-sidebar-filter-link.active {
+    background-color: rgba(2, 132, 199, 0.12);
+    color: #0284c7 !important;
+    font-weight: 700;
+}

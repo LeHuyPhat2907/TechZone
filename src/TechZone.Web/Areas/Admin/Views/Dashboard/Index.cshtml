@@ -1,0 +1,485 @@
+@model AdminDashboardMetricsDto
+@{
+    ViewData["Title"] = "Bảng Điều Khiển Quản Trị";
+}
+
+<!-- Page Header with Live Badge -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a href="/Admin/Dashboard" class="text-decoration-none text-muted">Admin Hub</a></li>
+                <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">Dashboard Tổng Quan</li>
+            </ol>
+        </nav>
+        <h3 class="fw-bold text-dark m-0">
+            Tổng Quan Vận Hành Shop
+        </h3>
+        <small class="text-muted">Báo cáo hợp nhất dòng tiền, xử lý đơn hàng và cảnh báo tồn kho thiết bị điện tử</small>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+        <div class="d-none d-md-flex align-items-center gap-2 px-3 py-2 bg-white rounded-pill border shadow-2xs text-secondary small">
+            <i class="bi bi-clock-history text-primary"></i>
+            <span id="tzAdminClock">@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 shadow-2xs d-flex align-items-center gap-1" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise text-primary"></i>
+            <span>Làm Mới</span>
+        </button>
+        <a href="/Admin/Order" class="btn btn-sm btn-primary rounded-pill px-3 shadow-2xs d-flex align-items-center gap-1" style="background: var(--tz-primary-gradient); border: none;">
+            <i class="bi bi-plus-circle me-1"></i>
+            <span>Xử Lý Đơn Hàng</span>
+        </a>
+    </div>
+</div>
+
+<!-- 4 Key Metric Cards (Elevated SaaS Styling) -->
+<div class="row g-3 g-xl-4 mb-4">
+    <!-- Card 1: Doanh Thu -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #10b981;">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.75rem;">Tổng Doanh Thu</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+            @if (User.IsInRole("WarehouseStaff") || User.IsInRole("Technician"))
+            {
+                <div class="fs-4 fw-bold text-muted mb-1 font-monospace">•••••••• ₫</div>
+                <div class="d-flex align-items-center gap-2 small">
+                    <span class="badge tz-badge-soft-secondary rounded-pill px-2 py-1">
+                        <i class="bi bi-shield-lock me-1"></i>Bảo mật RBAC
+                    </span>
+                    <span class="text-muted" style="font-size: 0.76rem;">Ẩn với Kho & Kỹ thuật</span>
+                </div>
+            }
+            else
+            {
+                <div class="fs-3 fw-bold text-dark mb-1">@Model.TotalRevenue.ToString("N0")<span class="fs-5 text-secondary fw-normal">₫</span></div>
+                <div class="d-flex align-items-center gap-2 small">
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1">
+                        <i class="bi bi-graph-up-arrow me-1"></i>+14.8%
+                    </span>
+                    <span class="text-muted" style="font-size: 0.76rem;">Doanh số thực tế ghi nhận</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Card 2: Đơn Chờ Xử Lý -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #f59e0b;">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.75rem;">Đơn Chờ Xử Lý</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-dark mb-1">
+                @Model.PendingOrdersCount
+                @if (Model.PendingOrdersCount > 0)
+                {
+                    <span class="tz-dot-pulse bg-warning ms-2" title="Cần thao tác"></span>
+                }
+            </div>
+            <div class="d-flex align-items-center gap-2 small">
+                <span class="badge bg-warning bg-opacity-15 text-dark rounded-pill px-2 py-1 fw-semibold">
+                    <i class="bi bi-exclamation-circle me-1"></i>Cần xác nhận
+                </span>
+                <span class="text-muted" style="font-size: 0.76rem;">Gán Serial/IMEI đóng gói</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Tổng Đơn Hàng -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #0284c7;">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.75rem;">Tổng Đơn Hàng</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(2, 132, 199, 0.12); color: #0284c7;">
+                    <i class="bi bi-box-seam-fill"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-dark mb-1">@Model.TotalOrders</div>
+            <div class="d-flex align-items-center gap-2 small">
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1">
+                    <i class="bi bi-check2-all me-1"></i>100% Hoàn tất
+                </span>
+                <span class="text-muted" style="font-size: 0.76rem;">Tất cả kênh đặt hàng</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Cảnh Báo Tồn Kho -->
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Admin/Product?stockFilter=low_stock" class="text-decoration-none">
+            <div class="tz-stat-card h-100" style="border-top: 3px solid #f43f5e;">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.75rem;">Cảnh Báo Tồn Kho</span>
+                    <div class="tz-stat-icon-wrapper" style="background: rgba(244, 63, 94, 0.12); color: #e11d48;">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-3 fw-bold text-dark mb-1">@Model.LowStockCount</div>
+                <div class="d-flex align-items-center gap-2 small">
+                    @if (Model.LowStockCount > 0)
+                    {
+                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1">
+                            <i class="bi bi-arrow-down-right me-1"></i>Sắp hết hàng
+                        </span>
+                        <span class="text-muted" style="font-size: 0.76rem;">&lt; 5 chiếc trong kho</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1">
+                            <i class="bi bi-shield-check me-1"></i>Tồn kho ổn định
+                        </span>
+                        <span class="text-muted" style="font-size: 0.76rem;">Đủ nguồn cung thiết bị</span>
+                    }
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Main Section: Recent Orders & Quick Operations -->
+<div class="row g-4 mb-4">
+    <!-- Left Column: Recent Orders Table (8 cols) -->
+    <div class="col-lg-8">
+        <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden h-100">
+            <!-- Table Header with Filter Pills -->
+            <div class="p-3 p-md-4 border-bottom bg-white d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h5 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-clock-history text-primary"></i>
+                        <span>Đơn Hàng Gần Đây Cần Xử Lý</span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2 py-1 small" style="font-size: 0.72rem;">
+                            @Model.RecentOrders.Count đơn
+                        </span>
+                    </h5>
+                    <small class="text-muted">Theo dõi và cập nhật trạng thái vận chuyển, hóa đơn VAT theo chuẩn FPT Shop & TGDD</small>
+                </div>
+
+                <a href="/Admin/Order" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-2xs d-flex align-items-center gap-1">
+                    <span>Xem tất cả</span>
+                    <i class="bi bi-arrow-right-short fs-6"></i>
+                </a>
+            </div>
+
+            <!-- Client Filter Pills -->
+            <div class="px-3 px-md-4 py-2 bg-light border-bottom d-flex flex-wrap align-items-center gap-2">
+                <span class="small text-secondary fw-bold text-uppercase me-1" style="font-size: 0.7rem;">Lọc nhanh:</span>
+                <button type="button" class="btn btn-xs btn-primary rounded-pill px-3 py-1 tz-table-filter active" data-filter="all" style="font-size: 0.78rem;">
+                    Tất cả (@Model.RecentOrders.Count)
+                </button>
+                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-3 py-1 tz-table-filter" data-filter="Pending" style="font-size: 0.78rem;">
+                    Chờ xử lý
+                </button>
+                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-3 py-1 tz-table-filter" data-filter="PaymentConfirmed" style="font-size: 0.78rem;">
+                    Đã thanh toán
+                </button>
+                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-3 py-1 tz-table-filter" data-filter="Shipping" style="font-size: 0.78rem;">
+                    Đang giao hàng
+                </button>
+            </div>
+
+            <!-- Orders Table -->
+            <!-- Orders Table (Compact, Auto-fit No Horizontal Scroll) -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tzRecentOrdersTable">
+                    <thead style="background-color: #f8fafc; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b;">
+                        <tr>
+                            <th class="ps-3 py-2 text-nowrap">Mã đơn & Thời gian</th>
+                            <th class="px-2 py-2 text-nowrap">Khách hàng</th>
+                            <th class="px-2 py-2 text-nowrap">Kênh giao</th>
+                            <th class="px-2 py-2 text-nowrap">Tổng thanh toán</th>
+                            <th class="px-2 py-2 text-nowrap">Trạng thái</th>
+                            <th class="text-end pe-3 py-2 text-nowrap">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody class="small">
+                        @if (Model.RecentOrders.Count > 0)
+                        {
+                            @foreach (var order in Model.RecentOrders)
+                            {
+                                <tr class="tz-order-row" data-status="@order.OrderStatus">
+                                    <!-- Order Code & Time -->
+                                    <td class="ps-3 py-2 text-nowrap">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <a href="/Admin/Order/Detail/@order.Id" class="fw-bold text-primary text-decoration-none font-monospace text-nowrap" style="letter-spacing: -0.01em; font-size: 0.8125rem;">
+                                                @order.OrderCode
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-link text-muted p-0 border-0 opacity-75" onclick="navigator.clipboard.writeText('@order.OrderCode'); this.innerHTML='<i class=\'bi bi-check text-success\'></i>'; setTimeout(() => this.innerHTML='<i class=\'bi bi-copy\'></i>', 1500);" title="Sao chép">
+                                                <i class="bi bi-copy" style="font-size: 0.7rem;"></i>
+                                            </button>
+                                        </div>
+                                        <div class="text-muted text-nowrap" style="font-size: 0.72rem;">
+                                            <i class="bi bi-clock me-1 opacity-75"></i>@order.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")
+                                        </div>
+                                    </td>
+
+                                    <!-- Customer Name & Phone -->
+                                    <td class="px-2 py-2 text-nowrap">
+                                        <div class="fw-bold text-dark text-nowrap" style="font-size: 0.825rem;">@order.CustomerName</div>
+                                        <div class="d-flex align-items-center gap-1 text-nowrap">
+                                            <span class="text-secondary font-monospace" style="font-size: 0.72rem;">@order.CustomerPhone</span>
+                                            @if (order.RequireVatInvoice)
+                                            {
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 py-0 px-1" style="font-size: 0.65rem;" title="Yêu cầu hóa đơn GTGT">
+                                                    VAT
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+
+                                    <!-- Delivery Type -->
+                                    <td class="px-2 py-2 text-nowrap">
+                                        @if (order.DeliveryType == "StorePickup")
+                                        {
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.72rem;">
+                                                <i class="bi bi-shop me-1"></i>Siêu Thị
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.72rem;">
+                                                <i class="bi bi-box-seam me-1"></i>GHN
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <!-- Total Amount -->
+                                    <td class="px-2 py-2 text-nowrap">
+                                        <div class="fw-bold text-danger text-nowrap" style="font-size: 0.85rem;">@order.TotalAmount.ToString("N0")₫</div>
+                                        <div class="text-muted text-nowrap" style="font-size: 0.68rem;">@order.Items.Count sản phẩm</div>
+                                    </td>
+
+                                    <!-- Status with Glowing Dot -->
+                                    <td class="px-2 py-2 text-nowrap">
+                                        @switch (order.OrderStatus)
+                                        {
+                                            case OrderStatus.Pending:
+                                                <span class="badge tz-badge-soft-warning rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.72rem;">
+                                                    <span class="tz-dot-pulse bg-warning" style="width: 5px; height: 5px;"></span> Chờ xử lý
+                                                </span>
+                                                break;
+                                            case OrderStatus.PaymentConfirmed:
+                                                <span class="badge tz-badge-soft-primary rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.72rem;">
+                                                    <span class="tz-dot-pulse bg-info" style="width: 5px; height: 5px;"></span> Đã thanh toán
+                                                </span>
+                                                break;
+                                            case OrderStatus.Preparing:
+                                                <span class="badge tz-badge-soft-primary rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.72rem;">
+                                                    <i class="bi bi-box me-1"></i>Đang chuẩn bị
+                                                </span>
+                                                break;
+                                            case OrderStatus.Shipping:
+                                                <span class="badge bg-primary text-white rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.72rem;">
+                                                    <i class="bi bi-truck me-1"></i>Đang giao
+                                                </span>
+                                                break;
+                                            case OrderStatus.Delivered:
+                                                <span class="badge tz-badge-soft-success rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.72rem;">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Hoàn tất
+                                                </span>
+                                                break;
+                                            case OrderStatus.Cancelled:
+                                                <span class="badge tz-badge-soft-danger rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.72rem;">
+                                                    <i class="bi bi-x-circle-fill me-1"></i>Đã hủy
+                                                </span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary text-white rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.72rem;">@order.OrderStatus</span>
+                                                break;
+                                        }
+                                    </td>
+
+                                    <!-- Action Button -->
+                                    <td class="text-end pe-3 py-2 text-nowrap">
+                                        <a href="/Admin/Order/Detail/@order.Id" class="btn btn-sm btn-light border border-secondary border-opacity-25 text-primary rounded-pill px-2 py-1 shadow-2xs fw-semibold tz-order-btn d-inline-flex align-items-center" style="font-size: 0.75rem;">
+                                            <span>Chi tiết</span>
+                                            <i class="bi bi-chevron-right ms-1" style="font-size: 0.65rem;"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                    Chưa có đơn hàng nào trong hệ thống TechZone.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Quick Operations & Security (4 cols) -->
+    <div class="col-lg-4">
+        <!-- Quick Operations Hub -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i>
+                    <span>Thao Tác Nhanh Quản Trị</span>
+                </h6>
+                <span class="badge bg-warning bg-opacity-15 text-dark rounded-pill px-2 py-1 small" style="font-size: 0.7rem;">
+                    Ưu tiên cao
+                </span>
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+                <!-- Action 1: Pending Orders -->
+                <a href="/Admin/Order?status=Pending" class="tz-action-card">
+                    <div class="tz-stat-icon-wrapper" style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245, 158, 11, 0.12); color: #d97706; font-size: 1.1rem;">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold small text-dark">Duyệt đơn chờ xác nhận</div>
+                        <div class="text-muted" style="font-size: 0.72rem;">@Model.PendingOrdersCount đơn cần kiểm tra & xuất kho</div>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted small"></i>
+                </a>
+
+                <!-- Action 2: Warranty & IMEI Lookup -->
+                <a href="/Warranty" target="_blank" class="tz-action-card">
+                    <div class="tz-stat-icon-wrapper" style="width: 40px; height: 40px; border-radius: 10px; background: rgba(6, 182, 212, 0.12); color: #0891b2; font-size: 1.1rem;">
+                        <i class="bi bi-upc-scan"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold small text-dark">Tra cứu Serial / IMEI thiết bị</div>
+                        <div class="text-muted" style="font-size: 0.72rem;">Quét barcode tra cứu E-Warranty</div>
+                    </div>
+                    <i class="bi bi-arrow-up-right text-muted small"></i>
+                </a>
+
+                <!-- Action 3: VAT Invoice Verification -->
+                <a href="/Admin/Order" class="tz-action-card">
+                    <div class="tz-stat-icon-wrapper" style="width: 40px; height: 40px; border-radius: 10px; background: rgba(99, 102, 241, 0.12); color: #4f46e5; font-size: 1.1rem;">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold small text-dark">Kiểm tra đơn yêu cầu hóa đơn VAT</div>
+                        <div class="text-muted" style="font-size: 0.72rem;">Phát hành HĐĐT điện tử qua email</div>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted small"></i>
+                </a>
+
+                <!-- Action 4: APM Real-time Diagnostics -->
+                <a href="/Admin/Diagnostics" class="tz-action-card">
+                    <div class="tz-stat-icon-wrapper" style="width: 40px; height: 40px; border-radius: 10px; background: rgba(244, 63, 94, 0.12); color: #e11d48; font-size: 1.1rem;">
+                        <i class="bi bi-activity"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold small text-dark">Giám sát & Chẩn đoán APM</div>
+                        <div class="text-muted" style="font-size: 0.72rem;">MongoDB, Redis & Serilog live stream</div>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted small"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Security & RBAC Protection Card -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4 position-relative overflow-hidden">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="tz-stat-icon-wrapper" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 1.1rem;">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold text-dark m-0">Bảo Mật Dữ Liệu Khách Hàng</h6>
+                    <small class="text-muted" style="font-size: 0.7rem;">Chuẩn PII Masking & OWASP Top 10</small>
+                </div>
+            </div>
+
+            <p class="small text-muted mb-3" style="line-height: 1.5; font-size: 0.825rem;">
+                Số điện thoại và địa chỉ khách hàng được tự động che giấu theo chuẩn <strong>RBAC</strong> đối với nhân viên bán hàng nhằm triệt tiêu nguy cơ rò rỉ dữ liệu hoặc cướp đơn hàng.
+            </p>
+
+            <div class="p-3 rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="small fw-semibold text-secondary">Trạng thái bảo mật:</span>
+                    <span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 rounded-pill px-2 py-1 small">
+                        <span class="tz-dot-pulse bg-success me-1"></span>Kích hoạt chuẩn RBAC
+                    </span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between text-muted" style="font-size: 0.72rem;">
+                    <span>Security Audit Logs:</span>
+                    <span class="font-monospace text-dark fw-bold">Live Recorded</span>
+                </div>
+            </div>
+
+            @if (User.IsInRole("SuperAdmin"))
+            {
+                <a href="/Admin/Rbac" class="btn btn-sm btn-outline-primary w-100 rounded-pill mt-3 d-flex align-items-center justify-content-center gap-1">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Xem Ma Trận Phân Quyền RBAC</span>
+                </a>
+            }
+        </div>
+
+        <!-- Tech Stack Telemetry -->
+        <div class="card border-0 rounded-4 shadow-sm p-3 bg-white">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="small fw-bold text-secondary text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Hạ Tầng Điện Toán</span>
+                <span class="badge bg-light text-secondary border rounded-pill px-2 py-0" style="font-size: 0.68rem;">v2.0</span>
+            </div>
+            <div class="d-flex flex-column gap-1 small text-secondary" style="font-size: 0.78rem;">
+                <div class="d-flex justify-content-between">
+                    <span><i class="bi bi-code-square me-1 text-primary"></i>Backend Core:</span>
+                    <span class="fw-semibold text-dark">ASP.NET Core 10 MVC</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span><i class="bi bi-database me-1 text-success"></i>Cơ sở dữ liệu:</span>
+                    <span class="fw-semibold text-dark">MongoDB 7.0 NoSQL</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span><i class="bi bi-lightning me-1 text-danger"></i>Bộ đệm In-Memory:</span>
+                    <span class="fw-semibold text-dark">Redis 7.2 Cache</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Real-time digital clock update
+        function updateAdminClock() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const el = document.getElementById('tzAdminClock');
+            if (el) el.innerText = `${dateStr} ${timeStr}`;
+        }
+        setInterval(updateAdminClock, 1000);
+        updateAdminClock();
+
+        // Client-side quick filter tabs for table rows
+        document.querySelectorAll('.tz-table-filter').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.tz-table-filter').forEach(b => {
+                    b.classList.remove('btn-primary', 'active');
+                    b.classList.add('btn-outline-secondary');
+                });
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-primary', 'active');
+
+                const filter = this.getAttribute('data-filter');
+                document.querySelectorAll('.tz-order-row').forEach(row => {
+                    if (filter === 'all' || row.getAttribute('data-status') === filter) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+}

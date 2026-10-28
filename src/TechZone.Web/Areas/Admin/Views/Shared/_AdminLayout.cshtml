@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quản Trị Hệ Thống TechZone</title>
+
+    <!-- Google Fonts & Bootstrap Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        :root {
+            --tz-admin-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --tz-admin-bg: #f8fafc;
+            --tz-admin-sidebar: #0b1120;
+            --tz-admin-border: #e2e8f0;
+            --tz-primary-gradient: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+        }
+
+        body {
+            font-family: var(--tz-admin-font);
+            background-color: var(--tz-admin-bg);
+            color: #1e293b;
+            letter-spacing: -0.01em;
+        }
+
+        /* Topbar */
+        .admin-topbar {
+            height: 64px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            z-index: 1030;
+        }
+
+        .tz-brand-text {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: #0f172a;
+        }
+
+        .tz-brand-gradient {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tz-quick-search {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 0.38rem 1rem;
+            font-size: 0.85rem;
+            width: 260px;
+            transition: all 0.2s ease;
+        }
+
+        .tz-quick-search:focus {
+            background: #ffffff;
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+            outline: none;
+            width: 320px;
+        }
+
+        /* Sidebar */
+        .admin-sidebar {
+            width: 270px;
+            min-height: calc(100vh - 64px);
+            background: linear-gradient(180deg, #0b1120 0%, #0f172a 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .tz-nav-section-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-top: 1.1rem;
+            margin-bottom: 0.45rem;
+            padding-left: 0.85rem;
+        }
+
+        .tz-admin-nav-link {
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 0.875rem;
+            padding: 0.6rem 0.85rem;
+            border-radius: 0.65rem;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tz-admin-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 1rem;
+            color: #94a3b8;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .tz-admin-nav-link:hover {
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.06);
+            transform: translateX(3px);
+        }
+
+        .tz-admin-nav-link:hover .tz-admin-icon {
+            background: rgba(255, 255, 255, 0.12);
+            color: #38bdf8;
+        }
+
+        .tz-admin-nav-link.active {
+            background: var(--tz-primary-gradient) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+            font-weight: 600;
+        }
+
+        .tz-admin-nav-link.active .tz-admin-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        /* Pulsing dot */
+        .tz-dot-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            position: relative;
+        }
+
+        .tz-dot-pulse::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            background-color: inherit;
+            animation: tzPulseRing 2s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+        }
+
+        @@keyframes tzPulseRing {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(2.8); opacity: 0; }
+        }
+
+        /* Stat Cards */
+        .tz-stat-card {
+            background: #ffffff;
+            border: 1px solid #eef2f6;
+            border-radius: 1rem;
+            padding: 1.35rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .tz-stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.07);
+            border-color: #cbd5e1;
+        }
+
+        .tz-stat-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+        }
+
+        /* Quick Action Cards */
+        .tz-action-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.85rem;
+            padding: 0.85rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            text-decoration: none;
+            color: #1e293b;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tz-action-card:hover {
+            border-color: #0284c7;
+            background: #f8fafc;
+            transform: translateX(4px);
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.1);
+            color: #0284c7;
+        }
+
+        .tz-order-btn {
+            white-space: nowrap !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #ffffff;
+            color: #0284c7;
+            line-height: 1.5;
+        }
+
+        .tz-order-btn:hover {
+            background: #0284c7 !important;
+            color: #ffffff !important;
+            border-color: #0284c7 !important;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
+            transform: translateY(-1px);
+        }
+
+        .tz-order-btn:hover i {
+            color: #ffffff !important;
+            transform: translateX(2px);
+        }
+
+        .tz-order-btn i {
+            transition: transform 0.2s ease;
+        }
+
+        /* Custom Badge Opacity Fix & Modern Soft Badges */
+        .bg-opacity-15 {
+            --bs-bg-opacity: 0.15 !important;
+        }
+
+        .tz-badge-soft-success {
+            background-color: rgba(16, 185, 129, 0.12) !important;
+            color: #047857 !important;
+            border: 1px solid rgba(16, 185, 129, 0.28) !important;
+            font-weight: 600;
+        }
+
+        .tz-badge-soft-primary {
+            background-color: rgba(2, 132, 199, 0.12) !important;
+            color: #0284c7 !important;
+            border: 1px solid rgba(2, 132, 199, 0.28) !important;
+            font-weight: 600;
+        }
+
+        .tz-badge-soft-warning {
+            background-color: rgba(245, 158, 11, 0.15) !important;
+            color: #b45309 !important;
+            border: 1px solid rgba(245, 158, 11, 0.35) !important;
+            font-weight: 600;
+        }
+
+        .tz-badge-soft-danger {
+            background-color: rgba(239, 68, 68, 0.12) !important;
+            color: #dc2626 !important;
+            border: 1px solid rgba(239, 68, 68, 0.28) !important;
+            font-weight: 600;
+        }
+
+        .tz-badge-soft-secondary {
+            background-color: rgba(100, 116, 139, 0.12) !important;
+            color: #475569 !important;
+            border: 1px solid rgba(100, 116, 139, 0.28) !important;
+            font-weight: 600;
+        }
+
+        .btn-xs {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.72rem;
+            line-height: 1.35;
+        }
+    </style>
+</head>
+<body>
+    <!-- Topbar -->
+    <header class="admin-topbar d-flex align-items-center justify-content-between px-3 px-md-4 sticky-top">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-sm btn-light d-md-none border" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebarOffcanvas">
+                <i class="bi bi-list fs-5"></i>
+            </button>
+            <a href="/Admin/Dashboard" class="text-decoration-none d-flex align-items-center gap-2">
+                <div class="tz-admin-icon" style="background: var(--tz-primary-gradient); color: white; width: 36px; height: 36px;">
+                    <i class="bi bi-cpu-fill fs-5"></i>
+                </div>
+                <div>
+                    <span class="tz-brand-text">TECH<span class="tz-brand-gradient">ZONE</span></span>
+                    <span class="badge bg-dark text-light rounded-pill ms-1 px-2 py-1" style="font-size: 0.68rem; font-weight: 600;">Admin Hub</span>
+                </div>
+            </a>
+            <div class="vr d-none d-lg-block mx-2 text-secondary opacity-25" style="height: 24px;"></div>
+            <span class="text-muted d-none d-lg-inline small">
+                <span class="tz-dot-pulse bg-success me-1"></span>Hệ thống Quản trị TMĐT Điện tử Chuẩn Doanh nghiệp
+            </span>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 gap-md-3">
+            <!-- Quick Search Bar -->
+            <div class="d-none d-md-flex align-items-center position-relative">
+                <i class="bi bi-search position-absolute start-0 ms-3 text-muted" style="font-size: 0.85rem;"></i>
+                <input type="text" class="tz-quick-search ps-5" placeholder="Tìm đơn, Serial, khách..." id="tzAdminQuickSearch" />
+                <kbd class="position-absolute end-0 me-2 text-muted bg-white border px-1 rounded small" style="font-size: 0.7rem;">⌘K</kbd>
+            </div>
+
+            <!-- Storefront Link -->
+            <a href="/" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-flex align-items-center gap-1 shadow-2xs">
+                <i class="bi bi-shop text-primary"></i>
+                <span class="d-none d-sm-inline">Xem Website</span>
+                <i class="bi bi-box-arrow-up-right small text-muted"></i>
+            </a>
+
+            <!-- Notification Bell -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-light border rounded-circle p-2 position-relative shadow-2xs" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo hệ thống">
+                    <i class="bi bi-bell fs-6 text-secondary"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                        <span class="visually-hidden">New alerts</span>
+                    </span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm p-2" style="width: 280px;">
+                    <li class="dropdown-header text-uppercase fw-bold small text-secondary">Thông báo vận hành</li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                        <a class="dropdown-item small rounded-2 p-2 d-flex gap-2" href="/Admin/Order?status=Pending">
+                            <i class="bi bi-bag-check text-warning fs-5"></i>
+                            <div>
+                                <strong class="d-block text-dark">Đơn hàng mới chờ duyệt</strong>
+                                <span class="text-muted" style="font-size: 0.72rem;">Kiểm tra & gán Serial/IMEI thiết bị</span>
+                            </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item small rounded-2 p-2 d-flex gap-2" href="/Admin/Diagnostics">
+                            <i class="bi bi-activity text-success fs-5"></i>
+                            <div>
+                                <strong class="d-block text-dark">Hệ thống đang hoạt động tốt</strong>
+                                <span class="text-muted" style="font-size: 0.72rem;">MongoDB & Redis phản hồi &lt; 2ms</span>
+                            </div>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- User Menu -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-light border rounded-pill dropdown-toggle d-flex align-items-center gap-2 px-2 py-1 shadow-2xs" type="button" data-bs-toggle="dropdown">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 28px; height: 28px; background: linear-gradient(135deg, #0284c7, #2563eb); font-size: 0.75rem;">
+                        @(User.Identity?.Name?.Length > 0 ? User.Identity.Name.Substring(0, 1).ToUpper() : "A")
+                    </div>
+                    <span class="fw-semibold small d-none d-sm-inline">@User.Identity?.Name</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 p-2" style="min-width: 220px; border-radius: 0.75rem;">
+                    <li class="px-3 py-2">
+                        <div class="fw-bold text-dark">@User.Identity?.Name</div>
+                        @{
+                            var userRoleName = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+                            var roleDisplay = userRoleName switch
+                            {
+                                "SuperAdmin" => "👑 SuperAdmin (Toàn quyền)",
+                                "SalesStaff" => "💼 Nhân viên Bán hàng (Sales)",
+                                "WarehouseStaff" => "📦 Thủ kho & IMEI (Warehouse)",
+                                "Technician" => "🔧 Kỹ thuật viên (Technician)",
+                                "Customer" => "👤 Khách hàng thành viên",
+                                _ => userRoleName
+                            };
+                        }
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2 py-1 mt-1" style="font-size: 0.7rem;">
+                            <i class="bi bi-shield-check me-1"></i>@roleDisplay
+                        </span>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li><a class="dropdown-item rounded-2 py-2 small" href="/Admin/Rbac"><i class="bi bi-shield-lock text-primary me-2"></i>Ma trận phân quyền RBAC</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2 small" href="/Auth/Profile"><i class="bi bi-person me-2 text-secondary"></i>Hồ sơ cá nhân</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2 small" href="/Admin/Diagnostics"><i class="bi bi-speedometer2 me-2 text-danger"></i>APM Chẩn đoán</a></li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                        <form asp-area="" asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+                            <button type="submit" class="dropdown-item rounded-2 py-2 text-danger small"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Offcanvas Sidebar -->
+    <div class="offcanvas offcanvas-start bg-dark text-white d-md-none" tabindex="-1" id="adminSidebarOffcanvas" style="width: 280px; background: linear-gradient(180deg, #0b1120 0%, #0f172a 100%) !important;">
+        <div class="offcanvas-header border-bottom border-secondary border-opacity-25 py-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="tz-admin-icon" style="background: var(--tz-primary-gradient); color: white; width: 32px; height: 32px;">
+                    <i class="bi bi-cpu-fill"></i>
+                </div>
+                <span class="tz-brand-text text-white">TECH<span class="tz-brand-gradient">ZONE</span></span>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body p-3">
+            <div class="tz-nav-section-title">Bán hàng & Vận hành</div>
+            <nav class="nav flex-column mb-3">
+                <a href="/Admin/Dashboard" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <span class="tz-admin-icon"><i class="bi bi-grid-1x2-fill"></i></span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/Admin/Sales" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sales" ? "active" : "")">
+                    <span class="tz-admin-icon"><i class="bi bi-headset"></i></span>
+                    <span>Bán Hàng & Xử Lý Đơn Hub</span>
+                    <span class="badge tz-badge-soft-primary rounded-pill ms-auto" style="font-size: 0.65rem;">Sales</span>
+                </a>
+                <a href="/Admin/Order" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" ? "active" : "")">
+                    <span class="tz-admin-icon"><i class="bi bi-box-seam-fill"></i></span>
+                    <span>Tất cả Đơn hàng</span>
+                </a>
+                @if (User.IsInRole("SuperAdmin") || User.IsInRole("SalesStaff") || User.IsInRole("WarehouseStaff"))
+                {
+                    <a href="/Admin/Product" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-phone-fill"></i></span>
+                        <span>Sản phẩm</span>
+                    </a>
+                    <a href="/Admin/Category" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Category" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-diagram-3-fill"></i></span>
+                        <span>Danh mục</span>
+                    </a>
+                    <a href="/Admin/Attributes" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attributes" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-sliders"></i></span>
+                        <span>Thông số kỹ thuật</span>
+                    </a>
+                    <a href="/Admin/Review" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Review" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-star-half"></i></span>
+                        <span>Đánh giá & Bình luận</span>
+                    </a>
+                }
+            </nav>
+
+            <div class="tz-nav-section-title">Kho hàng & Kỹ thuật</div>
+            <nav class="nav flex-column mb-3">
+                @if (User.IsInRole("SuperAdmin") || User.IsInRole("WarehouseStaff"))
+                {
+                    <a href="/Admin/Warehouse" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Warehouse" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-boxes"></i></span>
+                        <span>Thủ Kho & Vận Hành Hub</span>
+                        <span class="badge tz-badge-soft-success rounded-pill ms-auto" style="font-size: 0.65rem;">Kho</span>
+                    </a>
+                    <a href="/Admin/Inventory" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Inventory" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-upc-scan"></i></span>
+                        <span>Kho & IMEI</span>
+                    </a>
+                }
+                @if (User.IsInRole("SuperAdmin") || User.IsInRole("Technician") || User.IsInRole("SalesStaff"))
+                {
+                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("Technician"))
+                    {
+                        <a href="/Admin/Technician" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Technician" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-tools"></i></span>
+                            <span>Kỹ Thuật & Bảo Hành Hub</span>
+                            <span class="badge tz-badge-soft-warning rounded-pill ms-auto" style="font-size: 0.65rem;">KTV</span>
+                        </a>
+                    }
+                    <a href="/Admin/Warranty" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Warranty" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-shield-check"></i></span>
+                        <span>Bảo hành & RMA</span>
+                    </a>
+                }
+            </nav>
+
+            @if (User.IsInRole("SuperAdmin") || User.IsInRole("SalesStaff"))
+            {
+                <div class="tz-nav-section-title">Khách hàng & Marketing</div>
+                <nav class="nav flex-column mb-3">
+                    <a href="/Admin/Customer" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Customer" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-people-fill"></i></span>
+                        <span>Khách hàng & CRM</span>
+                    </a>
+                    <a href="/Admin/Marketing" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Marketing" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-megaphone-fill"></i></span>
+                        <span>Khuyến mãi & Vouchers</span>
+                    </a>
+                </nav>
+            }
+
+            @if (User.IsInRole("SuperAdmin") || User.IsInRole("Accountant"))
+            {
+                <div class="tz-nav-section-title">Tài chính & Quản trị</div>
+                <nav class="nav flex-column mb-3">
+                    <a href="/Admin/Reports" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Reports" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-graph-up-arrow"></i></span>
+                        <span>Báo cáo doanh thu & Lãi</span>
+                    </a>
+                    @if (User.IsInRole("SuperAdmin"))
+                    {
+                        <a href="/Admin/Rbac" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Rbac" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-shield-lock-fill"></i></span>
+                            <span>Tài khoản & Phân quyền (IAM)</span>
+                        </a>
+                        <a href="/Admin/Diagnostics" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Diagnostics" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-activity"></i></span>
+                            <span>APM Logs</span>
+                        </a>
+                    }
+                </nav>
+            }
+        </div>
+    </div>
+
+    <div class="d-flex">
+        <!-- Sidebar Navigation (Desktop) -->
+        <aside class="admin-sidebar p-3 d-none d-md-flex">
+            <div class="overflow-y-auto" style="max-height: calc(100vh - 160px);">
+                <!-- 1. Bán hàng & Vận hành (Mục 1.1, 1.3) -->
+                <div class="tz-nav-section-title">Bán hàng & Vận hành</div>
+                <nav class="nav flex-column">
+                    <a href="/Admin/Dashboard" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-grid-1x2-fill"></i></span>
+                        <span>Tổng quan Dashboard</span>
+                    </a>
+                    <a href="/Admin/Sales" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sales" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-headset"></i></span>
+                        <span>Bán Hàng & Xử Lý Đơn Hub</span>
+                        <span class="badge tz-badge-soft-primary rounded-pill ms-auto" style="font-size: 0.65rem;">Sales</span>
+                    </a>
+                    <a href="/Admin/Order" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" ? "active" : "")">
+                        <span class="tz-admin-icon"><i class="bi bi-box-seam-fill"></i></span>
+                        <span>Quản lý đơn hàng</span>
+                    </a>
+                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("SalesStaff") || User.IsInRole("WarehouseStaff"))
+                    {
+                        <a href="/Admin/Product" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-phone-fill"></i></span>
+                            <span>Quản lý sản phẩm</span>
+                        </a>
+                        <a href="/Admin/Category" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Category" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-diagram-3-fill"></i></span>
+                            <span>Danh mục & Hãng</span>
+                        </a>
+                        <a href="/Admin/Attributes" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attributes" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-sliders"></i></span>
+                            <span>Thông số kỹ thuật</span>
+                        </a>
+                    }
+                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("SalesStaff"))
+                    {
+                        <a href="/Admin/Media" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Media" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-images"></i></span>
+                            <span>Media & Thư viện ảnh</span>
+                        </a>
+                        <a href="/Admin/Review" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Review" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-star-half"></i></span>
+                            <span>Đánh giá & Bình luận</span>
+                        </a>
+                    }
+                </nav>
+
+                <!-- 2. Kho hàng & Kỹ thuật Thiết bị (Mục 1.2, 1.4) -->
+                <div class="tz-nav-section-title">Kho hàng & Kỹ thuật</div>
+                <nav class="nav flex-column">
+                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("WarehouseStaff"))
+                    {
+                        <a href="/Admin/Warehouse" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Warehouse" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-boxes"></i></span>
+                            <span>Thủ Kho & Vận Hành Hub</span>
+                            <span class="badge tz-badge-soft-success rounded-pill ms-auto" style="font-size: 0.65rem;">Kho</span>
+                        </a>
+                        <a href="/Admin/Inventory" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Inventory" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-upc-scan"></i></span>
+                            <span>Kho & Quản lý IMEI</span>
+                            <span class="badge tz-badge-soft-primary rounded-pill ms-auto" style="font-size: 0.65rem;">GRN</span>
+                        </a>
+                    }
+                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("Technician") || User.IsInRole("SalesStaff"))
+                    {
+                        @if (User.IsInRole("SuperAdmin") || User.IsInRole("Technician"))
+                        {
+                            <a href="/Admin/Technician" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Technician" ? "active" : "")">
+                                <span class="tz-admin-icon"><i class="bi bi-tools"></i></span>
+                                <span>Kỹ Thuật & Bảo Hành Hub</span>
+                                <span class="badge tz-badge-soft-warning rounded-pill ms-auto" style="font-size: 0.65rem;">KTV</span>
+                            </a>
+                        }
+                        <a href="/Admin/Warranty" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Warranty" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-shield-check"></i></span>
+                            <span>Bảo hành & Tiếp nhận RMA</span>
+                        </a>
+                    }
+                </nav>
+
+                <!-- 3. Khách hàng & Marketing (Mục 1.5) -->
+                @if (User.IsInRole("SuperAdmin") || User.IsInRole("SalesStaff"))
+                {
+                    <div class="tz-nav-section-title">Khách hàng & Marketing</div>
+                    <nav class="nav flex-column">
+                        <a href="/Admin/Customer" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Customer" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-people-fill"></i></span>
+                            <span>Khách hàng & CRM</span>
+                        </a>
+                        <a href="/Admin/Marketing" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Marketing" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-megaphone-fill"></i></span>
+                            <span>Khuyến mãi & Vouchers</span>
+                        </a>
+                    </nav>
+                }
+
+                <!-- 4. Tài chính & Quản trị Hệ thống (Mục 1.6, 1.7, 1.8) -->
+                @if (User.IsInRole("SuperAdmin") || User.IsInRole("Accountant"))
+                {
+                    <div class="tz-nav-section-title">Tài chính & Quản trị</div>
+                    <nav class="nav flex-column">
+                        <a href="/Admin/Reports" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Reports" ? "active" : "")">
+                            <span class="tz-admin-icon"><i class="bi bi-graph-up-arrow"></i></span>
+                            <span>Báo cáo doanh thu & Lãi</span>
+                        </a>
+                        @if (User.IsInRole("SuperAdmin"))
+                        {
+                            <a href="/Admin/Rbac" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Rbac" ? "active" : "")">
+                                <span class="tz-admin-icon"><i class="bi bi-shield-lock-fill"></i></span>
+                                <span>Phân quyền RBAC & IAM</span>
+                                <span class="badge tz-badge-soft-primary rounded-pill ms-auto" style="font-size: 0.65rem;">Chuẩn</span>
+                            </a>
+                            <a href="/Admin/Diagnostics" class="tz-admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Diagnostics" ? "active" : "")">
+                                <span class="tz-admin-icon"><i class="bi bi-activity"></i></span>
+                                <span>Giám sát & APM Logs</span>
+                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.65rem;">Live</span>
+                            </a>
+                        }
+                    </nav>
+                }
+            </div>
+
+            <!-- Bottom System Status Pill -->
+            <div class="mt-auto pt-3 border-top border-secondary border-opacity-25">
+                <div class="p-2.5 rounded-3" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06);">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="small fw-bold text-light" style="font-size: 0.76rem;">TechZone Engine</span>
+                        <span class="tz-dot-pulse bg-success"></span>
+                    </div>
+                    <div class="text-secondary" style="font-size: 0.7rem;">ASP.NET Core 10 | MongoDB 7.0</div>
+                    <div class="text-secondary" style="font-size: 0.7rem;">Redis L2 Cache | RBAC Matrix Active</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow-1 p-3 p-md-4" style="min-width: 0; max-width: 100%;">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm mb-4 border-0 bg-success bg-opacity-10 text-success" role="alert">
+                    <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm mb-4 border-0 bg-danger bg-opacity-10 text-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5 align-middle"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Keyboard shortcut ⌘K / Ctrl+K focus search
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.getElementById('tzAdminQuickSearch');
+                if (searchInput) searchInput.focus();
+            }
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

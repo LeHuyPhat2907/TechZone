@@ -1,0 +1,1014 @@
+@using TechZone.Domain.Enums
+@using TechZone.Domain.Common
+@model RbacViewModel
+@{
+    ViewData["Title"] = "Quản Trị Tài Khoản & Phân Quyền Nội Bộ (IAM - Mục 1.6)";
+    var isSuperAdmin = User.IsInRole("SuperAdmin");
+}
+
+<div class="container-fluid px-0">
+    <!-- Page Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge tz-badge-soft-primary px-2.5 py-1 rounded-pill">
+                    <i class="bi bi-shield-lock-fill me-1"></i>Mục 1.6 - Quản Trị Phân Quyền & IAM
+                </span>
+                <span class="badge bg-dark text-light rounded-pill px-2.5 py-1">staff.manage | role.manage | permission.assign | session.revoke</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-1">Quản Trị Tài Khoản & Phân Quyền Nội Bộ (IAM)</h2>
+            <p class="text-secondary small mb-0">Quản lý nhân sự các phòng ban (Sales, Kho, Kỹ thuật, Kế toán), định nghĩa Role chức danh mới, gán quyền hạn ma trận và thu hồi phiên đăng nhập.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-primary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-2xs" data-bs-toggle="modal" data-bs-target="#createRoleModal">
+                <i class="bi bi-shield-plus"></i>
+                <span>Tạo Role Mới</span>
+            </button>
+            <button type="button" class="btn btn-primary rounded-pill px-3.5 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-sm" data-bs-toggle="modal" data-bs-target="#createStaffModal">
+                <i class="bi bi-person-plus-fill"></i>
+                <span class="fw-semibold">Thêm Nhân Viên Mới</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Role Count Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-sm-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center h-100" style="border-top: 3px solid #f59e0b !important;">
+                <div class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">👑 SuperAdmin</div>
+                <div class="fs-4 fw-bold text-dark mt-1">@Model.SuperAdminCount</div>
+                <span class="badge bg-warning bg-opacity-15 text-dark rounded-pill px-2 py-0 mt-1" style="font-size: 0.65rem;">Toàn quyền hệ thống</span>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center h-100" style="border-top: 3px solid #0284c7 !important;">
+                <div class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">💼 Sales Staff</div>
+                <div class="fs-4 fw-bold text-primary mt-1">@Model.SalesStaffCount</div>
+                <span class="badge tz-badge-soft-primary rounded-pill px-2 py-0 mt-1" style="font-size: 0.65rem;">Kinh doanh & CSKH</span>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center h-100" style="border-top: 3px solid #ea580c !important;">
+                <div class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">📦 Warehouse</div>
+                <div class="fs-4 fw-bold mt-1" style="color: #ea580c;">@Model.WarehouseStaffCount</div>
+                <span class="badge bg-warning bg-opacity-15 text-dark rounded-pill px-2 py-0 mt-1" style="font-size: 0.65rem;">Kho hàng & IMEI</span>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center h-100" style="border-top: 3px solid #8b5cf6 !important;">
+                <div class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">🔧 Technician</div>
+                <div class="fs-4 fw-bold mt-1" style="color: #8b5cf6;">@Model.TechnicianCount</div>
+                <span class="badge bg-purple bg-opacity-15 text-dark rounded-pill px-2 py-0 mt-1" style="font-size: 0.65rem; background: rgba(139, 92, 246, 0.12); color: #7c3aed;">Bảo hành & Sửa chữa</span>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center h-100" style="border-top: 3px solid #059669 !important;">
+                <div class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">💰 Accountant</div>
+                <div class="fs-4 fw-bold text-success mt-1">@Model.AccountantCount</div>
+                <span class="badge tz-badge-soft-success rounded-pill px-2 py-0 mt-1" style="font-size: 0.65rem;">Tài chính & Lãi gộp</span>
+            </div>
+        </div>
+        <div class="col-6 col-sm-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center h-100" style="border-top: 3px solid #475569 !important;">
+                <div class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">🏢 Role Công Ty</div>
+                <div class="fs-4 fw-bold text-dark mt-1">@Model.TotalRolesCount</div>
+                <span class="badge bg-light text-secondary border rounded-pill px-2 py-0 mt-1" style="font-size: 0.65rem;">Tổng nhóm vai trò</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills gap-2 mb-3 bg-white p-2 rounded-4 shadow-2xs border">
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "staff" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Rbac", new { tab = "staff" })">
+                <i class="bi bi-people-fill"></i>
+                <span>Tài Khoản Nhân Viên</span>
+                <span class="badge @(Model.ActiveTab == "staff" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.TotalStaffCount</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "roles" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Rbac", new { tab = "roles" })">
+                <i class="bi bi-shield-check"></i>
+                <span>Định Nghĩa Role Công Ty</span>
+                <span class="badge @(Model.ActiveTab == "roles" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.TotalRolesCount</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "matrix" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Rbac", new { tab = "matrix" })">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+                <span>Ma Trận Phân Quyền (RBAC Matrix)</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "guardrails" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Rbac", new { tab = "guardrails" })">
+                <i class="bi bi-shield-shaded"></i>
+                <span>Giới Hạn Nghiệp Vụ Từng Role</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- ============================================================== -->
+    <!-- TAB 1: STAFF MANAGEMENT (staff.create | update | delete) -->
+    <!-- ============================================================== -->
+    @if (Model.ActiveTab == "staff")
+    {
+        <!-- Filter Toolbar -->
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+            <form method="get" class="row g-2 align-items-center">
+                <input type="hidden" name="tab" value="staff" />
+                <div class="col-12 col-md-6">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0 text-muted ps-3">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control bg-light border-start-0" 
+                               placeholder="Tìm theo họ tên, email, số điện thoại, phòng ban..."
+                               value="@Model.SearchQuery" />
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <select name="roleFilter" class="form-select form-select-sm bg-light">
+                        <option value="All" selected="@(Model.RoleFilter == "All" ? "selected" : null)">-- Tất cả vai trò --</option>
+                        <option value="SuperAdmin" selected="@(Model.RoleFilter == "SuperAdmin" ? "selected" : null)">👑 SuperAdmin</option>
+                        <option value="SalesStaff" selected="@(Model.RoleFilter == "SalesStaff" ? "selected" : null)">💼 Sales Staff</option>
+                        <option value="WarehouseStaff" selected="@(Model.RoleFilter == "WarehouseStaff" ? "selected" : null)">📦 Warehouse Staff</option>
+                        <option value="Technician" selected="@(Model.RoleFilter == "Technician" ? "selected" : null)">🔧 Technician</option>
+                        <option value="Accountant" selected="@(Model.RoleFilter == "Accountant" ? "selected" : null)">💰 Accountant</option>
+                        <option value="MarketingStaff" selected="@(Model.RoleFilter == "MarketingStaff" ? "selected" : null)">📢 Marketing Staff</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold flex-fill">
+                        <i class="bi bi-funnel-fill me-1"></i>Lọc Nhân Sự
+                    </button>
+                    <a href="@Url.Action("Index", "Rbac", new { tab = "staff" })" class="btn btn-sm btn-light border rounded-pill px-3">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Staff Table -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.04em;">
+                            <th class="ps-3 py-3">Nhân Viên Nội Bộ</th>
+                            <th>Liên Hệ & Email</th>
+                            <th>Vai Trò & Phòng Ban</th>
+                            <th>Quyền Hạn Được Gán</th>
+                            <th>Trạng Thái</th>
+                            <th>Đăng Nhập Gần Nhất</th>
+                            <th class="text-end pe-3">Thao Tác IAM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.StaffMembers.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-people fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                    Không tìm thấy nhân viên nào phù hợp với điều kiện tìm kiếm.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var user in Model.StaffMembers)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center gap-2.5">
+                                            <div class="rounded-circle text-white fw-bold d-flex align-items-center justify-content-center shadow-2xs flex-shrink-0"
+                                                 style="width: 38px; height: 38px; font-size: 0.9rem; background: @(user.Role switch {
+                                                     UserRole.SuperAdmin => "linear-gradient(135deg, #f59e0b, #d97706)",
+                                                     UserRole.SalesStaff => "linear-gradient(135deg, #0284c7, #2563eb)",
+                                                     UserRole.WarehouseStaff => "linear-gradient(135deg, #ea580c, #c2410c)",
+                                                     UserRole.Technician => "linear-gradient(135deg, #8b5cf6, #6d28d9)",
+                                                     UserRole.Accountant => "linear-gradient(135deg, #10b981, #047857)",
+                                                     UserRole.MarketingStaff => "linear-gradient(135deg, #ec4899, #be185d)",
+                                                     _ => "linear-gradient(135deg, #64748b, #475569)"
+                                                 });">
+                                                @(user.FullName.Length > 0 ? user.FullName.Substring(0, 1).ToUpper() : "U")
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark d-flex align-items-center gap-1.5">
+                                                    <span>@user.FullName</span>
+                                                    @if (user.Email.Equals("admin@techzone.vn", StringComparison.OrdinalIgnoreCase))
+                                                    {
+                                                        <span class="badge bg-warning text-dark rounded-pill" style="font-size: 0.65rem;">ROOT</span>
+                                                    }
+                                                </div>
+                                                <div class="text-muted font-monospace" style="font-size: 0.72rem;">ID: @user.Id.Substring(0, Math.Min(8, user.Id.Length))</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold text-dark"><i class="bi bi-envelope me-1.5 text-secondary"></i>@user.Email</div>
+                                        <div class="small text-muted"><i class="bi bi-telephone me-1.5 text-secondary"></i>@(string.IsNullOrEmpty(user.PhoneNumber) ? "Chưa có SĐT" : user.PhoneNumber)</div>
+                                    </td>
+                                    <td>
+                                        <div class="mb-1">
+                                            @switch (user.Role)
+                                            {
+                                                case UserRole.SuperAdmin:
+                                                    <span class="badge bg-warning bg-opacity-15 text-dark border border-warning border-opacity-25 rounded-pill px-2.5 py-1">👑 SuperAdmin</span>
+                                                    break;
+                                                case UserRole.SalesStaff:
+                                                    <span class="badge tz-badge-soft-primary rounded-pill px-2.5 py-1">💼 Sales Staff</span>
+                                                    break;
+                                                case UserRole.WarehouseStaff:
+                                                    <span class="badge rounded-pill px-2.5 py-1" style="background: rgba(234, 88, 12, 0.12); color: #c2410c; border: 1px solid rgba(234, 88, 12, 0.28); font-weight: 600;">📦 Warehouse</span>
+                                                    break;
+                                                case UserRole.Technician:
+                                                    <span class="badge rounded-pill px-2.5 py-1" style="background: rgba(139, 92, 246, 0.12); color: #7c3aed; border: 1px solid rgba(139, 92, 246, 0.28); font-weight: 600;">🔧 Technician</span>
+                                                    break;
+                                                case UserRole.Accountant:
+                                                    <span class="badge tz-badge-soft-success rounded-pill px-2.5 py-1">💰 Accountant</span>
+                                                    break;
+                                                case UserRole.MarketingStaff:
+                                                    <span class="badge rounded-pill px-2.5 py-1" style="background: rgba(236, 72, 153, 0.12); color: #be185d; border: 1px solid rgba(236, 72, 153, 0.28); font-weight: 600;">📢 Marketing</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1">@user.Role</span>
+                                                    break;
+                                            }
+                                        </div>
+                                        <div class="small text-secondary">
+                                            <i class="bi bi-building me-1"></i>@(user.Department ?? "Chưa phân ban")
+                                            @if (!string.IsNullOrEmpty(user.CustomRoleName))
+                                            {
+                                                <span class="badge bg-purple text-white rounded-pill ms-1" style="background: #9333ea; font-size: 0.65rem;">@user.CustomRoleName</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-xs btn-outline-info rounded-pill px-2.5 py-1 btn-assign-user-perms"
+                                                data-user-id="@user.Id"
+                                                data-user-name="@user.FullName"
+                                                data-perms='@System.Text.Json.JsonSerializer.Serialize(user.Permissions)'
+                                                title="Tùy biến quyền hạn cá nhân">
+                                            <i class="bi bi-key-fill me-1"></i>
+                                            <span>@(user.Role == UserRole.SuperAdmin ? "Toàn quyền (Full)" : $"{user.Permissions.Count} quyền")</span>
+                                        </button>
+                                    </td>
+                                    <td>
+                                        @if (user.IsActive)
+                                        {
+                                            <span class="badge tz-badge-soft-success rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Hoạt động
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge tz-badge-soft-danger rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-lock-fill me-1"></i>Đã khóa
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="small text-dark">@(user.LastLoginAt.HasValue ? user.LastLoginAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "Chưa đăng nhập")</div>
+                                        <span class="text-muted" style="font-size: 0.7rem;">Stamp: @user.SecurityStamp.Substring(0, Math.Min(6, user.SecurityStamp.Length))...</span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="d-inline-flex gap-1.5 align-items-center">
+                                            <!-- Edit Staff Modal Trigger -->
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 btn-edit-staff"
+                                                    data-user-id="@user.Id"
+                                                    data-user-name="@user.FullName"
+                                                    data-user-email="@user.Email"
+                                                    data-user-phone="@(user.PhoneNumber ?? "")"
+                                                    data-user-role="@((int)user.Role)"
+                                                    data-user-dept="@(user.Department ?? "")"
+                                                    data-user-customrole="@(user.CustomRoleId ?? "")"
+                                                    data-user-active="@user.IsActive.ToString().ToLower()"
+                                                    title="Chỉnh sửa thông tin nhân viên">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+
+                                            <!-- Toggle Status (Lock/Unlock) -->
+                                            @if (!user.Email.Equals("admin@techzone.vn", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                <form asp-action="ToggleUserStatus" method="post" class="d-inline m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="userId" value="@user.Id" />
+                                                    <button type="submit" class="btn btn-xs @(user.IsActive ? "btn-outline-warning" : "btn-outline-success") rounded-pill px-2 py-1"
+                                                            title="@(user.IsActive ? "Khóa tài khoản" : "Mở khóa tài khoản")"
+                                                            onclick="return confirm('Bạn có chắc muốn @(user.IsActive ? "khóa" : "mở khóa") tài khoản này?');">
+                                                        <i class="bi @(user.IsActive ? "bi-lock" : "bi-unlock")"></i>
+                                                    </button>
+                                                </form>
+
+                                                <!-- session.revoke: Force Logout / Revoke Session -->
+                                                <form asp-action="RevokeSession" method="post" class="d-inline m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="userId" value="@user.Id" />
+                                                    <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2 py-1"
+                                                            title="Buộc đăng xuất (Force Logout toàn bộ thiết bị)"
+                                                            onclick="return confirm('CẢNH BÁO: Bạn có chắc chắn muốn buộc tài khoản [@user.FullName] đăng xuất ngay lập tức khỏi mọi thiết bị?');">
+                                                        <i class="bi bi-box-arrow-right"></i>
+                                                    </button>
+                                                </form>
+
+                                                <!-- staff.delete -->
+                                                <form asp-action="DeleteStaff" method="post" class="d-inline m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="userId" value="@user.Id" />
+                                                    <button type="submit" class="btn btn-xs btn-light border text-danger rounded-pill px-2 py-1"
+                                                            title="Xóa tài khoản nhân viên"
+                                                            onclick="return confirm('CẢNH BÁO BẢO MẬT: Xóa vĩnh viễn tài khoản nhân sự [@user.FullName]?');">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- ============================================================== -->
+    <!-- TAB 2: ROLE MANAGEMENT (role.manage) -->
+    <!-- ============================================================== -->
+    @if (Model.ActiveTab == "roles")
+    {
+        <div class="row g-4 mb-4">
+            @foreach (var role in Model.Roles)
+            {
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card border-0 rounded-4 shadow-sm h-100 bg-white p-3.5 d-flex flex-column justify-content-between position-relative overflow-hidden"
+                         style="border-left: 4px solid @(role.BaseRole switch {
+                             UserRole.SuperAdmin => "#f59e0b",
+                             UserRole.SalesStaff => "#0284c7",
+                             UserRole.WarehouseStaff => "#ea580c",
+                             UserRole.Technician => "#8b5cf6",
+                             UserRole.Accountant => "#10b981",
+                             UserRole.MarketingStaff => "#ec4899",
+                             _ => "#64748b"
+                         }) !important;">
+                        
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-1">@role.Name</h5>
+                                    <div class="d-flex align-items-center gap-1.5">
+                                        <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.72rem;">@role.Code</span>
+                                        @if (role.IsSystem)
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size: 0.68rem;">Hệ thống mặc định</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.68rem;">Role Doanh Nghiệp</span>
+                                        }
+                                    </div>
+                                </div>
+                                <span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1">
+                                    <i class="bi bi-people-fill me-1"></i>@role.UserCount nhân sự
+                                </span>
+                            </div>
+
+                            <p class="text-secondary small mb-3" style="min-height: 40px;">
+                                @(string.IsNullOrEmpty(role.Description) ? "Không có mô tả chi tiết chức năng." : role.Description)
+                            </p>
+
+                            <div class="bg-light p-2.5 rounded-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-secondary small fw-semibold">Phòng ban quản lý:</span>
+                                    <span class="fw-bold small text-dark">@(role.Department ?? "Chung")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-secondary small fw-semibold">Quyền hạn kích hoạt:</span>
+                                    <span class="badge bg-primary rounded-pill px-2 py-0.5">@role.Permissions.Count quyền</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                            <button type="button" class="btn btn-xs btn-outline-info rounded-pill px-3 py-1 btn-assign-role-perms"
+                                    data-role-id="@role.Id"
+                                    data-role-name="@role.Name"
+                                    data-perms='@System.Text.Json.JsonSerializer.Serialize(role.Permissions)'>
+                                <i class="bi bi-sliders me-1"></i>Phân Quyền (@role.Permissions.Count)
+                            </button>
+
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 btn-edit-role"
+                                        data-role-id="@role.Id"
+                                        data-role-name="@role.Name"
+                                        data-role-desc="@(role.Description ?? "")"
+                                        data-role-dept="@(role.Department ?? "")"
+                                        data-role-issystem="@role.IsSystem.ToString().ToLower()"
+                                        title="Chỉnh sửa vai trò">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                @if (!role.IsSystem)
+                                {
+                                    <form asp-action="DeleteRole" method="post" class="d-inline m-0" onsubmit="return confirm('Bạn có chắc chắn muốn xóa Role doanh nghiệp [@role.Name]?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="roleId" value="@role.Id" />
+                                        <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2 py-1" title="Xóa Role">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- ============================================================== -->
+    <!-- TAB 3: RBAC MATRIX (Table 7 trong đặc tả) -->
+    <!-- ============================================================== -->
+    @if (Model.ActiveTab == "matrix")
+    {
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="card-header bg-light border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold text-dark m-0">Ma Trận Phân Quyền Tổng Hợp Toàn Nền Tảng (RBAC Permission Matrix)</h5>
+                    <small class="text-muted">Đối chiếu chi tiết 8 phân hệ đặc tả giữa 7 nhóm chức danh nội bộ & Khách hàng</small>
+                </div>
+                <span class="badge bg-primary text-white rounded-pill px-3 py-1">Chuẩn ISO/IEC 27001</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0 border">
+                    <thead style="background-color: #f8fafc; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.04em; color: #475569;">
+                        <tr>
+                            <th class="ps-3 py-3" style="min-width: 260px;">Phân Hệ & Mã Quyền Hạn (Permission)</th>
+                            <th class="py-3 text-center" style="min-width: 100px;">Customer<br/><small class="text-muted text-lowercase">(Khách)</small></th>
+                            <th class="py-3 text-center" style="min-width: 100px;">Sales<br/><small class="text-muted text-lowercase">(Bán hàng)</small></th>
+                            <th class="py-3 text-center" style="min-width: 100px;">Warehouse<br/><small class="text-muted text-lowercase">(Thủ kho)</small></th>
+                            <th class="py-3 text-center" style="min-width: 100px;">Technician<br/><small class="text-muted text-lowercase">(Kỹ thuật)</small></th>
+                            <th class="py-3 text-center" style="min-width: 100px;">Accountant<br/><small class="text-muted text-lowercase">(Kế toán)</small></th>
+                            <th class="py-3 text-center" style="min-width: 100px;">Marketing<br/><small class="text-muted text-lowercase">(Tiếp thị)</small></th>
+                            <th class="py-3 text-center pe-3" style="min-width: 100px;">Admin<br/><small class="text-muted text-lowercase">(Quản trị)</small></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var group in Model.PermissionGroups)
+                        {
+                            <tr class="table-light">
+                                <td colspan="8" class="ps-3 py-2 fw-bold text-dark">
+                                    <i class="bi @group.Icon me-1.5 text-primary"></i>@group.Category
+                                </td>
+                            </tr>
+                            @foreach (var p in group.Permissions)
+                            {
+                                var defaultSales = AppPermissions.GetDefaultPermissionsForRole(UserRole.SalesStaff).Contains(p.Code);
+                                var defaultWarehouse = AppPermissions.GetDefaultPermissionsForRole(UserRole.WarehouseStaff).Contains(p.Code);
+                                var defaultTech = AppPermissions.GetDefaultPermissionsForRole(UserRole.Technician).Contains(p.Code);
+                                var defaultAccountant = AppPermissions.GetDefaultPermissionsForRole(UserRole.Accountant).Contains(p.Code);
+                                var defaultMarketing = AppPermissions.GetDefaultPermissionsForRole(UserRole.MarketingStaff).Contains(p.Code);
+                                var defaultCustomer = p.Code == AppPermissions.CategoryView || p.Code == AppPermissions.ProductView;
+
+                                <tr>
+                                    <td class="ps-3 py-2">
+                                        <div class="fw-bold text-dark">@p.Name</div>
+                                        <span class="text-muted font-monospace" style="font-size: 0.7rem;">@p.Code</span>
+                                        <div class="text-secondary" style="font-size: 0.68rem;">@p.Description</div>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (defaultCustomer) { <span class="badge tz-badge-soft-success rounded-pill px-2 py-0.5"><i class="bi bi-check-lg"></i></span> } else { <span class="text-danger small"><i class="bi bi-x-lg"></i></span> }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (defaultSales) { <span class="badge tz-badge-soft-success rounded-pill px-2 py-0.5"><i class="bi bi-check-lg"></i></span> } else { <span class="text-danger small"><i class="bi bi-x-lg"></i></span> }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (defaultWarehouse) { <span class="badge tz-badge-soft-success rounded-pill px-2 py-0.5"><i class="bi bi-check-lg"></i></span> } else { <span class="text-danger small"><i class="bi bi-x-lg"></i></span> }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (defaultTech) { <span class="badge tz-badge-soft-success rounded-pill px-2 py-0.5"><i class="bi bi-check-lg"></i></span> } else { <span class="text-danger small"><i class="bi bi-x-lg"></i></span> }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (defaultAccountant) { <span class="badge tz-badge-soft-success rounded-pill px-2 py-0.5"><i class="bi bi-check-lg"></i></span> } else { <span class="text-danger small"><i class="bi bi-x-lg"></i></span> }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (defaultMarketing) { <span class="badge tz-badge-soft-success rounded-pill px-2 py-0.5"><i class="bi bi-check-lg"></i></span> } else { <span class="text-danger small"><i class="bi bi-x-lg"></i></span> }
+                                    </td>
+                                    <td class="text-center pe-3">
+                                        <span class="badge bg-warning bg-opacity-25 text-dark border border-warning rounded-pill px-2 py-0.5"><i class="bi bi-check-all"></i> Full</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- ============================================================== -->
+    <!-- TAB 4: GUARDRAILS & POLICY CONSTRAINTS -->
+    <!-- ============================================================== -->
+    @if (Model.ActiveTab == "guardrails")
+    {
+        <div class="row g-4 mb-4">
+            <!-- Technician Guardrail -->
+            <div class="col-12 col-md-6">
+                <div class="card border-0 rounded-4 shadow-sm p-4 h-100" style="background: #faf5ff; border: 1px solid rgba(139, 92, 246, 0.2) !important;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="tz-stat-icon-wrapper" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(139, 92, 246, 0.15); color: #7c3aed;">
+                            <i class="bi bi-wrench"></i>
+                        </span>
+                        <h6 class="fw-bold text-dark m-0">Kỹ Thuật Viên / Bảo Hành (Technician)</h6>
+                    </div>
+                    <ul class="list-unstyled small text-secondary d-flex flex-column gap-2 mb-0">
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn sửa giá niêm yết:</strong> Không được quyền thay đổi giá bán lẻ hoặc giá niêm yết sản phẩm.</li>
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn tự duyệt hoàn tiền:</strong> Mọi khoản bồi hoàn phải qua Kế toán & Admin duyệt.</li>
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn chỉnh sửa tồn kho máy mới:</strong> Chỉ được quản lý kho linh kiện thay thế (spare parts).</li>
+                        <li><i class="bi bi-shield-lock-fill text-primary me-2"></i><strong>Bảo mật thông tin thanh toán:</strong> Mọi chi tiết thẻ, giao dịch chuyển khoản của khách hàng đều bị ẩn/làm mờ.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Warehouse Guardrail -->
+            <div class="col-12 col-md-6">
+                <div class="card border-0 rounded-4 shadow-sm p-4 h-100" style="background: #fff7ed; border: 1px solid rgba(234, 88, 12, 0.2) !important;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="tz-stat-icon-wrapper" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(234, 88, 12, 0.15); color: #c2410c;">
+                            <i class="bi bi-box-seam"></i>
+                        </span>
+                        <h6 class="fw-bold text-dark m-0">Thủ Kho / Quản Lý Kho (Warehouse Staff)</h6>
+                    </div>
+                    <ul class="list-unstyled small text-secondary d-flex flex-column gap-2 mb-0">
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn chỉnh sửa giá bán & giá nhập:</strong> Giá do Admin và Giám đốc ngành hàng thiết lập.</li>
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn xóa trắng tồn kho:</strong> Chỉ được xuất/nhập/điều chỉnh theo quy trình có ghi log kiểm kê.</li>
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn tạo đơn bán lẻ:</strong> Không được trực tiếp bán hàng hoặc tạo đơn hàng thương mại.</li>
+                        <li><i class="bi bi-shield-lock-fill text-primary me-2"></i><strong>Bảo mật báo cáo tài chính:</strong> Bị ẩn thẻ doanh thu tổng và báo cáo tài chính trên Dashboard.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Sales Guardrail -->
+            <div class="col-12 col-md-6">
+                <div class="card border-0 rounded-4 shadow-sm p-4 h-100" style="background: #f0f9ff; border: 1px solid rgba(2, 132, 199, 0.2) !important;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="tz-stat-icon-wrapper" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(2, 132, 199, 0.15); color: #0284c7;">
+                            <i class="bi bi-headset"></i>
+                        </span>
+                        <h6 class="fw-bold text-dark m-0">Nhân Viên Bán Hàng & Xử Lý Đơn (Sales)</h6>
+                    </div>
+                    <ul class="list-unstyled small text-secondary d-flex flex-column gap-2 mb-0">
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn gõ tay sửa giá niêm yết:</strong> Phải bán đúng giá niêm yết hoặc áp mã voucher hợp lệ.</li>
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn xóa vĩnh viễn đơn hàng:</strong> Chỉ được đánh dấu hủy đơn, không được xóa vết đơn trong DB.</li>
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn can thiệp tồn kho vật lý:</strong> Chỉ được tra cứu tồn kho khả dụng để tư vấn khách.</li>
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn tự gán IMEI thiết bị:</strong> Khâu quét mã IMEI phải do Thủ kho trực tiếp thực hiện lúc đóng gói.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Accountant Guardrail -->
+            <div class="col-12 col-md-6">
+                <div class="card border-0 rounded-4 shadow-sm p-4 h-100" style="background: #f0fdf4; border: 1px solid rgba(16, 185, 129, 0.2) !important;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="tz-stat-icon-wrapper" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); color: #059669;">
+                            <i class="bi bi-cash-stack"></i>
+                        </span>
+                        <h6 class="fw-bold text-dark m-0">Kế Toán & Quản Lý Dòng Tiền (Accountant)</h6>
+                    </div>
+                    <ul class="list-unstyled small text-secondary d-flex flex-column gap-2 mb-0">
+                        <li><i class="bi bi-shield-check text-success me-2"></i><strong>Đặc quyền bồi hoàn (Refund Approval):</strong> Có thẩm quyền duyệt giải ngân tiền hoàn trả khách.</li>
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn tự ý sửa thông số kỹ thuật thiết bị:</strong> Thuộc phạm vi chuyên trách của Quản lý sản phẩm.</li>
+                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i><strong>Chặn xóa đơn hàng:</strong> Mọi giao dịch kinh doanh đều phải lưu giữ để phục vụ đối soát thuế.</li>
+                        <li><i class="bi bi-shield-lock-fill text-primary me-2"></i><strong>Độc lập kiểm toán:</strong> Mọi thao tác xuất báo cáo tài chính đều được lưu trong Security Audit Log.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: CREATE STAFF (staff.create) -->
+<!-- ============================================================== -->
+<div class="modal fade" id="createStaffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="CreateStaff" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Thêm Tài Khoản Nhân Viên Mới</h5>
+                        <span class="text-muted small">Cấp phát tài khoản cho Sales, Kho, Kỹ thuật hoặc Kế toán</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Họ và tên nhân viên <span class="text-danger">*</span></label>
+                            <input type="text" name="FullName" class="form-control rounded-3" placeholder="VD: Nguyễn Văn An" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Email đăng nhập (Công ty) <span class="text-danger">*</span></label>
+                            <input type="email" name="Email" class="form-control rounded-3" placeholder="VD: an.nguyen@techzone.vn" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Số điện thoại</label>
+                            <input type="text" name="PhoneNumber" class="form-control rounded-3" placeholder="VD: 0912345678" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Mật khẩu khởi tạo <span class="text-danger">*</span></label>
+                            <input type="password" name="Password" class="form-control rounded-3" placeholder="Mật khẩu ít nhất 6 ký tự" required />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Vai trò cốt lõi (Base Role) <span class="text-danger">*</span></label>
+                            <select name="Role" class="form-select rounded-3">
+                                <option value="SalesStaff">💼 Bán Hàng & CSKH (Sales)</option>
+                                <option value="WarehouseStaff">📦 Thủ Kho & IMEI (Warehouse)</option>
+                                <option value="Technician">🔧 Kỹ Thuật Viên (Technician)</option>
+                                <option value="Accountant">💰 Kế Toán (Accountant)</option>
+                                <option value="MarketingStaff">📢 Marketing & SEO (Marketing)</option>
+                                <option value="SuperAdmin">👑 Quản Trị Viên (SuperAdmin)</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Chức danh mở rộng (Role Doanh nghiệp)</label>
+                            <select name="CustomRoleId" class="form-select rounded-3">
+                                <option value="">-- Mặc định theo Base Role --</option>
+                                @foreach (var r in Model.Roles.Where(r => !r.IsSystem))
+                                {
+                                    <option value="@r.Id">@r.Name (@r.Code)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Phòng ban</label>
+                            <input type="text" name="Department" class="form-control rounded-3" placeholder="VD: Kinh Doanh, Kho Vận, Kỹ Thuật" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-person-check-fill me-1"></i>Tạo Tài Khoản
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: UPDATE STAFF (staff.update) -->
+<!-- ============================================================== -->
+<div class="modal fade" id="updateStaffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="UpdateStaff" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="UserId" id="editStaffUserId" />
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Cập Nhật Hồ Sơ Nhân Viên</h5>
+                        <span class="text-muted small" id="editStaffHeaderEmail"></span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Họ và tên nhân viên <span class="text-danger">*</span></label>
+                            <input type="text" name="FullName" id="editStaffFullName" class="form-control rounded-3" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Số điện thoại</label>
+                            <input type="text" name="PhoneNumber" id="editStaffPhone" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Vai trò cốt lõi (Role)</label>
+                            <select name="Role" id="editStaffRole" class="form-select rounded-3">
+                                <option value="1">💼 Sales Staff</option>
+                                <option value="2">📦 Warehouse Staff</option>
+                                <option value="3">🔧 Technician</option>
+                                <option value="5">💰 Accountant</option>
+                                <option value="4">📢 Marketing Staff</option>
+                                <option value="6">👑 SuperAdmin</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Role Doanh nghiệp</label>
+                            <select name="CustomRoleId" id="editStaffCustomRole" class="form-select rounded-3">
+                                <option value="">-- Mặc định theo Role --</option>
+                                @foreach (var r in Model.Roles.Where(r => !r.IsSystem))
+                                {
+                                    <option value="@r.Id">@r.Name (@r.Code)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Phòng ban</label>
+                            <input type="text" name="Department" id="editStaffDept" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Đặt lại mật khẩu mới (Bỏ trống nếu không đổi)</label>
+                            <input type="password" name="NewPassword" class="form-control rounded-3" placeholder="Nhập mật khẩu mới nếu muốn reset..." />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="editStaffIsActive">
+                                <label class="form-check-label fw-semibold small text-success" for="editStaffIsActive">Tài khoản được phép hoạt động & đăng nhập</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-save me-1"></i>Lưu Thay Đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: CREATE ROLE (role.manage) -->
+<!-- ============================================================== -->
+<div class="modal fade" id="createRoleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="CreateRole" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Tạo Nhóm Vai Trò (Role) Doanh Nghiệp Mới</h5>
+                        <span class="text-muted small">Định nghĩa chức danh công ty và gán danh mục quyền hạn tương ứng</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Tên vai trò mới <span class="text-danger">*</span></label>
+                            <input type="text" name="Name" class="form-control rounded-3" placeholder="VD: Trưởng Phòng Kinh Doanh, Kế Toán Trưởng..." required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Mã định danh Role (Code) <span class="text-danger">*</span></label>
+                            <input type="text" name="Code" class="form-control font-monospace text-uppercase rounded-3" placeholder="VD: SALES_LEAD, CHIEF_ACCOUNTANT..." required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Khuôn mẫu cơ sở (Base Role) <span class="text-danger">*</span></label>
+                            <select name="BaseRole" class="form-select rounded-3">
+                                <option value="SalesStaff">💼 Bán Hàng & CSKH (Sales)</option>
+                                <option value="WarehouseStaff">📦 Thủ Kho & IMEI (Warehouse)</option>
+                                <option value="Technician">🔧 Kỹ Thuật Viên (Technician)</option>
+                                <option value="Accountant">💰 Kế Toán (Accountant)</option>
+                                <option value="MarketingStaff">📢 Marketing & SEO (Marketing)</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Phòng ban phụ trách</label>
+                            <input type="text" name="Department" class="form-control rounded-3" placeholder="VD: Khối Kinh Doanh, Phòng Kỹ Thuật..." />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Mô tả trách nhiệm & quyền hạn</label>
+                            <input type="text" name="Description" class="form-control rounded-3" placeholder="VD: Chịu trách nhiệm duyệt đơn hàng lớn, xử lý sự cố địa chỉ giao hàng và đổi trả..." />
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <span class="fw-bold small text-dark text-uppercase">Danh mục quyền hạn gán cho Role</span>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2" onclick="toggleAllCheckboxes('createRolePerms', true)">Chọn tất cả</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2" onclick="toggleAllCheckboxes('createRolePerms', false)">Bỏ chọn</button>
+                        </div>
+                    </div>
+
+                    <div id="createRolePerms" style="max-height: 280px; overflow-y: auto;" class="pe-2">
+                        @foreach (var g in Model.PermissionGroups)
+                        {
+                            <div class="card border rounded-3 p-2.5 bg-light mb-2">
+                                <div class="fw-bold small text-dark mb-2">
+                                    <i class="bi @g.Icon me-1 text-primary"></i>@g.Category
+                                </div>
+                                <div class="row g-2">
+                                    @foreach (var p in g.Permissions)
+                                    {
+                                        <div class="col-12 col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="Permissions" value="@p.Code" id="chkCreateRole_@p.Code.Replace('.', '_')" />
+                                                <label class="form-check-label small" for="chkCreateRole_@p.Code.Replace('.', '_')">
+                                                    <span class="fw-semibold text-dark">@p.Name</span>
+                                                    <span class="text-muted d-block" style="font-size: 0.68rem;">@p.Code</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-shield-check me-1"></i>Lưu & Tạo Role
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: EDIT ROLE (role.manage) -->
+<!-- ============================================================== -->
+<div class="modal fade" id="updateRoleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="UpdateRole" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="RoleId" id="editRoleId" />
+                <div class="modal-header border-bottom py-3 px-4">
+                    <h5 class="modal-title fw-bold text-dark mb-0">Chỉnh Sửa Nhóm Vai Trò</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Tên vai trò <span class="text-danger">*</span></label>
+                        <input type="text" name="Name" id="editRoleName" class="form-control rounded-3" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Phòng ban</label>
+                        <input type="text" name="Department" id="editRoleDept" class="form-control rounded-3" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Mô tả trách nhiệm</label>
+                        <textarea name="Description" id="editRoleDesc" class="form-control rounded-3" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-save me-1"></i>Lưu Thay Đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: DYNAMIC PERMISSION ASSIGNMENT (permission.assign) -->
+<!-- ============================================================== -->
+<div class="modal fade" id="assignPermsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="AssignPermissions" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="TargetType" id="assignPermTargetType" />
+                <input type="hidden" name="TargetId" id="assignPermTargetId" />
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="assignPermHeaderTitle">Gán & Thu Hồi Quyền Hạn Cụ Thể</h5>
+                        <span class="text-muted small" id="assignPermHeaderSub"></span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <span class="fw-semibold small text-secondary text-uppercase">Danh mục quyền hạn khả dụng</span>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5" onclick="toggleAllCheckboxes('assignPermsContainer', true)">Chọn tất cả</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5" onclick="toggleAllCheckboxes('assignPermsContainer', false)">Bỏ chọn tất cả</button>
+                        </div>
+                    </div>
+
+                    <div id="assignPermsContainer" style="max-height: 380px; overflow-y: auto;" class="pe-2">
+                        @foreach (var g in Model.PermissionGroups)
+                        {
+                            <div class="card border rounded-3 p-3 bg-light mb-3">
+                                <div class="fw-bold small text-dark mb-2.5 d-flex align-items-center gap-1.5">
+                                    <i class="bi @g.Icon text-primary"></i>
+                                    <span>@g.Category</span>
+                                    <span class="badge bg-white text-secondary border rounded-pill ms-auto" style="font-size: 0.68rem;">@g.Permissions.Count quyền</span>
+                                </div>
+                                <div class="row g-2">
+                                    @foreach (var p in g.Permissions)
+                                    {
+                                        <div class="col-12 col-md-6">
+                                            <div class="form-check p-2 bg-white rounded-3 border">
+                                                <input class="form-check-input perm-chk ms-1" type="checkbox" name="Permissions" value="@p.Code" id="chkAssign_@p.Code.Replace('.', '_')" />
+                                                <label class="form-check-label small ms-2" for="chkAssign_@p.Code.Replace('.', '_')">
+                                                    <span class="fw-semibold text-dark d-block">@p.Name</span>
+                                                    <span class="text-muted font-monospace" style="font-size: 0.68rem;">@p.Code</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-shield-check me-1"></i>Lưu Phân Quyền
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleAllCheckboxes(containerId, check) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = check);
+            }
+        }
+
+        // Bind Edit Staff Modal
+        document.querySelectorAll('.btn-edit-staff').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.getElementById('editStaffUserId').value = this.getAttribute('data-user-id');
+                document.getElementById('editStaffFullName').value = this.getAttribute('data-user-name');
+                document.getElementById('editStaffHeaderEmail').innerText = `Email: ${this.getAttribute('data-user-email')}`;
+                document.getElementById('editStaffPhone').value = this.getAttribute('data-user-phone') || '';
+                document.getElementById('editStaffRole').value = this.getAttribute('data-user-role');
+                document.getElementById('editStaffDept').value = this.getAttribute('data-user-dept') || '';
+                document.getElementById('editStaffCustomRole').value = this.getAttribute('data-user-customrole') || '';
+                document.getElementById('editStaffIsActive').checked = this.getAttribute('data-user-active') === 'true';
+
+                const modal = new bootstrap.Modal(document.getElementById('updateStaffModal'));
+                modal.show();
+            });
+        });
+
+        // Bind Edit Role Modal
+        document.querySelectorAll('.btn-edit-role').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.getElementById('editRoleId').value = this.getAttribute('data-role-id');
+                document.getElementById('editRoleName').value = this.getAttribute('data-role-name');
+                document.getElementById('editRoleDept').value = this.getAttribute('data-role-dept') || '';
+                document.getElementById('editRoleDesc').value = this.getAttribute('data-role-desc') || '';
+
+                const modal = new bootstrap.Modal(document.getElementById('updateRoleModal'));
+                modal.show();
+            });
+        });
+
+        // Bind Assign User Permissions
+        document.querySelectorAll('.btn-assign-user-perms').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const userId = this.getAttribute('data-user-id');
+                const userName = this.getAttribute('data-user-name');
+                const perms = JSON.parse(this.getAttribute('data-perms') || '[]');
+
+                document.getElementById('assignPermTargetType').value = 'User';
+                document.getElementById('assignPermTargetId').value = userId;
+                document.getElementById('assignPermHeaderTitle').innerText = `Phân Quyền Cho Nhân Viên: ${userName}`;
+                document.getElementById('assignPermHeaderSub').innerText = 'Tùy biến quyền hạn đặc thù ghi đè cho tài khoản cá nhân';
+
+                // Check active permissions
+                document.querySelectorAll('#assignPermsContainer .perm-chk').forEach(chk => {
+                    chk.checked = perms.includes(chk.value);
+                });
+
+                const modal = new bootstrap.Modal(document.getElementById('assignPermsModal'));
+                modal.show();
+            });
+        });
+
+        // Bind Assign Role Permissions
+        document.querySelectorAll('.btn-assign-role-perms').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const roleId = this.getAttribute('data-role-id');
+                const roleName = this.getAttribute('data-role-name');
+                const perms = JSON.parse(this.getAttribute('data-perms') || '[]');
+
+                document.getElementById('assignPermTargetType').value = 'Role';
+                document.getElementById('assignPermTargetId').value = roleId;
+                document.getElementById('assignPermHeaderTitle').innerText = `Phân Quyền Cho Role: ${roleName}`;
+                document.getElementById('assignPermHeaderSub').innerText = 'Mọi nhân sự được gán Role này sẽ tự động kế thừa bộ quyền bên dưới';
+
+                // Check active permissions
+                document.querySelectorAll('#assignPermsContainer .perm-chk').forEach(chk => {
+                    chk.checked = perms.includes(chk.value);
+                });
+
+                const modal = new bootstrap.Modal(document.getElementById('assignPermsModal'));
+                modal.show();
+            });
+        });
+    </script>
+}

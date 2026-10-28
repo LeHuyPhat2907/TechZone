@@ -1,0 +1,307 @@
+@model TechZone.Web.Areas.Admin.Models.DiagnosticsViewModel
+@{
+    ViewData["Title"] = "Giám Sát & Chẩn Đoán Hệ Thống";
+}
+
+<div class="container-fluid py-4 px-md-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb small mb-1">
+                    <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="text-decoration-none">Admin</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Giám sát & Chẩn đoán</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                <i class="bi bi-activity text-danger"></i> Giám Sát & Chẩn Đoán Hệ Thống (APM & Logging)
+            </h3>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/health" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm">
+                <i class="bi bi-heart-pulse-fill me-1"></i>Probe: /health
+            </a>
+            <a asp-action="DownloadLog" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
+                <i class="bi bi-download me-1"></i>Tải Tệp Log (.log)
+            </a>
+            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Làm Mới
+            </button>
+        </div>
+    </div>
+
+    <!-- Health & Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <!-- MongoDB Health -->
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold">Cơ sở dữ liệu MongoDB</span>
+                    @if (Model.IsMongoDbHealthy)
+                    {
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                            <i class="bi bi-check-circle-fill me-1"></i>Healthy
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">
+                            <i class="bi bi-x-circle-fill me-1"></i>Unhealthy
+                        </span>
+                    }
+                </div>
+                <div class="d-flex align-items-baseline gap-2">
+                    <div class="fs-4 fw-bold @(Model.IsMongoDbHealthy ? "text-success" : "text-danger")">
+                        @(Model.IsMongoDbHealthy ? $"{Model.MongoDbPingMs} ms" : "Disconnected")
+                    </div>
+                </div>
+                <small class="text-muted mt-1" style="font-size: 0.72rem;">MongoDB 7.0 (Sharding & Replica Ready)</small>
+            </div>
+        </div>
+
+        <!-- Redis Cache Health -->
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold">Bộ nhớ đệm Redis Cache</span>
+                    @if (Model.IsRedisHealthy)
+                    {
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                            <i class="bi bi-lightning-charge-fill me-1"></i>Connected
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Degraded
+                        </span>
+                    }
+                </div>
+                <div class="d-flex align-items-baseline gap-2">
+                    <div class="fs-4 fw-bold @(Model.IsRedisHealthy ? "text-primary" : "text-warning")">
+                        @(Model.IsRedisHealthy ? $"{Model.RedisPingMs} ms" : "Fallback Memory")
+                    </div>
+                </div>
+                <small class="text-muted mt-1" style="font-size: 0.72rem;">Redis 7.2 + In-Memory Resilient Cache</small>
+            </div>
+        </div>
+
+        <!-- Memory Working Set -->
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold">Bộ nhớ tiến trình (RAM)</span>
+                    <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">Process</span>
+                </div>
+                <div class="fs-4 fw-bold text-dark">
+                    @Model.MemoryUsageMb MB
+                </div>
+                <small class="text-muted mt-1" style="font-size: 0.72rem;">Máy chủ: @Model.MachineName</small>
+            </div>
+        </div>
+
+        <!-- Uptime -->
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold">Thời gian hoạt động (Uptime)</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Active</span>
+                </div>
+                <div class="fs-5 fw-bold text-dark text-truncate" title="@Model.UptimeFormatted">
+                    @Model.UptimeFormatted
+                </div>
+                <small class="text-muted mt-1" style="font-size: 0.72rem;">.NET Core: @Model.DotNetVersion</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Viewer Card -->
+    <div class="card border-0 rounded-4 shadow-sm p-4 bg-white">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div>
+                <h5 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-terminal-split text-primary"></i> Nhật Ký Hệ Thống (Structured Log Stream)
+                </h5>
+                <small class="text-muted">Được ghi nhận thời gian thực qua Serilog Rolling File (`logs/techzone-app-*.log`)</small>
+            </div>
+
+            <!-- Severity Pills -->
+            <div class="d-flex gap-2">
+                <a asp-action="Index" asp-route-level="all" asp-route-search="@Model.SearchKeyword" class="btn btn-sm rounded-pill px-3 @(Model.CurrentLevel == "all" ? "btn-dark" : "btn-light border")">
+                    Tất cả (@Model.TotalLogsCount)
+                </a>
+                <a asp-action="Index" asp-route-level="error" asp-route-search="@Model.SearchKeyword" class="btn btn-sm rounded-pill px-3 @(Model.CurrentLevel == "error" ? "btn-danger" : "btn-light border text-danger")">
+                    <i class="bi bi-x-circle-fill me-1"></i>Lỗi (@Model.ErrorLogsCount)
+                </a>
+                <a asp-action="Index" asp-route-level="warning" asp-route-search="@Model.SearchKeyword" class="btn btn-sm rounded-pill px-3 @(Model.CurrentLevel == "warning" ? "btn-warning text-dark" : "btn-light border text-warning")">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Cảnh báo (@Model.WarningLogsCount)
+                </a>
+                <a asp-action="Index" asp-route-level="info" asp-route-search="@Model.SearchKeyword" class="btn btn-sm rounded-pill px-3 @(Model.CurrentLevel == "info" ? "btn-primary" : "btn-light border text-primary")">
+                    <i class="bi bi-info-circle-fill me-1"></i>Thông tin (@Model.InfoLogsCount)
+                </a>
+            </div>
+        </div>
+
+        <!-- Filter Search Bar -->
+        <form method="get" class="row g-2 align-items-center mb-3">
+            <input type="hidden" name="level" value="@Model.CurrentLevel" />
+            <div class="col-md-9">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" value="@Model.SearchKeyword" class="form-control form-control-sm border-start-0" placeholder="Tìm kiếm theo Correlation ID (tz-corr-...), thông điệp lỗi hoặc nội dung log..." />
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 flex-fill">
+                    <i class="bi bi-funnel-fill me-1"></i>Lọc Dữ Liệu
+                </button>
+                @if (!string.IsNullOrWhiteSpace(Model.SearchKeyword))
+                {
+                    <a asp-action="Index" asp-route-level="@Model.CurrentLevel" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                        Xóa lọc
+                    </a>
+                }
+            </div>
+        </form>
+
+        <!-- Logs Table -->
+        <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+            <table class="table table-hover align-middle small mb-0 font-monospace" style="font-size: 0.82rem;">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th style="width: 140px;">Thời Gian</th>
+                        <th style="width: 80px;" class="text-center">Mức Độ</th>
+                        <th style="width: 170px;">Correlation ID</th>
+                        <th>Nội Dung Sự Kiện</th>
+                        <th style="width: 90px;" class="text-center">Chi Tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.LogEntries.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-check2-circle text-success fs-1 d-block mb-2"></i>
+                                Không có bản ghi nhật ký nào phù hợp với bộ lọc hiện tại.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @for (int i = 0; i < Model.LogEntries.Count; i++)
+                        {
+                            var entry = Model.LogEntries[i];
+                            var badgeClass = entry.Level switch
+                            {
+                                "ERR" or "FTL" => "bg-danger text-white",
+                                "WRN" => "bg-warning text-dark",
+                                _ => "bg-primary-subtle text-primary border border-primary-subtle"
+                            };
+
+                            <tr>
+                                <td class="text-muted">@entry.Timestamp.ToString("HH:mm:ss.fff")</td>
+                                <td class="text-center">
+                                    <span class="badge @badgeClass fw-bold px-2 py-1">@entry.Level</span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(entry.CorrelationId))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-light border px-2 py-0 font-monospace text-dark text-truncate" style="max-width: 160px; font-size: 0.72rem;" onclick="copyCorrelationId('@entry.CorrelationId')" title="Nhấp để copy Correlation ID">
+                                            <i class="bi bi-fingerprint text-primary me-1"></i>@entry.CorrelationId
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" style="font-size: 0.72rem;">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="text-break">@entry.Message</div>
+                                </td>
+                                <td class="text-center">
+                                    @if (!string.IsNullOrWhiteSpace(entry.Exception))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger px-2 py-0" style="font-size: 0.72rem;" onclick="viewStackTrace(@i)" title="Xem Stack Trace">
+                                            <i class="bi bi-bug"></i> Trace
+                                        </button>
+                                        <div id="stackTrace_@i" class="d-none">@entry.Exception</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xem Chi Tiết Stack Trace / Exception -->
+<div class="modal fade" id="stackTraceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h6 class="modal-title fw-bold" id="stackTraceModalLabel">
+                    <i class="bi bi-bug-fill text-danger me-2"></i>Exception Stack Trace Chi Tiết
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <pre id="stackTraceContent" class="p-3 bg-dark text-warning rounded-3 small font-monospace text-wrap mb-0" style="max-height: 480px; overflow-y: auto;"></pre>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" onclick="copyStackTraceText()">
+                    <i class="bi bi-clipboard me-1"></i>Copy Stack Trace
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Thông Báo -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3 z-3">
+    <div id="diagToast" class="toast align-items-center text-white bg-dark border-0 rounded-4 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body d-flex align-items-center gap-2" id="diagToastMessage">
+                <i class="bi bi-check-circle-fill text-success fs-5"></i> Thành công.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function showDiagToast(msg) {
+            const toastEl = document.getElementById('diagToast');
+            document.getElementById('diagToastMessage').innerHTML = `<i class="bi bi-check-circle-fill text-success fs-5"></i> ${msg}`;
+            const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+            toast.show();
+        }
+
+        function copyCorrelationId(id) {
+            navigator.clipboard.writeText(id).then(() => {
+                showDiagToast('Đã copy Correlation ID: ' + id);
+            });
+        }
+
+        function viewStackTrace(index) {
+            const rawTrace = document.getElementById('stackTrace_' + index)?.innerText || '';
+            document.getElementById('stackTraceContent').innerText = rawTrace;
+            const modal = new bootstrap.Modal(document.getElementById('stackTraceModal'));
+            modal.show();
+        }
+
+        function copyStackTraceText() {
+            const trace = document.getElementById('stackTraceContent').innerText;
+            navigator.clipboard.writeText(trace).then(() => {
+                showDiagToast('Đã copy toàn bộ Stack Trace vào Clipboard.');
+            });
+        }
+    </script>
+}

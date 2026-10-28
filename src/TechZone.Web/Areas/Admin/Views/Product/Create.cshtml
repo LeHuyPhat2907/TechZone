@@ -1,0 +1,460 @@
+@model ProductEditViewModel
+@{
+    ViewData["Title"] = "Thêm Mới Thiết Bị / Sản Phẩm";
+}
+
+<!-- Page Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="/Admin/Product" class="text-decoration-none">Quản Lý Sản Phẩm</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Thêm mới thiết bị</li>
+            </ol>
+        </nav>
+        <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+            <span class="tz-stat-icon-wrapper" style="width: 38px; height: 38px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); color: #10b981; font-size: 1.15rem;">
+                <i class="bi bi-plus-circle-fill"></i>
+            </span>
+            <span>Thêm Mới Thiết Bị / Sản Phẩm</span>
+        </h3>
+        <small class="text-muted">Đăng bán sản phẩm mới, thiết lập giá niêm yết/sỉ, bài viết mô tả chi tiết, thư viện ảnh và video mở hộp</small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="/Admin/Product" class="btn btn-outline-secondary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1 shadow-2xs">
+            <i class="bi bi-arrow-left"></i>
+            <span>Quay Lại Danh Sách</span>
+        </a>
+        <button type="submit" form="productForm" class="btn btn-primary rounded-pill px-4 py-2 btn-sm d-flex align-items-center gap-2 shadow-sm fw-bold">
+            <i class="bi bi-check2-circle fs-6"></i>
+            <span>Lưu & Đăng Sản Phẩm</span>
+        </button>
+    </div>
+</div>
+
+<form asp-action="Create" method="post" id="productForm">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 mb-4"></div>
+
+    <div class="row g-4">
+        <!-- Main Form Column (Left 8 Cols) -->
+        <div class="col-lg-8">
+            <!-- 1. Thông Tin Cơ Bản Thiết Bị -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-info-circle-fill text-primary"></i>
+                    <span>1. Thông Tin Thiết Bị Cơ Bản</span>
+                </h5>
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label asp-for="Name" class="form-label fw-semibold small text-dark"></label> <span class="text-danger">*</span>
+                        <input asp-for="Name" class="form-control" placeholder="Ví dụ: iPhone 16 Pro Max 256GB Chính Hãng VN/A" id="productNameInput" required />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Sku" class="form-label fw-semibold small text-dark"></label> <span class="text-danger">*</span>
+                        <input asp-for="Sku" class="form-control text-uppercase" placeholder="Ví dụ: IP16PM-256-VN" required />
+                        <span asp-validation-for="Sku" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="CategoryId" class="form-label fw-semibold small text-dark"></label> <span class="text-danger">*</span>
+                        <select asp-for="CategoryId" class="form-select" required>
+                            <option value="">-- Chọn danh mục sản phẩm --</option>
+                            @foreach (var cat in Model.Categories)
+                            {
+                                <option value="@cat.Id">@cat.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="BrandId" class="form-label fw-semibold small text-dark"></label> <span class="text-danger">*</span>
+                        <select asp-for="BrandId" class="form-select" required>
+                            <option value="">-- Chọn thương hiệu / hãng SX --</option>
+                            @foreach (var brand in Model.Brands)
+                            {
+                                <option value="@brand.Id">@brand.Name (@brand.CountryOfOrigin)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="BrandId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Slug" class="form-label fw-semibold small text-dark"></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light small text-muted">/product/</span>
+                            <input asp-for="Slug" class="form-control" id="productSlugInput" placeholder="tu-dong-sinh-tu-ten-san-pham" />
+                        </div>
+                        <small class="text-muted" style="font-size: 0.75rem;">Để trống hệ thống sẽ tự động tạo từ tên sản phẩm theo chuẩn SEO tiếng Việt.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Giá Cả & Chính Sách Giá (RBAC product.price_override) -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-tag-fill text-success"></i>
+                        <span>2. Giá Bán & Chính Sách Giá (RBAC)</span>
+                    </h5>
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 small">
+                        <i class="bi bi-shield-lock me-1"></i>product.price_override
+                    </span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="OriginalPrice" class="form-label fw-semibold small text-dark"></label> <span class="text-danger">*</span>
+                        <div class="input-group">
+                            <input asp-for="OriginalPrice" type="number" class="form-control fw-bold" min="0" step="1000" placeholder="34990000" id="origPriceInput" required />
+                            <span class="input-group-text bg-light">₫</span>
+                        </div>
+                        <span asp-validation-for="OriginalPrice" class="text-danger small"></span>
+                        <small class="text-muted" style="font-size: 0.72rem;">Giá niêm yết gốc của hãng sản xuất.</small>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Price" class="form-label fw-semibold small text-dark"></label> <span class="text-danger">*</span>
+                        <div class="input-group">
+                            <input asp-for="Price" type="number" class="form-control fw-bold text-danger fs-6" min="0" step="1000" placeholder="32490000" id="salePriceInput" required />
+                            <span class="input-group-text bg-light">₫</span>
+                        </div>
+                        <span asp-validation-for="Price" class="text-danger small"></span>
+                        <small class="text-muted" style="font-size: 0.72rem;">Giá bán lẻ trực tiếp tới khách hàng.</small>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="WholesalePrice" class="form-label fw-semibold small text-dark"></label>
+                        <div class="input-group">
+                            <input asp-for="WholesalePrice" type="number" class="form-control fw-bold text-primary" min="0" step="1000" placeholder="29500000" />
+                            <span class="input-group-text bg-light">₫</span>
+                        </div>
+                        <span asp-validation-for="WholesalePrice" class="text-danger small"></span>
+                        <small class="text-muted" style="font-size: 0.72rem;">Giá bán sỉ / đại lý / khách hàng B2B.</small>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="WarrantyMonths" class="form-label fw-semibold small text-dark"></label>
+                        <div class="input-group">
+                            <input asp-for="WarrantyMonths" type="number" class="form-control" min="0" max="120" />
+                            <span class="input-group-text bg-light">Tháng</span>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.72rem;">Bảo hành điện tử chính hãng theo số IMEI/Serial.</small>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="StockQuantity" class="form-label fw-semibold small text-dark"></label>
+                        <div class="input-group">
+                            <input asp-for="StockQuantity" type="number" class="form-control fw-bold" min="0" />
+                            <span class="input-group-text bg-light">Chiếc</span>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.72rem;">Tồn kho vật lý ban đầu nhập hệ thống.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Bài Viết Mô Tả Sản Phẩm Chuyên Sâu -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-richtext-fill text-info"></i>
+                    <span>3. Bài Viết Mô Tả & Đánh Giá Sản Phẩm</span>
+                </h5>
+
+                <div class="mb-3">
+                    <label asp-for="ShortDescription" class="form-label fw-semibold small text-dark"></label>
+                    <textarea asp-for="ShortDescription" class="form-control" rows="2" placeholder="Tóm tắt ngắn gọn 1-2 câu về điểm nổi bật nhất của thiết bị để hiển thị trên thẻ sản phẩm và Meta SEO..."></textarea>
+                    <span asp-validation-for="ShortDescription" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-2">
+                    <label asp-for="Description" class="form-label fw-semibold small text-dark"></label>
+                    <textarea asp-for="Description" class="form-control" rows="8" placeholder="Nhập bài viết đánh giá chi tiết, đặc điểm mở hộp thiết bị, công nghệ màn hình, hiệu năng vi xử lý, thời lượng pin, hướng dẫn sử dụng... (Hỗ trợ định dạng văn bản / HTML)"></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                    <small class="text-muted" style="font-size: 0.72rem;">Bài viết này sẽ hiển thị tại mục "Mô tả sản phẩm chuyên sâu" trên trang Storefront.</small>
+                </div>
+            </div>
+
+            <!-- 4. Thư Viện Ảnh & Video Mở Hộp (Unbox / Review) -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-images text-warning"></i>
+                    <span>4. Thư Viện Ảnh & Video Unbox / Review</span>
+                </h5>
+
+                <!-- Thumbnail -->
+                <div class="mb-4">
+                    <label asp-for="ThumbnailUrl" class="form-label fw-semibold small text-dark"></label> <span class="text-danger">*</span>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text bg-light"><i class="bi bi-image"></i></span>
+                        <input asp-for="ThumbnailUrl" class="form-control" placeholder="https://cdn.techzone.vn/images/products/..." id="thumbnailInput" required />
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="previewThumbnail()">
+                            <i class="bi bi-eye me-1"></i>Xem trước
+                        </button>
+                    </div>
+                    <span asp-validation-for="ThumbnailUrl" class="text-danger small"></span>
+
+                    <!-- Thumbnail Live Preview -->
+                    <div id="thumbPreviewBox" class="p-2 border rounded-3 bg-light text-center" style="max-width: 140px; display: none;">
+                        <img id="thumbImg" src="" alt="Thumbnail preview" class="img-fluid rounded" style="max-height: 100px; object-fit: contain;" />
+                    </div>
+                </div>
+
+                <!-- Video Unbox / Review -->
+                <div class="mb-4">
+                    <label asp-for="VideoUrl" class="form-label fw-semibold small text-dark"></label>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text bg-light"><i class="bi bi-youtube text-danger"></i></span>
+                        <input asp-for="VideoUrl" class="form-control" placeholder="https://www.youtube.com/watch?v=... hoặc link video mp4 unbox" id="videoUrlInput" />
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="previewVideo()">
+                            <i class="bi bi-play-btn me-1"></i>Xem video
+                        </button>
+                    </div>
+                    <small class="text-muted" style="font-size: 0.72rem;">Hỗ trợ link YouTube review / mở hộp thiết bị hoặc đường dẫn video trực tiếp.</small>
+
+                    <!-- Video Live Preview -->
+                    <div id="videoPreviewBox" class="mt-2 border rounded-4 p-2 bg-dark text-center" style="display: none; max-width: 480px;">
+                        <div class="ratio ratio-16x9">
+                            <iframe id="videoIframe" src="" title="Video preview" allowfullscreen class="rounded-3"></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gallery Images Dynamic List -->
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <label class="form-label fw-semibold small text-dark m-0">Thư viện ảnh chi tiết (Gallery)</label>
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" onclick="addGalleryImageRow()">
+                            <i class="bi bi-plus-lg me-1"></i>Thêm ảnh phụ
+                        </button>
+                    </div>
+                    <p class="text-muted small mb-2" style="font-size: 0.75rem;">Thêm danh sách URL ảnh các góc chụp, phụ kiện trong hộp hoặc các phiên bản màu sắc.</p>
+
+                    <input type="hidden" asp-for="GalleryImagesJson" id="galleryImagesJson" value="[]" />
+
+                    <div class="table-responsive border rounded-3">
+                        <table class="table table-sm table-hover align-middle mb-0" id="galleryTable">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th style="width: 45%;">Đường dẫn ảnh (URL)</th>
+                                    <th style="width: 25%;">Phiên bản màu (Tùy chọn)</th>
+                                    <th style="width: 15%;">Thứ tự</th>
+                                    <th style="width: 15%;" class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="galleryBody">
+                                <!-- Dynamic rows via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Options (Right 4 Cols) -->
+        <div class="col-lg-4">
+            <!-- Trạng Thái Kinh Doanh -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-toggle-on text-primary"></i>
+                    <span>Trạng Thái Kinh Doanh</span>
+                </h6>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" asp-for="IsActive" id="isActiveSwitch">
+                    <label class="form-check-label fw-semibold small text-dark" for="isActiveSwitch">Mở bán trên Storefront</label>
+                    <div class="text-muted" style="font-size: 0.72rem;">Khi tắt, sản phẩm sẽ tạm ẩn khỏi trang bán lẻ và giỏ hàng.</div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" asp-for="IsFeatured" id="isFeaturedSwitch">
+                    <label class="form-check-label fw-semibold small text-dark" for="isFeaturedSwitch">Sản phẩm tiêu biểu (Featured)</label>
+                    <div class="text-muted" style="font-size: 0.72rem;">Xuất hiện tại khu vực banner/sản phẩm nổi bật trang chủ.</div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" asp-for="IsNewArrival" id="isNewArrivalSwitch">
+                    <label class="form-check-label fw-semibold small text-dark" for="isNewArrivalSwitch">Hàng mới về (New Arrival)</label>
+                    <div class="text-muted" style="font-size: 0.72rem;">Gắn nhãn New Arrival màu xanh trên thẻ sản phẩm.</div>
+                </div>
+
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" asp-for="IsBestSeller" id="isBestSellerSwitch">
+                    <label class="form-check-label fw-semibold small text-dark" for="isBestSellerSwitch">Bán chạy nhất (Best Seller)</label>
+                    <div class="text-muted" style="font-size: 0.72rem;">Gắn huy hiệu Best Seller ưu tiên lên trang danh mục.</div>
+                </div>
+            </div>
+
+            <!-- Thông Số Nổi Bật (Highlight Specs) -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h6 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-stars text-warning"></i>
+                        <span>Thông Số Nổi Bật (Pills)</span>
+                    </h6>
+                </div>
+                <p class="text-muted small mb-2" style="font-size: 0.75rem;">Các thông số chính hiển thị dưới dạng viên thuốc (badge) ở đầu trang chi tiết sản phẩm.</p>
+                <textarea asp-for="HighlightSpecsRaw" class="form-control small mb-2" rows="3" placeholder="Ví dụ: OLED 6.7 inch 120Hz, Chip A18 Pro 3nm, Camera 48MP Zoom 5x, Pin 4685 mAh, Sạc nhanh 30W" id="highlightSpecsInput"></textarea>
+                <small class="text-muted" style="font-size: 0.72rem;">Phân cách các thông số bằng dấu phẩy (<code>,</code>).</small>
+            </div>
+
+            <!-- Tags / Thẻ Tìm Kiếm -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <h6 class="fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                    <i class="bi bi-hash text-secondary"></i>
+                    <span>Thẻ Tìm Kiếm / Tags</span>
+                </h6>
+                <p class="text-muted small mb-2" style="font-size: 0.75rem;">Từ khóa hỗ trợ khách hàng tìm kiếm nhanh sản phẩm trên thanh Search.</p>
+                <input asp-for="TagsRaw" class="form-control small" placeholder="smartphone, iphone, apple, flagship, 256gb" />
+                <small class="text-muted" style="font-size: 0.72rem;">Phân cách bằng dấu phẩy.</small>
+            </div>
+
+            <!-- Bước Tiếp Theo -->
+            <div class="card border-0 rounded-4 p-4 text-white shadow-sm" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
+                <h6 class="fw-bold mb-2 d-flex align-items-center gap-2">
+                    <i class="bi bi-sliders"></i>
+                    <span>Bước kế tiếp</span>
+                </h6>
+                <p class="small mb-3 opacity-90" style="font-size: 0.8rem;">
+                    Sau khi lưu sản phẩm, bạn có thể truy cập phân hệ <strong>Thông Số Kỹ Thuật (attribute.manage)</strong> để áp dụng bộ Template thông số phần cứng chuẩn ngành (RAM, CPU, Camera, Màn hình...).
+                </p>
+                <button type="submit" form="productForm" class="btn btn-light text-primary rounded-pill w-100 fw-bold btn-sm py-2">
+                    <i class="bi bi-check-lg me-1"></i>Lưu Sản Phẩm Ngay
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Auto-generate slug from product name if empty
+        document.getElementById('productNameInput')?.addEventListener('blur', function() {
+            var slugInput = document.getElementById('productSlugInput');
+            if (slugInput && !slugInput.value.trim()) {
+                slugInput.value = generateSlug(this.value);
+            }
+        });
+
+        function generateSlug(text) {
+            if (!text) return '';
+            return text.toString().toLowerCase().trim()
+                .replace(/đ/g, 'd')
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9 -]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+        }
+
+        function previewThumbnail() {
+            var url = document.getElementById('thumbnailInput').value.trim();
+            var box = document.getElementById('thumbPreviewBox');
+            var img = document.getElementById('thumbImg');
+            if (url) {
+                img.src = url;
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        }
+
+        function previewVideo() {
+            var url = document.getElementById('videoUrlInput').value.trim();
+            var box = document.getElementById('videoPreviewBox');
+            var iframe = document.getElementById('videoIframe');
+            if (!url) {
+                box.style.display = 'none';
+                return;
+            }
+
+            var embedUrl = getYouTubeEmbedUrl(url);
+            if (embedUrl) {
+                iframe.src = embedUrl;
+                box.style.display = 'block';
+            } else {
+                alert('Vui lòng nhập link YouTube hợp lệ (ví dụ: https://www.youtube.com/watch?v=... hoặc https://youtu.be/...)');
+            }
+        }
+
+        function getYouTubeEmbedUrl(url) {
+            if (!url) return '';
+            var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            var match = url.match(regExp);
+            return (match && match[2].length === 11) ? ('https://www.youtube.com/embed/' + match[2]) : '';
+        }
+
+        // Gallery Dynamic Table
+        var galleryItems = [];
+
+        function renderGalleryTable() {
+            var tbody = document.getElementById('galleryBody');
+            tbody.innerHTML = '';
+
+            if (galleryItems.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted small py-3">Chưa có ảnh phụ nào trong thư viện. Bấm "Thêm ảnh phụ" để thêm.</td></tr>';
+                document.getElementById('galleryImagesJson').value = '[]';
+                return;
+            }
+
+            galleryItems.forEach(function(item, idx) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <input type="text" class="form-control form-control-sm" value="${escapeHtml(item.Url || '')}" placeholder="https://..." onchange="updateGalleryItem(${idx}, 'Url', this.value)" />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" value="${escapeHtml(item.ColorTag || '')}" placeholder="Vd: Titan Đen" onchange="updateGalleryItem(${idx}, 'ColorTag', this.value)" />
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" value="${item.DisplayOrder || (idx + 1)}" min="1" onchange="updateGalleryItem(${idx}, 'DisplayOrder', parseInt(this.value))" />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-xs btn-outline-danger rounded-pill px-2 py-1" onclick="removeGalleryItem(${idx})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('galleryImagesJson').value = JSON.stringify(galleryItems);
+        }
+
+        function addGalleryImageRow() {
+            galleryItems.push({
+                Url: '',
+                ColorTag: '',
+                DisplayOrder: galleryItems.length + 1
+            });
+            renderGalleryTable();
+        }
+
+        function updateGalleryItem(index, key, val) {
+            if (galleryItems[index]) {
+                galleryItems[index][key] = val;
+                document.getElementById('galleryImagesJson').value = JSON.stringify(galleryItems);
+            }
+        }
+
+        function removeGalleryItem(index) {
+            galleryItems.splice(index, 1);
+            renderGalleryTable();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        document.getElementById('thumbnailInput')?.addEventListener('change', previewThumbnail);
+        document.getElementById('videoUrlInput')?.addEventListener('change', previewVideo);
+
+        // Init
+        previewThumbnail();
+        renderGalleryTable();
+    </script>
+}

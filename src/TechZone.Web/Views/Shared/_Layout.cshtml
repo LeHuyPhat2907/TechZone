@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechZone | Thiết Bị Điện Tử & Công Nghệ Chính Hãng</title>
+    
+    <!-- SEO Meta Tags (Task 15) -->
+    <meta name="description" content="@(ViewData["MetaDescription"] ?? "TechZone - Hệ thống bán lẻ thiết bị công nghệ hàng đầu: điện thoại, laptop, tablet, phụ kiện chính hãng, trả góp 0%, giao hàng toàn quốc.")" />
+    <meta name="keywords" content="@(ViewData["MetaKeywords"] ?? "điện thoại, laptop, macbook, iphone, samsung, tablet, thiết bị công nghệ, techzone")" />
+    <meta name="author" content="TechZone Vietnam" />
+    <meta name="robots" content="@(ViewData["MetaRobots"] ?? "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1")" />
+    <link rel="canonical" href="@(ViewData["CanonicalUrl"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")" />
+
+    <!-- Open Graph / Facebook (Task 15) -->
+    <meta property="og:type" content="@(ViewData["OgType"] ?? "website")" />
+    <meta property="og:url" content="@(ViewData["CanonicalUrl"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")" />
+    <meta property="og:title" content="@(ViewData["OgTitle"] ?? ViewData["Title"] ?? "TechZone - Thiết Bị Điện Tử & Công Nghệ Chính Hãng")" />
+    <meta property="og:description" content="@(ViewData["MetaDescription"] ?? "TechZone - Mua sắm smartphone, laptop, thiết bị công nghệ chính hãng giá tốt nhất.")" />
+    <meta property="og:image" content="@(ViewData["OgImage"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}/images/placeholder.svg")" />
+    <meta property="og:site_name" content="TechZone" />
+    <meta property="og:locale" content="vi_VN" />
+
+    <!-- Twitter Cards (Task 15) -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@(ViewData["OgTitle"] ?? ViewData["Title"] ?? "TechZone")" />
+    <meta name="twitter:description" content="@(ViewData["MetaDescription"] ?? "TechZone - Mua sắm thiết bị công nghệ chính hãng giá tốt nhất.")" />
+    <meta name="twitter:image" content="@(ViewData["OgImage"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}/images/placeholder.svg")" />
+
+    <!-- Schema.org Organization Structured Data (Task 15) -->
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@@type": "Organization",
+      "name": "TechZone Vietnam",
+      "url": "@($"{Context.Request.Scheme}://{Context.Request.Host}")",
+      "logo": "@($"{Context.Request.Scheme}://{Context.Request.Host}/images/placeholder.svg")",
+      "contactPoint": {
+        "@@type": "ContactPoint",
+        "telephone": "+84-1900-8888",
+        "contactType": "customer service",
+        "areaServed": "VN",
+        "availableLanguage": "Vietnamese"
+      },
+      "sameAs": [
+        "https://facebook.com/techzonevietnam",
+        "https://youtube.com/@@techzonevietnam"
+      ]
+    }
+    </script>
+    
+    <!-- Zero-Flash Dark Mode Script (Task 13) -->
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('techzone_theme') || 
+                    (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            } catch (e) {}
+        })();
+    </script>
+
+    <!-- Google Fonts & Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <!-- 1. Top Bar -->
+    <div class="tz-topbar">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-4">
+                <span><i class="bi bi-telephone me-1 text-info"></i> Hotline: <strong>1900 8888</strong> (8:00 - 21:30)</span>
+                <span class="d-none d-md-inline"><i class="bi bi-truck me-1 text-success"></i> Miễn phí vận chuyển đơn từ 500.000đ</span>
+                <span class="d-none d-lg-inline"><i class="bi bi-shield-check me-1 text-warning"></i> 100% Hàng chính hãng - Đổi mới 7 ngày</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <a asp-controller="Store" asp-action="Index"><i class="bi bi-geo-alt me-1 text-danger"></i> Hệ thống cửa hàng</a>
+                <span class="text-secondary">|</span>
+                <a asp-controller="Home" asp-action="News"><i class="bi bi-newspaper me-1 text-info"></i> Tin công nghệ</a>
+                <span class="text-secondary">|</span>
+                <a asp-controller="Order" asp-action="Track"><i class="bi bi-box-seam me-1"></i> Tra cứu đơn hàng</a>
+                <span class="text-secondary">|</span>
+                <a asp-controller="Warranty" asp-action="Index"><i class="bi bi-patch-check me-1"></i> Tra cứu bảo hành</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Main Navbar -->
+    <header class="tz-navbar">
+        <div class="container d-flex align-items-center justify-content-between gap-3">
+            <!-- Brand Logo -->
+            <a class="tz-brand" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-cpu-fill text-primary fs-2"></i>
+                <div>TECH<span class="zone">ZONE</span></div>
+            </a>
+
+            <!-- Search Form with TGDD-style Live Autocomplete Dropdown -->
+            <div class="position-relative tz-search-box d-none d-md-block">
+                <form asp-controller="Catalog" asp-action="Index" method="get">
+                    <input type="text" id="globalSearchInput" name="keyword" class="form-control tz-search-input" placeholder="Bạn cần tìm iPhone 15, Galaxy S24, MacBook M3..." value="@Context.Request.Query["keyword"]" autocomplete="off" />
+                    <button type="submit" class="tz-search-btn" title="Tìm kiếm">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+
+                <!-- Floating Live Search Dropdown 2 columns -->
+                <div id="liveSearchResults" class="card border-0 rounded-4 shadow-lg position-absolute start-0 end-0 mt-2 p-3 bg-white d-none" style="z-index: 1050; max-height: 420px; overflow-y: auto;">
+                    <div class="row g-3">
+                        <div class="col-4 border-end">
+                            <h6 class="small text-muted fw-bold text-uppercase mb-2"><i class="bi bi-clock-history me-1"></i>Gợi ý từ khóa</h6>
+                            <div id="searchSuggestionsList" class="d-flex flex-column gap-1"></div>
+                        </div>
+                        <div class="col-8">
+                            <h6 class="small text-muted fw-bold text-uppercase mb-2"><i class="bi bi-fire text-danger me-1"></i>Sản phẩm khớp</h6>
+                            <div id="searchProductsList" class="d-flex flex-column gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions: Cart, User -->
+            <div class="d-flex align-items-center gap-2">
+                <!-- Cart Button -->
+                <a asp-controller="Cart" asp-action="Index" class="tz-nav-btn position-relative">
+                    <i class="bi bi-cart3 fs-5 text-primary"></i>
+                    <span class="d-none d-lg-inline">Giỏ hàng</span>
+                    <span id="cartCountBadge" class="tz-badge">0</span>
+                </a>
+
+                <!-- Notification Bell Dropdown (Task 14 Real-Time SignalR) -->
+                <div class="dropdown" id="notificationDropdownContainer">
+                    <button class="tz-nav-btn dropdown-toggle border-0 bg-transparent position-relative" type="button" id="notifBellBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo hệ thống">
+                        <i class="bi bi-bell fs-5 text-warning" id="notifBellIcon"></i>
+                        <span id="notifBadge" class="tz-badge d-none">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end shadow-lg p-0 rounded-4 border" style="width: 360px; max-width: 90vw; z-index: 1060;" aria-labelledby="notifBellBtn">
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-bell-fill text-warning me-2"></i>Thông báo</h6>
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none text-primary p-0" id="markAllReadBtn" style="font-size: 0.8rem;">Đã đọc tất cả</button>
+                        </div>
+                        <div id="notifListContainer" class="d-flex flex-column" style="max-height: 380px; overflow-y: auto;">
+                            <div class="text-center py-4 text-muted small" id="notifEmptyState">
+                                <i class="bi bi-bell-slash fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                Bạn chưa có thông báo mới nào
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Dropdown -->
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <div class="dropdown">
+                        <button class="tz-nav-btn dropdown-toggle border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle fs-5 text-success"></i>
+                            <span class="d-none d-lg-inline">@User.Identity.Name</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li><h6 class="dropdown-header">Xin chào, @User.Identity.Name!</h6></li>
+                            @if (User.IsInRole("SuperAdmin") || User.IsInRole("SalesStaff") || User.IsInRole("WarehouseStaff"))
+                            {
+                                <li><a class="dropdown-item text-primary fw-bold" href="/Admin/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Trang quản trị Admin</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                            }
+                            <li><a class="dropdown-item fw-semibold text-primary" asp-controller="Member" asp-action="Index"><i class="bi bi-person-badge me-2"></i>Trung tâm Thành viên (Portal)</a></li>
+                            <li><a class="dropdown-item" href="/Member?tab=orders"><i class="bi bi-box-seam me-2"></i>Đơn mua & Đổi trả</a></li>
+                            <li><a class="dropdown-item" href="/Member?tab=warranty"><i class="bi bi-patch-check me-2"></i>Bảo hành điện tử</a></li>
+                            <li><a class="dropdown-item" href="/Member?tab=wallet"><i class="bi bi-ticket-perforated me-2"></i>Ví Voucher & Xu</a></li>
+                            <li><a class="dropdown-item" href="/Member?tab=wishlist"><i class="bi bi-heart me-2"></i>Sản phẩm yêu thích</a></li>
+                            <li><a class="dropdown-item" href="/Member?tab=profile"><i class="bi bi-gear me-2"></i>Cài đặt tài khoản</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+                                    <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                }
+                else
+                {
+                    <div class="dropdown">
+                        <button class="tz-nav-btn dropdown-toggle border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle fs-5"></i>
+                            <span class="d-none d-lg-inline">Tài khoản</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li><a class="dropdown-item" asp-controller="Auth" asp-action="Login"><i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập</a></li>
+                            <li><a class="dropdown-item" asp-controller="Auth" asp-action="Register"><i class="bi bi-person-plus me-2"></i>Đăng ký tài khoản</a></li>
+                        </ul>
+                    </div>
+                }
+
+                <!-- Dark / Light Theme Toggle Button (Task 13) -->
+                <button type="button" id="themeToggleBtn" class="tz-theme-toggle-btn ms-1" title="Chuyển chế độ Sáng / Tối" aria-label="Toggle theme">
+                    <i class="bi bi-sun-fill theme-icon-sun"></i>
+                    <i class="bi bi-moon-stars-fill theme-icon-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3. Category Strip -->
+    <div class="tz-cat-bar d-none d-md-block">
+        <div class="container d-flex align-items-center gap-2 overflow-auto">
+            <a asp-controller="Catalog" asp-action="Index" class="tz-cat-link">
+                <i class="bi bi-grid-fill"></i> Tất cả sản phẩm
+            </a>
+            <a asp-controller="Catalog" asp-action="Index" asp-route-category="dien-thoai" class="tz-cat-link">
+                <i class="bi bi-phone"></i> Điện thoại
+            </a>
+            <a asp-controller="Catalog" asp-action="Index" asp-route-category="laptop" class="tz-cat-link">
+                <i class="bi bi-laptop"></i> Laptop
+            </a>
+            <a asp-controller="Catalog" asp-action="Index" asp-route-category="may-tinh-bang" class="tz-cat-link">
+                <i class="bi bi-tablet"></i> Máy tính bảng
+            </a>
+            <a asp-controller="Catalog" asp-action="Index" asp-route-category="tai-nghe-am-thanh" class="tz-cat-link">
+                <i class="bi bi-headphones"></i> Tai nghe & Âm thanh
+            </a>
+            <a asp-controller="Catalog" asp-action="Index" asp-route-category="dong-ho-thong-minh" class="tz-cat-link">
+                <i class="bi bi-smartwatch"></i> Đồng hồ thông minh
+            </a>
+            <a asp-controller="Catalog" asp-action="Index" asp-route-category="phu-kien" class="tz-cat-link">
+                <i class="bi bi-plug"></i> Phụ kiện
+            </a>
+        </div>
+    </div>
+
+    <!-- 4. Main Body Content -->
+    <main role="main" class="pb-4">
+        @RenderBody()
+    </main>
+
+    <!-- 5. Toast Container for AJAX Alerts -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+        <div id="actionToast" class="toast align-items-center text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <i id="toastIcon" class="bi bi-check-circle-fill text-success fs-5"></i>
+                    <span id="toastMessage">Thông báo</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Footer -->
+    <footer class="tz-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-cpu-fill text-primary fs-3"></i>
+                        <span class="fw-bold text-white fs-4">TECH<span class="text-primary">ZONE</span></span>
+                    </div>
+                    <p class="tz-footer-desc small mb-3">
+                        Hệ thống thương mại điện tử chuyên sâu thiết bị công nghệ & điện tử chính hãng. Tiên phong giải pháp quản lý định danh Serial/IMEI và Bảo hành điện tử E-Warranty tức thì.
+                    </p>
+                    <div class="small tz-footer-contact d-flex flex-column gap-2">
+                        <div><i class="bi bi-geo-alt-fill me-2 text-primary"></i> 123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM</div>
+                        <div><i class="bi bi-envelope-fill me-2 text-primary"></i> <a href="mailto:support@techzone.vn">support@techzone.vn</a></div>
+                        <div><i class="bi bi-telephone-fill me-2 text-primary"></i> <a href="tel:19008888" class="fw-bold">1900 8888</a> <span class="tz-footer-badge">(Tư vấn 24/7)</span></div>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-md-6 col-6">
+                    <h6>DANH MỤC CÔNG NGHỆ</h6>
+                    <ul>
+                        <li><a asp-controller="Catalog" asp-action="Index" asp-route-category="dien-thoai">Điện thoại di động</a></li>
+                        <li><a asp-controller="Catalog" asp-action="Index" asp-route-category="laptop">Laptop Gaming & AI</a></li>
+                        <li><a asp-controller="Catalog" asp-action="Index" asp-route-category="may-tinh-bang">Máy tính bảng iPad</a></li>
+                        <li><a asp-controller="Catalog" asp-action="Index" asp-route-category="tai-nghe-am-thanh">Tai nghe chống ồn</a></li>
+                        <li><a asp-controller="Catalog" asp-action="Index" asp-route-category="dong-ho-thong-minh">Đồng hồ Smartwatch</a></li>
+                        <li><a asp-controller="Catalog" asp-action="Index" asp-route-category="phu-kien">Cáp sạc GaN, Phụ kiện</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6 col-6">
+                    <h6>CHÍNH SÁCH BÁN HÀNG</h6>
+                    <ul>
+                        <li><a href="/Policy?tab=warranty">Chính sách Bảo hành điện tử</a></li>
+                        <li><a href="/Policy?tab=return">Chính sách Đổi trả 1-đổi-1 (30 ngày)</a></li>
+                        <li><a href="/Policy?tab=shipping">Giao hàng hỏa tốc liên tỉnh (GHN)</a></li>
+                        <li><a href="/Policy?tab=payment">Phương thức thanh toán trực tuyến</a></li>
+                        <li><a asp-controller="Order" asp-action="Track">Hướng dẫn tra cứu vận đơn</a></li>
+                        <li><a href="/Policy?tab=privacy">Bảo mật thông tin khách hàng</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6>KẾT NỐI VÀ ĐỐI TÁC</h6>
+                    <div class="mb-3">
+                        <div class="small tz-footer-label mb-2">Đối tác vận chuyển chính thức:</div>
+                        <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary border-opacity-25 p-2 me-1"><i class="bi bi-box-seam text-primary me-1"></i> Giao Hàng Nhanh (GHN)</span>
+                    </div>
+                    <div>
+                        <div class="small tz-footer-label mb-2">Cổng thanh toán bảo mật:</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary border-opacity-25 p-2"><i class="bi bi-qr-code text-success me-1"></i> VietQR PayOS</span>
+                            <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary border-opacity-25 p-2"><i class="bi bi-wallet2 text-danger me-1"></i> VNPAY-QR</span>
+                            <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary border-opacity-25 p-2"><i class="bi bi-cash-coin text-warning me-1"></i> COD</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tz-footer-bottom d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    &copy; 2026 TechZone E-Commerce. Khóa luận tốt nghiệp chuyên ngành Kỹ thuật Phần mềm.
+                </div>
+                <div class="tz-footer-arch">
+                    Kiến trúc: ASP.NET Core 10 MVC | MongoDB 7.0 NoSQL | Redis 7.2 Cache
+                </div>
+            </div>
+        </div>
+    <!-- 6. Floating Comparison Tray (Task 5: Customer Survey Insight - 86.8% Demand) -->
+    <div id="floatingCompareTray" class="position-fixed bottom-0 start-50 translate-middle-x bg-white shadow-lg border rounded-top-4 p-3 d-none" style="z-index: 1060; width: 95%; max-width: 720px; transition: transform 0.3s ease-in-out;">
+        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary rounded-pill"><i class="bi bi-arrow-left-right me-1"></i>So sánh</span>
+                <strong class="text-dark small">Khay So Sánh Thiết Bị (<span id="compareCount">0</span>/2)</strong>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-0 small" onclick="clearCompareTray()">
+                    <i class="bi bi-trash me-1"></i>Xóa hết
+                </button>
+                <button type="button" class="btn btn-sm btn-light border rounded-circle p-1" style="width: 28px; height: 28px; line-height: 1;" onclick="toggleCompareTrayVisibility()">
+                    <i class="bi bi-dash"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="row align-items-center g-2">
+            <!-- Slot 1 -->
+            <div class="col-5">
+                <div id="compareSlot1" class="p-2 border rounded-3 bg-light d-flex align-items-center gap-2 position-relative" style="min-height: 56px;">
+                    <span class="text-muted small fst-italic mx-auto">Chưa chọn SP 1</span>
+                </div>
+            </div>
+
+            <!-- VS Icon -->
+            <div class="col-2 text-center">
+                <span class="badge bg-danger rounded-circle p-2 fw-bold" style="font-size: 0.75rem;">VS</span>
+            </div>
+
+            <!-- Slot 2 -->
+            <div class="col-5">
+                <div id="compareSlot2" class="p-2 border rounded-3 bg-light d-flex align-items-center gap-2 position-relative" style="min-height: 56px;">
+                    <span class="text-muted small fst-italic mx-auto">+ Thêm SP thứ 2</span>
+                </div>
+            </div>
+
+            <!-- CTA Action -->
+            <div class="col-12 mt-2">
+                <button type="button" id="btnGoCompare" class="btn btn-primary w-100 fw-bold rounded-pill py-2 shadow-sm" disabled onclick="navigateToCompare()">
+                    <i class="bi bi-arrow-left-right me-1"></i>So Sánh Ngay Chi Tiết
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global Cart Counter & Toast Notification
+        function showToast(message, isSuccess = true) {
+            const toastEl = document.getElementById('actionToast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            toastMsg.innerText = message;
+            if (isSuccess) {
+                toastIcon.className = 'bi bi-check-circle-fill text-success fs-5';
+            } else {
+                toastIcon.className = 'bi bi-exclamation-triangle-fill text-danger fs-5';
+            }
+            
+            const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+            toast.show();
+        }
+
+        function refreshCartBadge(animate = false) {
+            fetch('/Cart/GetCartCount')
+                .then(res => res.json())
+                .then(data => {
+                    const count = data.count || 0;
+                    const badge = document.getElementById('cartCountBadge');
+                    const mobileBadge = document.getElementById('mobileCartCountBadge');
+                    
+                    if (badge) {
+                        badge.innerText = count;
+                        if (animate) {
+                            badge.classList.remove('tz-badge-pop');
+                            void badge.offsetWidth;
+                            badge.classList.add('tz-badge-pop');
+                        }
+                    }
+                    if (mobileBadge) {
+                        mobileBadge.innerText = count;
+                        if (animate) {
+                            mobileBadge.classList.remove('tz-badge-pop');
+                            void mobileBadge.offsetWidth;
+                            mobileBadge.classList.add('tz-badge-pop');
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function addToCart(productId, variantSku = '', quantity = 1) {
+            // Micro-interaction: Cart icon bounce animation
+            const cartIcons = document.querySelectorAll('.tz-nav-btn i.bi-cart3, .tz-bottom-nav-item i.bi-cart3');
+            cartIcons.forEach(icon => {
+                icon.classList.remove('tz-cart-bounce');
+                void icon.offsetWidth;
+                icon.classList.add('tz-cart-bounce');
+            });
+
+            fetch('/Cart/Add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId: productId, variantSku: variantSku, quantity: quantity })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.succeeded) {
+                    showToast('Đã thêm sản phẩm vào giỏ hàng!', true);
+                    refreshCartBadge(true);
+                } else {
+                    showToast(data.message || 'Không thể thêm vào giỏ hàng', false);
+                }
+            })
+            .catch(() => {
+                showToast('Lỗi kết nối máy chủ', false);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshCartBadge();
+
+            // Dark / Light Theme Toggle Listener (Task 13)
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+                    const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', nextTheme);
+                    localStorage.setItem('techzone_theme', nextTheme);
+                });
+            }
+
+            // TGDD-style Live Search Autocomplete (Task 2)
+            const searchInput = document.getElementById('globalSearchInput');
+            const searchDropdown = document.getElementById('liveSearchResults');
+            const suggestionsList = document.getElementById('searchSuggestionsList');
+            const productsList = document.getElementById('searchProductsList');
+            let searchTimer = null;
+
+            if (searchInput && searchDropdown) {
+                searchInput.addEventListener('input', function () {
+                    const query = this.value.trim();
+                    clearTimeout(searchTimer);
+
+                    if (query.length < 2) {
+                        searchDropdown.classList.add('d-none');
+                        return;
+                    }
+
+                    searchTimer = setTimeout(() => {
+                        fetch('/Catalog/QuickSearch?q=' + encodeURIComponent(query))
+                            .then(res => res.json())
+                            .then(data => {
+                                const hasProducts = data.products && data.products.length > 0;
+                                const hasSuggestions = data.suggestions && data.suggestions.length > 0;
+
+                                if (!hasProducts && !hasSuggestions) {
+                                    searchDropdown.classList.add('d-none');
+                                    return;
+                                }
+
+                                // Render suggestions
+                                suggestionsList.innerHTML = '';
+                                (data.suggestions || []).forEach(s => {
+                                    const a = document.createElement('a');
+                                    a.href = '/Catalog?keyword=' + encodeURIComponent(s);
+                                    a.className = 'text-decoration-none small text-secondary py-1 px-2 rounded d-block';
+                                    a.innerHTML = '<i class="bi bi-search text-muted me-1"></i>' + s;
+                                    suggestionsList.appendChild(a);
+                                });
+
+                                // Render products
+                                productsList.innerHTML = '';
+                                (data.products || []).forEach(p => {
+                                    const item = document.createElement('a');
+                                    item.href = '/product/' + p.slug;
+                                    item.className = 'd-flex align-items-center gap-2 text-decoration-none p-1 rounded border-bottom text-dark';
+                                    item.innerHTML = `
+                                        <img src="${p.thumbnailUrl}" style="width: 40px; height: 40px; object-fit: contain;" class="rounded border p-1" />
+                                        <div class="flex-grow-1 overflow-hidden">
+                                            <div class="fw-semibold text-dark text-truncate small">${p.name}</div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="fw-bold text-danger small">${p.priceText}</span>
+                                                ${p.discountRate > 0 ? `<span class="badge bg-danger text-white" style="font-size: 0.65rem;">-${p.discountRate}%</span>` : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                    productsList.appendChild(item);
+                                });
+
+                                searchDropdown.classList.remove('d-none');
+                            })
+                            .catch(() => {
+                                searchDropdown.classList.add('d-none');
+                            });
+                    }, 250);
+                });
+
+                document.addEventListener('click', function (e) {
+                    if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+                        searchDropdown.classList.add('d-none');
+                    }
+                });
+            }
+
+            // Init comparison tray
+            renderCompareTray();
+        });
+
+        // Floating Comparison Tray Manager (Task 5 Customer Survey)
+        const COMPARE_STORAGE_KEY = 'techzone_compare_tray';
+
+        function getCompareItems() {
+            try {
+                return JSON.parse(localStorage.getItem(COMPARE_STORAGE_KEY)) || [];
+            } catch {
+                return [];
+            }
+        }
+
+        function saveCompareItems(items) {
+            localStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(items));
+            renderCompareTray();
+        }
+
+        function addToCompareTray(slug, name, img, price) {
+            let items = getCompareItems();
+            const exists = items.some(x => x.slug === slug);
+            if (exists) {
+                showToast(`Sản phẩm "${name}" đã có trong danh sách so sánh!`, false);
+                renderCompareTray(true);
+                return;
+            }
+
+            if (items.length >= 2) {
+                // Replace second item
+                items[1] = { slug: slug, name: name, img: img, price: price };
+                showToast(`Đã thay thế vị trí thứ 2 bằng "${name}"!`, true);
+            } else {
+                items.push({ slug: slug, name: name, img: img, price: price });
+                showToast(`Đã thêm "${name}" vào khay so sánh!`, true);
+            }
+
+            saveCompareItems(items);
+            renderCompareTray(true);
+        }
+
+        function removeFromCompareTray(slug) {
+            let items = getCompareItems().filter(x => x.slug !== slug);
+            saveCompareItems(items);
+            renderCompareTray(items.length > 0);
+        }
+
+        function clearCompareTray() {
+            localStorage.removeItem(COMPARE_STORAGE_KEY);
+            renderCompareTray(false);
+            showToast('Đã xóa tất cả sản phẩm trong khay so sánh.', true);
+        }
+
+        function toggleCompareTrayVisibility() {
+            const tray = document.getElementById('floatingCompareTray');
+            if (tray) {
+                tray.classList.toggle('d-none');
+            }
+        }
+
+        function navigateToCompare() {
+            const items = getCompareItems();
+            if (items.length >= 2) {
+                window.location.href = `/Catalog/Compare?p1=${encodeURIComponent(items[0].slug)}&p2=${encodeURIComponent(items[1].slug)}`;
+            } else if (items.length === 1) {
+                window.location.href = `/Catalog/Compare?p1=${encodeURIComponent(items[0].slug)}`;
+            }
+        }
+
+        function renderCompareTray(forceShow = false) {
+            const tray = document.getElementById('floatingCompareTray');
+            if (!tray) return;
+
+            const items = getCompareItems();
+            const countEl = document.getElementById('compareCount');
+            const slot1 = document.getElementById('compareSlot1');
+            const slot2 = document.getElementById('compareSlot2');
+            const btnGo = document.getElementById('btnGoCompare');
+
+            if (countEl) countEl.innerText = items.length;
+
+            if (items.length === 0) {
+                tray.classList.add('d-none');
+                return;
+            }
+
+            if (forceShow) {
+                tray.classList.remove('d-none');
+            }
+
+            // Render Slot 1
+            if (items[0]) {
+                slot1.innerHTML = `
+                    <img src="${items[0].img}" style="width: 38px; height: 38px; object-fit: contain;" class="rounded border p-1 bg-white" />
+                    <div class="overflow-hidden flex-grow-1" style="font-size: 0.75rem;">
+                        <div class="fw-bold text-dark text-truncate">${items[0].name}</div>
+                        <span class="text-danger fw-semibold">${items[0].price}</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-1" onclick="removeFromCompareTray('${items[0].slug}')">✖</button>
+                `;
+            } else {
+                slot1.innerHTML = `<span class="text-muted small fst-italic mx-auto">Chưa chọn SP 1</span>`;
+            }
+
+            // Render Slot 2
+            if (items[1]) {
+                slot2.innerHTML = `
+                    <img src="${items[1].img}" style="width: 38px; height: 38px; object-fit: contain;" class="rounded border p-1 bg-white" />
+                    <div class="overflow-hidden flex-grow-1" style="font-size: 0.75rem;">
+                        <div class="fw-bold text-dark text-truncate">${items[1].name}</div>
+                        <span class="text-danger fw-semibold">${items[1].price}</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-1" onclick="removeFromCompareTray('${items[1].slug}')">✖</button>
+                `;
+            } else {
+                slot2.innerHTML = `<span class="text-muted small fst-italic mx-auto">+ Thêm SP thứ 2</span>`;
+            }
+
+            // Button status
+            if (btnGo) {
+                btnGo.disabled = items.length < 2;
+                btnGo.innerHTML = items.length >= 2 
+                    ? '<i class="bi bi-arrow-left-right me-1"></i>So Sánh Ngay Chi Tiết'
+                    : '<i class="bi bi-plus-circle me-1"></i>Chọn thêm 1 sản phẩm để đối chiếu';
+            }
+        }
+    </script>
+    <!-- Mobile Bottom Navigation Bar (Task 13 Mobile-First Thumb Zone UX) -->
+    <nav class="tz-bottom-nav d-md-none" aria-label="Mobile Navigation">
+        <a asp-controller="Home" asp-action="Index" class="tz-bottom-nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+            <i class="bi bi-house-door-fill"></i>
+            <span>Trang chủ</span>
+        </a>
+        <a asp-controller="Catalog" asp-action="Index" class="tz-bottom-nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Catalog" && Context.Request.Query["sort"] != "flashsale" ? "active" : "")">
+            <i class="bi bi-grid-fill"></i>
+            <span>Danh mục</span>
+        </a>
+        <a asp-controller="Catalog" asp-action="Index" asp-route-sort="flashsale" class="tz-bottom-nav-item @(Context.Request.Query["sort"] == "flashsale" ? "active" : "")">
+            <i class="bi bi-lightning-charge-fill text-danger"></i>
+            <span>Siêu Sale</span>
+        </a>
+        <a asp-controller="Cart" asp-action="Index" class="tz-bottom-nav-item position-relative @(ViewContext.RouteData.Values["controller"]?.ToString() == "Cart" ? "active" : "")">
+            <i class="bi bi-cart3"></i>
+            <span id="mobileCartCountBadge" class="tz-bottom-nav-badge">0</span>
+            <span>Giỏ hàng</span>
+        </a>
+        <a asp-controller="Auth" asp-action="@(User.Identity?.IsAuthenticated == true ? "Profile" : "Login")" class="tz-bottom-nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Auth" ? "active" : "")">
+            <i class="bi bi-person-circle"></i>
+            <span>@(User.Identity?.IsAuthenticated == true ? "Tài khoản" : "Đăng nhập")</span>
+        </a>
+    </nav>
+
+    <!-- Microsoft SignalR Client & Real-Time Notification Logic (Task 14) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+        function loadNotifications() {
+            fetch('/Notification/GetRecent')
+                .then(res => res.json())
+                .then(data => {
+                    const badge = document.getElementById('notifBadge');
+                    const container = document.getElementById('notifListContainer');
+                    const emptyState = document.getElementById('notifEmptyState');
+                    
+                    if (badge) {
+                        if (data.unreadCount > 0) {
+                            badge.innerText = data.unreadCount > 99 ? '99+' : data.unreadCount;
+                            badge.classList.remove('d-none');
+                        } else {
+                            badge.classList.add('d-none');
+                        }
+                    }
+
+                    if (container && data.items && data.items.length > 0) {
+                        container.innerHTML = '';
+                        data.items.forEach(item => {
+                            container.appendChild(createNotificationItem(item));
+                        });
+                    } else if (emptyState && container) {
+                        container.innerHTML = '';
+                        container.appendChild(emptyState);
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function createNotificationItem(item) {
+            const el = document.createElement('a');
+            el.href = item.targetUrl || '#';
+            el.className = 'd-flex align-items-start gap-3 p-3 border-bottom text-decoration-none text-dark transition-all ' + (item.isRead ? 'opacity-75' : 'bg-light fw-semibold');
+            el.style.fontSize = '0.85rem';
+            
+            const iconClass = item.type === 'Order' ? 'bi-box-seam-fill text-primary' : (item.type === 'Promotion' ? 'bi-tag-fill text-danger' : 'bi-info-circle-fill text-info');
+            
+            el.innerHTML = `
+                <div class="rounded-circle p-2 bg-white shadow-sm border mt-1">
+                    <i class="bi ${iconClass} fs-5"></i>
+                </div>
+                <div class="flex-grow-1 overflow-hidden">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="text-truncate">${item.title}</strong>
+                        <span class="text-muted small" style="font-size: 0.7rem;">${item.timeAgo}</span>
+                    </div>
+                    <div class="text-muted small" style="font-size: 0.78rem; line-height: 1.3;">${item.message}</div>
+                </div>
+            `;
+
+            el.addEventListener('click', () => {
+                fetch('/Notification/MarkAsRead?id=' + encodeURIComponent(item.id), { method: 'POST' });
+            });
+
+            return el;
+        }
+
+        function handleIncomingNotification(notif) {
+            // 1. Shake Bell Icon (Micro-interaction)
+            const bellIcon = document.getElementById('notifBellIcon');
+            if (bellIcon) {
+                bellIcon.classList.remove('tz-cart-bounce');
+                void bellIcon.offsetWidth;
+                bellIcon.classList.add('tz-cart-bounce');
+            }
+
+            // 2. Play subtle notification sound if Web Audio API is supported
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } catch (e) {}
+
+            // 3. Show Toast notification popup
+            showToast(`${notif.title}: ${notif.message}`, true);
+
+            // 4. Reload notifications list and badge
+            loadNotifications();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotifications();
+
+            // Mark all as read button
+            document.getElementById('markAllReadBtn')?.addEventListener('click', () => {
+                fetch('/Notification/MarkAllAsRead', { method: 'POST' })
+                    .then(() => loadNotifications());
+            });
+
+            // SignalR Connection
+            if (typeof signalR !== 'undefined') {
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/hub/notifications")
+                    .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+                    .configureLogging(signalR.LogLevel.None)
+                    .build();
+
+                connection.on("NewOrderNotification", function (notif) {
+                    handleIncomingNotification(notif);
+                });
+
+                connection.on("OrderStatusUpdated", function (notif) {
+                    handleIncomingNotification(notif);
+                });
+
+                connection.start().catch(() => {});
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

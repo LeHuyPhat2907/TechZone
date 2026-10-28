@@ -1,0 +1,327 @@
+@model OrderTrackingDto?
+@{
+    ViewData["Title"] = "Tra Cứu Tiến Trình Vận Đơn - TechZone";
+
+    int currentStep = 1;
+    if (Model != null)
+    {
+        currentStep = Model.OrderStatus switch
+        {
+            OrderStatus.Pending => 1,
+            OrderStatus.PaymentConfirmed => 1,
+            OrderStatus.Confirmed => 2,
+            OrderStatus.Preparing => 3,
+            OrderStatus.Shipping => 4,
+            OrderStatus.Delivered => 5,
+            _ => 1
+        };
+    }
+}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <!-- Header & Search Box -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 p-md-5 bg-white mb-4">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-dark"><i class="bi bi-box-seam text-primary me-2"></i>Tra Cứu Tiến Trình Đơn Hàng</h3>
+                    <p class="text-muted small">Tra cứu nhanh chóng không cần đăng nhập: Nhập <strong>Mã đơn hàng</strong> (ví dụ: <code>TZ-260926-XXXX</code>) HOẶC <strong>Số điện thoại</strong> đã đặt hàng</p>
+                </div>
+
+                <form asp-action="Track" method="get" class="row g-3 justify-content-center" onsubmit="return validateTrackingForm()">
+                    <div class="col-md-5">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Mã đơn hàng TechZone</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-upc-scan"></i></span>
+                            <input type="text" id="trackOrderCode" name="orderCode" value="@(Model?.OrderCode ?? Context.Request.Query["orderCode"])" class="form-control text-uppercase" placeholder="VD: TZ-260926-XXXX" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Hoặc Số điện thoại đặt hàng</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-telephone"></i></span>
+                            <input type="tel" id="trackPhone" name="phone" value="@Context.Request.Query["phone"]" class="form-control" placeholder="VD: 0901234567" />
+                        </div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+                            <i class="bi bi-search me-1"></i> Tra Cứu
+                        </button>
+                    </div>
+                </form>
+
+                <script>
+                    function validateTrackingForm() {
+                        const code = document.getElementById('trackOrderCode').value.trim();
+                        const phone = document.getElementById('trackPhone').value.trim();
+                        if (!code && !phone) {
+                            alert('Vui lòng nhập Mã đơn hàng hoặc Số điện thoại để tra cứu!');
+                            return false;
+                        }
+                        return true;
+                    }
+                </script>
+
+                @if (ViewBag.ErrorMessage != null)
+                {
+                    <div class="alert alert-warning rounded-3 mt-3 mb-0 small text-center">
+                        <i class="bi bi-exclamation-circle me-1"></i> @ViewBag.ErrorMessage
+                    </div>
+                }
+            </div>
+
+            <!-- Tracking Result Section -->
+            @if (Model != null)
+            {
+                <div class="card border-0 rounded-4 shadow-sm p-4 p-md-5 bg-white mb-4">
+                    <!-- Order Header -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center pb-3 border-bottom mb-4">
+                        <div>
+                            <span class="text-muted small">Mã đơn hàng:</span>
+                            <h4 class="fw-bold text-primary mb-0">@Model.OrderCode</h4>
+                            <small class="text-muted">Ngày đặt: @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge @(Model.OrderStatus == OrderStatus.Delivered ? "bg-success" : (Model.OrderStatus == OrderStatus.Cancelled ? "bg-danger" : "bg-primary")) fs-6 p-2 rounded-3">
+                                @Model.OrderStatus
+                            </span>
+                            <div class="text-muted small mt-1">
+                                Hình thức: 
+                                @if (Model.DeliveryType == "StorePickup")
+                                {
+                                    <strong class="text-success"><i class="bi bi-shop me-1"></i>Nhận tại siêu thị</strong>
+                                }
+                                else
+                                {
+                                    <strong class="text-primary"><i class="bi bi-truck me-1"></i>Giao GHN</strong>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5-Step Stepper -->
+                    <div class="tz-stepper">
+                        <div class="tz-step-item @(currentStep >= 1 ? (currentStep > 1 ? "completed" : "active") : "")">
+                            <div class="tz-step-circle">
+                                @(currentStep > 1 ? "✓" : "1")
+                            </div>
+                            <div class="tz-step-label">Tiếp nhận đơn</div>
+                        </div>
+                        <div class="tz-step-item @(currentStep >= 2 ? (currentStep > 2 ? "completed" : "active") : "")">
+                            <div class="tz-step-circle">
+                                @(currentStep > 2 ? "✓" : "2")
+                            </div>
+                            <div class="tz-step-label">Xác nhận</div>
+                        </div>
+                        <div class="tz-step-item @(currentStep >= 3 ? (currentStep > 3 ? "completed" : "active") : "")">
+                            <div class="tz-step-circle">
+                                @(currentStep > 3 ? "✓" : "3")
+                            </div>
+                            <div class="tz-step-label">Scan Serial/IMEI</div>
+                        </div>
+                        <div class="tz-step-item @(currentStep >= 4 ? (currentStep > 4 ? "completed" : "active") : "")">
+                            <div class="tz-step-circle">
+                                @(currentStep > 4 ? "✓" : "4")
+                            </div>
+                            <div class="tz-step-label">@(Model.DeliveryType == "StorePickup" ? "Sẵn sàng nhận máy" : "Đang giao hàng")</div>
+                        </div>
+                        <div class="tz-step-item @(currentStep >= 5 ? "completed" : "")">
+                            <div class="tz-step-circle">
+                                @(currentStep == 5 ? "✓" : "5")
+                            </div>
+                            <div class="tz-step-label">Hoàn tất nhận hàng</div>
+                        </div>
+                    </div>
+
+                    <!-- Customer & Fulfillment Info -->
+                    <div class="p-3 bg-light rounded-4 my-4 small">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <strong>Khách hàng:</strong> @Model.CustomerName
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Số điện thoại:</strong> <code>@Model.MaskedPhone</code> <span class="text-muted">(Bảo mật PII)</span>
+                            </div>
+                            @if (Model.DeliveryType == "StorePickup")
+                            {
+                                <div class="col-12">
+                                    <div class="p-2 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-3">
+                                        <i class="bi bi-shop text-success me-1"></i>
+                                        <strong>Siêu thị nhận hàng:</strong> @Model.PickupStoreAddress
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-12">
+                                    <strong>Địa chỉ giao tận nơi:</strong> @Model.MaskedAddress
+                                </div>
+                            }
+                            <div class="col-12">
+                                <strong>Tổng thanh toán:</strong> <span class="fw-bold text-danger fs-6">@Model.TotalAmount.ToString("N0")₫</span>
+                            </div>
+                        </div>
+
+                        @if (Model.RequireVatInvoice)
+                        {
+                            <div class="mt-3 pt-3 border-top">
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle mb-1"><i class="bi bi-receipt me-1"></i> Hóa đơn VAT Điện Tử Doanh Nghiệp</span>
+                                <div class="text-secondary mt-1">
+                                    <strong>Đơn vị:</strong> @Model.CompanyName | <strong>MST:</strong> <code class="fw-bold">@Model.TaxId</code>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Carrier & Tracking Portal Integration (GHN, GHTK, Viettel Post) -->
+                    @if (!string.IsNullOrEmpty(Model.TrackingNumber))
+                    {
+                        <div class="p-3 bg-primary bg-opacity-10 border border-primary border-opacity-25 rounded-4 mb-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                        <i class="bi bi-truck fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-primary">Đơn vị vận chuyển: @Model.CarrierName</div>
+                                        <div class="small text-secondary">
+                                            Mã vận đơn đối soát: <code class="fw-bold fs-6 text-danger">@Model.TrackingNumber</code>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    @if (Model.CarrierName.Contains("GHN"))
+                                    {
+                                        <a href="https://donhang.ghn.vn/?order_code=@Model.TrackingNumber" target="_blank" class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>Tra cứu trên GHN Portal
+                                        </a>
+                                    }
+                                    else if (Model.CarrierName.Contains("GHTK"))
+                                    {
+                                        <a href="https://giaohangtietkiem.vn" target="_blank" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>Tra cứu trên GHTK Portal
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="https://tracking.viettelpost.com.vn/" target="_blank" class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>Tra cứu Viettel Post
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Items Table -->
+                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-box me-2 text-primary"></i>Chi Tiết Kiện Hàng</h6>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-sm align-middle small">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th>Số lượng</th>
+                                    <th>Đơn giá</th>
+                                    <th class="text-end">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <img src="@item.ThumbnailUrl" alt="@item.ProductName" class="rounded border p-1" style="width: 40px; height: 40px; object-fit: contain;" />
+                                                <div>
+                                                    <span class="fw-semibold text-dark">@item.ProductName</span>
+                                                    <span class="text-muted d-block small">@item.VariantName</span>
+                                                    @if (item.AssignedSerialNumbers.Count > 0)
+                                                    {
+                                                        <span class="badge bg-info-subtle text-info-emphasis border small">
+                                                            S/N: @string.Join(", ", item.AssignedSerialNumbers)
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>@item.Quantity</td>
+                                        <td>@item.UnitPrice.ToString("N0")₫</td>
+                                        <td class="text-end fw-bold text-danger">@item.TotalPrice.ToString("N0")₫</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Timeline Log -->
+                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history me-2 text-primary"></i>Nhật Ký Hành Trình Vận Đơn</h6>
+                    <ul class="list-group list-group-flush small">
+                        @foreach (var log in Model.StatusHistory.OrderByDescending(h => h.Timestamp))
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-start px-0">
+                                <div>
+                                    <span class="badge bg-light text-dark border me-2">@log.Status</span>
+                                    <span>@log.Note</span>
+                                    <div class="text-muted mt-1 small">Thực hiện bởi: <em>@log.ChangedBy</em></div>
+                                </div>
+                                <span class="text-muted text-nowrap">@log.Timestamp.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <!-- Carrier Comparison & SLA Info Card (Khảo sát GHN, GHTK, Viettel Post) -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                    <h5 class="fw-bold text-dark m-0"><i class="bi bi-shield-check text-success me-2"></i>Cam Kết Vận Chuyển An Toàn TechZone</h5>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 small">Đối tác vận chuyển chính thức</span>
+                </div>
+                <p class="small text-muted mb-3">Tất cả kiện hàng thiết bị điện tử giá trị cao tại TechZone đều được đóng gói túi khí chống sốc 3 lớp, dán tem niêm phong chống bóc và mua <strong>Bảo hiểm hàng hóa 100% giá trị</strong>.</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm small align-middle mb-0 text-center">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-start">Đơn vị vận chuyển</th>
+                                <th>Thời gian giao nội thành</th>
+                                <th>Thời gian liên tỉnh</th>
+                                <th>Bảo hiểm hàng hóa</th>
+                                <th>Tra cứu vận đơn</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-start fw-bold text-danger">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i>Giao Hàng Nhanh (GHN)
+                                    <span class="badge bg-danger ms-1 small">Ưu tiên số 1</span>
+                                </td>
+                                <td>Trong ngày (4 - 12h)</td>
+                                <td>24 - 48 giờ</td>
+                                <td>Tối đa 50.000.000₫</td>
+                                <td>API Webhook & SMS tự động</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start fw-bold text-success">
+                                    <i class="bi bi-box-seam me-1"></i>Giao Hàng Tiết Kiệm (GHTK)
+                                </td>
+                                <td>6 - 24 giờ</td>
+                                <td>2 - 3 ngày</td>
+                                <td>Tối đa 20.000.000₫</td>
+                                <td>App GHTK iShop</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start fw-bold text-danger">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>Viettel Post
+                                </td>
+                                <td>12 - 24 giờ</td>
+                                <td>2 - 4 ngày (Phủ 100% huyện xã/hải đảo)</td>
+                                <td>100% giá trị khai giá</td>
+                                <td>Tracking Portal ViettelPost</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

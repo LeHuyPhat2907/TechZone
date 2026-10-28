@@ -1,0 +1,157 @@
+@model List<TechZone.Web.Controllers.StoreLocationDto>
+@{
+    ViewData["Title"] = "Hệ Thống Showroom & Trung Tâm Bảo Hành - TechZone";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    string selectedCity = ViewBag.SelectedCity as string ?? "all";
+    string selectedFeature = ViewBag.SelectedFeature as string ?? "all";
+}
+
+<style>
+    .store-hero {
+        background: linear-gradient(135deg, #0d6efd 0%, #1e3c72 100%);
+        color: #fff;
+        border-radius: 1.25rem;
+        padding: 2.5rem 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .store-card {
+        border-radius: 1rem;
+        border: 1px solid rgba(0,0,0,0.08);
+        background: #fff;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .store-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+    .badge-service {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 2rem;
+        font-weight: 600;
+    }
+</style>
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Hệ thống Cửa hàng & Trung tâm Bảo hành</li>
+        </ol>
+    </nav>
+
+    <!-- Hero Banner -->
+    <div class="store-hero mb-4 shadow-sm text-center">
+        <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold text-uppercase mb-2">
+            <i class="bi bi-geo-alt-fill me-1"></i> Mạng lưới toàn quốc
+        </span>
+        <h2 class="fw-bold mb-2">HỆ THỐNG SHOWROOM & TRUNG TÂM BẢO HÀNH TECHZONE</h2>
+        <p class="text-white-50 mb-0 max-w-600 mx-auto">
+            Trải nghiệm tận tay các siêu phẩm công nghệ hàng đầu, tư vấn chuyên sâu và dịch vụ bảo hành ủy quyền chính hãng tại 5 thành phố lớn.
+        </p>
+    </div>
+
+    <!-- Filters Row -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-light">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="small fw-bold text-muted text-uppercase me-2"><i class="bi bi-funnel me-1"></i>Chọn Thành phố:</span>
+                    <a href="/Store" class="btn btn-sm @(selectedCity == "all" ? "btn-primary" : "btn-outline-secondary") rounded-pill px-3">Tất cả</a>
+                    <a href="/Store?city=TP.+Hồ+Chí+Minh" class="btn btn-sm @(selectedCity == "TP. Hồ Chí Minh" ? "btn-primary" : "btn-outline-secondary") rounded-pill px-3">TP. HCM</a>
+                    <a href="/Store?city=Hà+Nội" class="btn btn-sm @(selectedCity == "Hà Nội" ? "btn-primary" : "btn-outline-secondary") rounded-pill px-3">Hà Nội</a>
+                    <a href="/Store?city=Đà+Nẵng" class="btn btn-sm @(selectedCity == "Đà Nẵng" ? "btn-primary" : "btn-outline-secondary") rounded-pill px-3">Đà Nẵng</a>
+                    <a href="/Store?city=Cần+Thơ" class="btn btn-sm @(selectedCity == "Cần Thơ" ? "btn-primary" : "btn-outline-secondary") rounded-pill px-3">Cần Thơ</a>
+                    <a href="/Store?city=Hải+Phòng" class="btn btn-sm @(selectedCity == "Hải Phòng" ? "btn-primary" : "btn-outline-secondary") rounded-pill px-3">Hải Phòng</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="d-inline-flex align-items-center gap-2">
+                    <span class="small fw-bold text-muted me-2">Tiêu chí:</span>
+                    <a href="/Store?city=@selectedCity&feature=rma" class="btn btn-sm @(selectedFeature == "rma" ? "btn-warning text-dark" : "btn-outline-secondary") rounded-pill px-3">
+                        <i class="bi bi-tools me-1"></i> Có TTBH Tiếp nhận RMA
+                    </a>
+                    <a href="/Store?city=@selectedCity&feature=flagship" class="btn btn-sm @(selectedFeature == "flagship" ? "btn-info text-dark" : "btn-outline-secondary") rounded-pill px-3">
+                        <i class="bi bi-gem me-1"></i> Flagship Store
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store List Grid -->
+    <div class="row g-4">
+        @if (Model.Any())
+        {
+            @foreach (var store in Model)
+            {
+                <div class="col-lg-6">
+                    <div class="store-card p-4 h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="fw-bold text-dark mb-0">@store.Name</h5>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    @if (store.IsFlagship)
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle badge-service">
+                                            <i class="bi bi-star-fill me-1"></i>Flagship
+                                        </span>
+                                    }
+                                    @if (store.IsRmaServiceCenter)
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle badge-service">
+                                            <i class="bi bi-shield-check me-1"></i>TT Bảo hành RMA
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            <p class="small text-muted mb-2"><i class="bi bi-geo-alt-fill text-danger me-2"></i><strong>@store.Address</strong></p>
+                            
+                            <div class="small text-secondary mb-2">
+                                <i class="bi bi-telephone-fill text-success me-2"></i>Hotline: <a href="tel:@store.Phone.Replace(" ", "")" class="fw-bold text-decoration-none">@store.Phone</a>
+                            </div>
+
+                            <div class="small text-secondary mb-3">
+                                <i class="bi bi-clock-fill text-primary me-2"></i>Giờ phục vụ: <strong>@store.OpeningHours</strong>
+                            </div>
+
+                            <div class="bg-light p-3 rounded-3 mb-3">
+                                <div class="small fw-bold text-dark mb-2"><i class="bi bi-check2-circle text-success me-1"></i>Dịch vụ & Tiện ích tại Showroom:</div>
+                                <ul class="list-unstyled small text-muted mb-0">
+                                    @foreach (var feat in store.Features)
+                                    {
+                                        <li class="mb-1">• @feat</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 pt-2 border-top">
+                            <a href="@store.GoogleMapsUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm rounded-pill px-3 flex-fill">
+                                <i class="bi bi-map me-1"></i> Chỉ đường Google Maps
+                            </a>
+                            <a href="tel:@store.Phone.Replace(" ", "")" class="btn btn-outline-success btn-sm rounded-pill px-3">
+                                <i class="bi bi-telephone me-1"></i> Gọi ngay
+                            </a>
+                            <a asp-controller="Catalog" asp-action="Index" class="btn btn-primary btn-sm rounded-pill px-3">
+                                Mua sắm giữ máy
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-geo-alt-slash display-4 text-muted mb-3 d-block"></i>
+                <h5 class="fw-bold text-muted">Không tìm thấy showroom phù hợp với bộ lọc</h5>
+                <a href="/Store" class="btn btn-primary rounded-pill px-4 mt-2">Xem tất cả các chi nhánh</a>
+            </div>
+        }
+    </div>
+</div>

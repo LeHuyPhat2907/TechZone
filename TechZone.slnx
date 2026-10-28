@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TechZone.Application/TechZone.Application.csproj" />
+    <Project Path="src/TechZone.Domain/TechZone.Domain.csproj" />
+    <Project Path="src/TechZone.Infrastructure/TechZone.Infrastructure.csproj" />
+    <Project Path="src/TechZone.Web/TechZone.Web.csproj" />
+  </Folder>
+</Solution>

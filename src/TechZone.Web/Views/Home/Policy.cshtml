@@ -1,0 +1,167 @@
+@{
+    ViewData["Title"] = "Chính Sách & Quy Định - TechZone";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    string activeTab = ViewBag.ActiveTab as string ?? "warranty";
+}
+
+<style>
+    .policy-nav .nav-link {
+        font-weight: 500;
+        color: #495057;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.2s;
+    }
+    .policy-nav .nav-link.active {
+        background-color: #0d6efd;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(13,110,253,0.25);
+    }
+    .policy-card {
+        border-radius: 1.25rem;
+        border: 1px solid rgba(0,0,0,0.06);
+        background: #fff;
+        padding: 2.5rem;
+    }
+</style>
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chính sách & Quy định Chính thức</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <!-- Sidebar Navigation -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 sticky-top" style="top: 90px;">
+                <h6 class="fw-bold text-dark px-3 pt-2 mb-3">Trung Tâm Chính Sách</h6>
+                <div class="nav flex-column policy-nav" id="policyTab" role="tablist">
+                    <button class="nav-link @(activeTab == "warranty" ? "active" : "")" id="p-warranty-btn" data-bs-toggle="pill" data-bs-target="#p-warranty" type="button">
+                        <i class="bi bi-patch-check-fill text-warning"></i> Bảo hành điện tử E-Warranty
+                    </button>
+                    <button class="nav-link @(activeTab == "return" ? "active" : "")" id="p-return-btn" data-bs-toggle="pill" data-bs-target="#p-return" type="button">
+                        <i class="bi bi-arrow-counterclockwise text-success"></i> Đổi trả 1-đổi-1 trong 30 ngày
+                    </button>
+                    <button class="nav-link @(activeTab == "shipping" ? "active" : "")" id="p-shipping-btn" data-bs-toggle="pill" data-bs-target="#p-shipping" type="button">
+                        <i class="bi bi-truck text-primary"></i> Vận chuyển & Giao hỏa tốc
+                    </button>
+                    <button class="nav-link @(activeTab == "payment" ? "active" : "")" id="p-payment-btn" data-bs-toggle="pill" data-bs-target="#p-payment" type="button">
+                        <i class="bi bi-credit-card-2-front text-info"></i> Thanh toán & Trả góp 0%
+                    </button>
+                    <button class="nav-link @(activeTab == "privacy" ? "active" : "")" id="p-privacy-btn" data-bs-toggle="pill" data-bs-target="#p-privacy" type="button">
+                        <i class="bi bi-shield-lock-fill text-danger"></i> Bảo mật thông tin khách hàng
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Policy Content -->
+        <div class="col-lg-9">
+            <div class="tab-content policy-card shadow-sm" id="policyTabContent">
+                
+                <!-- 1. Bảo hành điện tử -->
+                <div class="tab-pane fade @(activeTab == "warranty" ? "show active" : "")" id="p-warranty" role="tabpanel">
+                    <h4 class="fw-bold text-dark mb-3"><i class="bi bi-patch-check-fill text-warning me-2"></i>Chính Sách Bảo Hành Điện Tử (E-Warranty)</h4>
+                    <p class="text-muted">TechZone là đơn vị tiên phong quản lý bảo hành 100% bằng số <strong>IMEI / Serial Number</strong> được kích hoạt trực tiếp từ hệ thống khi đơn hàng giao thành công.</p>
+                    
+                    <h6 class="fw-bold text-dark mt-4">1. Thời hạn bảo hành tiêu chuẩn:</h6>
+                    <ul>
+                        <li><strong>Điện thoại, Tablet, Laptop mới 100%:</strong> Bảo hành 12 tháng chính hãng từ nhà sản xuất (Apple, Samsung, ASUS, Dell, HP, Lenovo).</li>
+                        <li><strong>Phụ kiện cáp sạc, tai nghe, pin dự phòng:</strong> Bảo hành 12 - 24 tháng theo quy chuẩn của hãng.</li>
+                        <li><strong>Gói bảo hành mở rộng (TechZone Care+):</strong> Cộng thêm 12 tháng bảo hành toàn diện bao gồm rơi vỡ, vào nước.</li>
+                    </ul>
+
+                    <h6 class="fw-bold text-dark mt-4">2. Điều kiện được bảo hành miễn phí:</h6>
+                    <ul>
+                        <li>Thiết bị còn trong hạn bảo hành điện tử tra cứu được trên hệ thống <a asp-controller="Warranty" asp-action="Index">E-Warranty</a>.</li>
+                        <li>Lỗi phần cứng phát sinh do nhà sản xuất (mất nguồn, lỗi màn hình sọc, liệt cảm ứng, lỗi mainboard).</li>
+                        <li>Số IMEI/Serial trên máy trùng khớp với số IMEI lưu trên hệ thống hóa đơn TechZone.</li>
+                    </ul>
+
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-1"></i> Để tra cứu hạn bảo hành máy của bạn ngay bây giờ, vui lòng nhập mã IMEI/Serial tại: <a asp-controller="Warranty" asp-action="Index" class="fw-bold">Cổng Tra Cứu Bảo Hành</a>.
+                    </div>
+                </div>
+
+                <!-- 2. Đổi trả 1-đổi-1 -->
+                <div class="tab-pane fade @(activeTab == "return" ? "show active" : "")" id="p-return" role="tabpanel">
+                    <h4 class="fw-bold text-dark mb-3"><i class="bi bi-arrow-counterclockwise text-success me-2"></i>Chính Sách Đổi Mới 1-Đổi-1 Trong 30 Ngày</h4>
+                    <p class="text-muted">Nhằm đảm bảo quyền lợi tối đa cho khách hàng, TechZone áp dụng chính sách đổi mới sản phẩm tương đương trong 30 ngày đầu tiên nếu máy phát sinh lỗi từ nhà sản xuất.</p>
+
+                    <h6 class="fw-bold text-dark mt-4">1. Quy trình đổi mới:</h6>
+                    <ol>
+                        <li>Khách hàng gửi yêu cầu đổi trả trực tuyến tại <a href="/Member?tab=orders">Trung tâm thành viên</a> kèm video bóc hộp hoặc mang máy đến bất kỳ Showroom TechZone nào.</li>
+                        <li>Kỹ thuật viên kiểm định ngoại quan và chẩn đoán lỗi trong vòng 30 - 60 phút.</li>
+                        <li>Xuất máy mới nguyên seal 100% đổi ngay cho khách hàng. Hạn bảo hành sẽ được tính mới cho thiết bị vừa nhận.</li>
+                    </ol>
+
+                    <h6 class="fw-bold text-dark mt-4">2. Trường hợp từ chối đổi mới:</h6>
+                    <ul>
+                        <li>Máy có dấu hiệu rơi vỡ, móp méo, nứt vỡ mặt kính do tác động vật lý của người dùng.</li>
+                        <li>Máy bị ẩm nước hoặc quỳ tím đổi màu (đối với dòng máy không có chuẩn chống nước hoặc ngâm vượt độ sâu quy định).</li>
+                        <li>Đã tự ý can thiệp phần cứng hoặc sửa chữa tại các cửa hàng không ủy quyền.</li>
+                    </ul>
+                </div>
+
+                <!-- 3. Vận chuyển -->
+                <div class="tab-pane fade @(activeTab == "shipping" ? "show active" : "")" id="p-shipping" role="tabpanel">
+                    <h4 class="fw-bold text-dark mb-3"><i class="bi bi-truck text-primary me-2"></i>Chính Sách Vận Chuyển & Giao Hàng Hỏa Tốc</h4>
+                    <p class="text-muted">TechZone hợp tác cùng các đối tác giao vận hàng đầu như Giao Hàng Nhanh (GHN), Giao Hàng Tiết Kiệm (GHTK) và GrabExpress để mang lại trải nghiệm nhận hàng an tâm tuyệt đối.</p>
+
+                    <h6 class="fw-bold text-dark mt-4">1. Thời gian giao hàng:</h6>
+                    <ul>
+                        <li><strong>Giao hỏa tốc 2 giờ:</strong> Áp dụng cho các quận nội thành TP.HCM và Hà Nội.</li>
+                        <li><strong>Giao tiêu chuẩn toàn quốc:</strong> 1 - 2 ngày làm việc cho các tỉnh thành lớn; 2 - 3 ngày cho khu vực huyện, xã.</li>
+                    </ul>
+
+                    <h6 class="fw-bold text-dark mt-4">2. Quy định đóng gói & Đồng kiểm:</h6>
+                    <ul>
+                        <li>100% kiện hàng được dán tem niêm phong <strong>TechZone Security Tape</strong> chống tráo hàng.</li>
+                        <li>Khách hàng được quyền <strong>đồng kiểm ngoại quan</strong> trước khi nhận và thanh toán tiền cho bưu tá.</li>
+                    </ul>
+                </div>
+
+                <!-- 4. Thanh toán -->
+                <div class="tab-pane fade @(activeTab == "payment" ? "show active" : "")" id="p-payment" role="tabpanel">
+                    <h4 class="fw-bold text-dark mb-3"><i class="bi bi-credit-card-2-front text-info me-2"></i>Phương Thức Thanh Toán & Trả Góp 0%</h4>
+                    <p class="text-muted">Hỗ trợ đa dạng phương thức thanh toán không tiền mặt và chương trình mua trước trả sau lãi suất 0%.</p>
+
+                    <h6 class="fw-bold text-dark mt-4">1. Các hình thức thanh toán được hỗ trợ:</h6>
+                    <ul>
+                        <li><strong>Thanh toán khi nhận hàng (COD):</strong> Kiểm tra máy trước, thanh toán tiền mặt cho bưu tá.</li>
+                        <li><strong>Chuyển khoản VietQR PayOS:</strong> Quét mã QR tự động xác thực trong 3 giây.</li>
+                        <li><strong>Cổng thanh toán điện tử:</strong> VNPAY-QR, Thẻ tín dụng/Ghi nợ quốc tế Visa, MasterCard, JCB.</li>
+                    </ul>
+
+                    <h6 class="fw-bold text-dark mt-4">2. Mua trả góp 0% lãi suất:</h6>
+                    <ul>
+                        <li>Hỗ trợ qua thẻ tín dụng của hơn 25 ngân hàng liên kết.</li>
+                        <li>Trả góp qua công ty tài chính (Fundiin, SPayLater) chỉ cần CCCD gắn chip, duyệt hồ sơ online trong 5 phút.</li>
+                    </ul>
+                </div>
+
+                <!-- 5. Bảo mật -->
+                <div class="tab-pane fade @(activeTab == "privacy" ? "show active" : "")" id="p-privacy" role="tabpanel">
+                    <h4 class="fw-bold text-dark mb-3"><i class="bi bi-shield-lock-fill text-danger me-2"></i>Chính Sách Bảo Mật Thông Tin Khách Hàng</h4>
+                    <p class="text-muted">TechZone cam kết bảo vệ dữ liệu cá nhân của người dùng tuân thủ nghiêm ngặt Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.</p>
+
+                    <h6 class="fw-bold text-dark mt-4">1. Cam kết an toàn thông tin:</h6>
+                    <ul>
+                        <li>Mọi thông tin cá nhân (Họ tên, SĐT, Email, Địa chỉ) được mã hóa bằng thuật toán hiện đại khi lưu trữ trong cơ sở dữ liệu.</li>
+                        <li>Tuyệt đối <strong>không chia sẻ hoặc bán dữ liệu</strong> cho bên thứ ba vì bất kỳ mục đích quảng cáo nào.</li>
+                        <li>Khách hàng có toàn quyền yêu cầu trích xuất, chỉnh sửa hoặc xóa vĩnh viễn tài khoản của mình bất cứ lúc nào qua tính năng Self-Service.</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,95 @@
+@using TechZone.Domain.Entities
+@model RmaRequest
+@{
+    var warranty = ViewBag.Warranty as Warranty;
+}
+
+<div class="p-4 bg-white text-dark" id="printReceiptContent" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: auto;">
+    <div class="text-center border-bottom pb-3 mb-3">
+        <h4 class="fw-bold mb-1 text-uppercase text-primary">HỆ THỐNG BÁN LẺ & TRUNG TÂM BẢO HÀNH TECHZONE</h4>
+        <p class="small text-muted mb-0">Địa chỉ: 123 Cách Mạng Tháng 8, Quận 3, TP. Hồ Chí Minh</p>
+        <p class="small text-muted mb-0">Hotline Kỹ thuật & Khiếu nại: <strong>1800 6868</strong> - Website: techzone.vn</p>
+    </div>
+
+    <div class="text-center mb-3">
+        <h5 class="fw-bold text-dark text-uppercase m-0">BIÊN NHẬN BẢO HÀNH & TIẾP NHẬN SỬA CHỮA</h5>
+        <div class="font-monospace fs-5 fw-bold text-danger">@Model.RmaCode</div>
+        <small class="text-muted">Mã nhận máy (Secret PIN): <strong>@(Model.PickupCode ?? "TZ-RECV")</strong></small>
+    </div>
+
+    <div class="card border p-3 rounded-3 mb-3 bg-light">
+        <div class="row g-2 small">
+            <div class="col-6"><strong>Khách hàng:</strong> @Model.CustomerName</div>
+            <div class="col-6"><strong>Số điện thoại:</strong> @Model.CustomerPhone</div>
+            <div class="col-6"><strong>Mã đơn hàng gốc:</strong> <span class="font-monospace">@Model.OrderCode</span></div>
+            <div class="col-6"><strong>Ngày tiếp nhận:</strong> @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+            <div class="col-6"><strong>KTV tiếp nhận:</strong> @(Model.InspectedByStaffName ?? "Kỹ thuật viên")</div>
+            <div class="col-6"><strong>KTV điều phối phụ trách:</strong> <span class="text-primary fw-semibold">@(Model.AssignedTechnicianName ?? "Đang phân công")</span></div>
+            <div class="col-12"><strong>Hạn hẹn trả máy dự kiến:</strong> <span class="fw-bold text-danger">@(Model.EstimatedCompletionDate?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Trong vòng 3 ngày làm việc")</span></div>
+        </div>
+    </div>
+
+    <div class="card border p-3 rounded-3 mb-3">
+        <h6 class="fw-bold text-dark mb-2 border-bottom pb-1"><i class="bi bi-phone me-1"></i>Thông Tin Thiết Bị Tiếp Nhận</h6>
+        <div class="row g-2 small">
+            <div class="col-12"><strong>Tên sản phẩm:</strong> <span class="fw-bold">@Model.ProductName</span></div>
+            <div class="col-6"><strong>Số Serial:</strong> <code class="fw-bold text-dark fs-6">@Model.SerialNumber</code></div>
+            <div class="col-6"><strong>Phương án dự kiến:</strong> <span class="badge bg-secondary">@Model.ResolutionType</span></div>
+            <div class="col-12"><strong>Tình trạng khách mô tả:</strong> <em>@Model.CustomerDescription</em></div>
+            <div class="col-12"><strong>Ghi chú ngoại quan & Kỹ thuật:</strong> <em>@(Model.StaffNotes ?? "Không có dấu hiệu cấn móp, quỳ tím hợp lệ")</em></div>
+        </div>
+    </div>
+
+    @if (Model.TotalCost > 0)
+    {
+        <div class="card border p-3 rounded-3 mb-3 bg-light">
+            <h6 class="fw-bold text-dark mb-2 border-bottom pb-1">Chi Phí Thay Thế & Dịch Vụ</h6>
+            <div class="d-flex justify-content-between small mb-1">
+                <span>Tiền linh kiện thay thế:</span>
+                <strong>@Model.PartsCost.ToString("N0")₫</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span>Tiền công kỹ thuật viên:</span>
+                <strong>@Model.LaborCost.ToString("N0")₫</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span>Giảm trừ ưu đãi:</span>
+                <strong class="text-success">-@Model.DiscountAmount.ToString("N0")₫</strong>
+            </div>
+            <hr class="my-1" />
+            <div class="d-flex justify-content-between">
+                <span class="fw-bold">Tổng chi phí khách thanh toán:</span>
+                <span class="fw-bold text-danger fs-5">@Model.TotalCost.ToString("N0")₫</span>
+            </div>
+            <div class="text-end small mt-1">
+                <span class="badge @(Model.PaymentStatus == "Paid" ? "bg-success" : "bg-warning text-dark")">@Model.PaymentStatus</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-success border-0 small py-2 px-3 mb-3">
+            <i class="bi bi-check-circle-fill me-1"></i>Thiết bị được hỗ trợ bảo hành chính hãng miễn phí theo chính sách TechZone Care.
+        </div>
+    }
+
+    <div class="small text-muted border-top pt-2 mb-4" style="font-size: 0.75rem;">
+        <strong>QUY ĐỊNH BẢO HÀNH & NHẬN MÁY:</strong>
+        <ul class="mb-0 ps-3">
+            <li>Quý khách vui lòng mang theo biên nhận này hoặc xuất trình mã nhận máy cùng số điện thoại đăng ký khi nhận lại thiết bị.</li>
+            <li>TechZone không chịu trách nhiệm về dữ liệu cá nhân (danh bạ, hình ảnh, tài khoản) lưu trong máy. Quý khách vui lòng sao lưu trước khi bàn giao.</li>
+            <li>Sau 30 ngày kể từ ngày thông báo nhận máy, nếu khách hàng không đến nhận, TechZone sẽ xử lý theo quy định thanh lý tài sản bảo hành.</li>
+        </ul>
+    </div>
+
+    <div class="row text-center mt-3 pt-2">
+        <div class="col-6">
+            <p class="small fw-bold mb-5">ĐẠI DIỆN KHÁCH HÀNG</p>
+            <p class="small text-muted mb-0">(Ký và ghi rõ họ tên)</p>
+        </div>
+        <div class="col-6">
+            <p class="small fw-bold mb-5">ĐẠI DIỆN TRUNG TÂM BẢO HÀNH</p>
+            <p class="small text-muted mb-0">@(Model.AssignedTechnicianName ?? "Kỹ thuật viên")</p>
+        </div>
+    </div>
+</div>

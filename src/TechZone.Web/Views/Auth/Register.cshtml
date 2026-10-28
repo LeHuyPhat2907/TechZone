@@ -1,0 +1,65 @@
+@model RegisterDto
+@{
+    ViewData["Title"] = "Đăng Ký Tài Khoản Mới - TechZone";
+}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 rounded-4 shadow-sm p-4 p-md-5 bg-white">
+                <div class="text-center mb-4">
+                    <a asp-controller="Home" asp-action="Index" class="d-inline-flex align-items-center gap-2 text-decoration-none mb-2">
+                        <i class="bi bi-cpu-fill text-primary fs-2"></i>
+                        <span class="fw-bold fs-3 text-dark">TECH<span class="text-primary">ZONE</span></span>
+                    </a>
+                    <h4 class="fw-bold text-dark">Đăng Ký Tài Khoản</h4>
+                    <p class="text-muted small">Tạo tài khoản để nhận ngay 100 điểm thưởng và ưu đãi VIP</p>
+                </div>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger rounded-3 small">
+                        <div asp-validation-summary="All" class="mb-0"></div>
+                    </div>
+                }
+
+                <form asp-action="Register" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Họ và tên của bạn</label>
+                        <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Địa chỉ Email</label>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="name@domain.com" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Số điện thoại</label>
+                        <input asp-for="PhoneNumber" class="form-control" placeholder="0901234567" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mật khẩu</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" required />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-secondary">Xác nhận mật khẩu</label>
+                        <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="••••••••" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 rounded-3 mb-3">
+                        Tạo Tài Khoản <i class="bi bi-person-check ms-1"></i>
+                    </button>
+                </form>
+
+                <div class="text-center small text-muted">
+                    Đã có tài khoản TechZone? <a asp-action="Login" class="text-primary fw-semibold text-decoration-none">Đăng nhập</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

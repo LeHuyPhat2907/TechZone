@@ -1,0 +1,76 @@
+@model List<TechZone.Domain.Entities.Post>
+@{
+    ViewData["Title"] = "Tin Tức & Cẩm Nang Công Nghệ - TechZone";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    string? selectedTag = ViewBag.SelectedTag as string;
+    string? searchKeyword = ViewBag.SearchKeyword as string;
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Tin Công Nghệ & Cẩm Nang</li>
+        </ol>
+    </nav>
+
+    <!-- Header & Search Box -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="bi bi-newspaper text-primary me-2"></i>Tin Tức Công Nghệ & Thủ Thuật</h3>
+            <p class="text-muted small mb-0">Cập nhật xu hướng thiết bị điện tử, mẹo sử dụng và tin tức công nghệ mới nhất từ TechZone Lab.</p>
+        </div>
+        <form asp-controller="Home" asp-action="News" method="get" class="d-flex gap-2" style="max-width: 320px;">
+            <input type="text" name="search" class="form-control form-control-sm" placeholder="Tìm kiếm bài viết..." value="@searchKeyword" />
+            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3"><i class="bi bi-search"></i></button>
+        </form>
+    </div>
+
+    <!-- Articles Grid -->
+    <div class="row g-4">
+        @if (Model.Any())
+        {
+            @foreach (var post in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                        <img src="@post.ThumbnailUrl" class="card-img-top" alt="@post.Title" style="height: 200px; object-fit: cover;" onerror="this.onerror=null;this.src='/images/placeholder.svg';" />
+                        <div class="card-body d-flex flex-column justify-content-between p-4">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-primary-subtle text-primary small">@post.CategoryName</span>
+                                    <span class="small text-muted"><i class="bi bi-eye me-1"></i>@post.ViewCount.ToString("N0")</span>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-2">
+                                    <a href="/Catalog" class="text-dark text-decoration-none">@post.Title</a>
+                                </h6>
+                                <p class="small text-secondary mb-3">@post.Summary</p>
+                            </div>
+                            <div>
+                                <div class="d-flex gap-1 flex-wrap mb-3">
+                                    @foreach (var t in post.Tags)
+                                    {
+                                        <a href="/News?tag=@t" class="badge bg-light text-secondary border text-decoration-none small">#@t</a>
+                                    }
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted pt-2 border-top">
+                                    <span><i class="bi bi-person me-1"></i>@post.AuthorName</span>
+                                    <span>@(post.PublishedAt?.ToString("dd/MM/yyyy") ?? post.CreatedAt.ToString("dd/MM/yyyy"))</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-journal-x display-4 text-muted mb-3 d-block"></i>
+                <h5 class="fw-bold text-muted">Không tìm thấy bài viết nào phù hợp</h5>
+                <a href="/News" class="btn btn-primary rounded-pill px-4 mt-2">Xem tất cả bài viết</a>
+            </div>
+        }
+    </div>
+</div>

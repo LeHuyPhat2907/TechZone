@@ -1,0 +1,300 @@
+@model HomeIndexViewModel
+@{
+    ViewData["Title"] = "Trang Chủ - Thế Giới Thiết Bị Điện Tử & Công Nghệ Chính Hãng";
+}
+
+<div class="container my-3">
+    <!-- 1. Hero Banner Carousel & Side Banners -->
+    <div class="row g-3 mb-4">
+        <!-- Main Carousel -->
+        <div class="col-lg-8">
+            <div id="heroCarousel" class="carousel slide rounded-4 overflow-hidden shadow-sm" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    @for (int i = 0; i < Model.Banners.Count; i++)
+                    {
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : "false")"></button>
+                    }
+                </div>
+                <div class="carousel-inner">
+                    @for (int i = 0; i < Model.Banners.Count; i++)
+                    {
+                        var banner = Model.Banners[i];
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <a href="@banner.LinkUrl">
+                                <img src="@banner.ImageUrl" class="d-block w-100" alt="@banner.Title" style="height: 380px; object-fit: cover;" loading="@(i == 0 ? "eager" : "lazy")" decoding="async" onerror="this.onerror=null;this.src='/images/placeholder.svg';" />
+                            </a>
+                        </div>
+                    }
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Trước</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Sau</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Side Banners -->
+        <div class="col-lg-4 d-flex flex-column gap-3">
+            <div class="card border-0 rounded-4 overflow-hidden shadow-sm h-50 position-relative">
+                <img src="https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600&auto=format&fit=crop&q=80" class="w-100 h-100" style="object-fit: cover;" alt="Galaxy S24 Ultra" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/placeholder.svg';" />
+                <div class="position-absolute bottom-0 start-0 end-0 p-3 bg-dark bg-opacity-75 text-white">
+                    <span class="badge bg-warning text-dark mb-1">Galaxy AI</span>
+                    <h6 class="mb-0 fw-bold">Galaxy S24 Ultra - Quyền Năng AI</h6>
+                    <small class="text-light">Tặng voucher 500k khi đặt online</small>
+                </div>
+                <a asp-controller="Catalog" asp-action="Detail" asp-route-slug="samsung-galaxy-s24-ultra" class="stretched-link"></a>
+            </div>
+
+            <div class="card border-0 rounded-4 overflow-hidden shadow-sm h-50 position-relative">
+                <img src="https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80" class="w-100 h-100" style="object-fit: cover;" alt="Anker Prime" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/placeholder.svg';" />
+                <div class="position-absolute bottom-0 start-0 end-0 p-3 bg-dark bg-opacity-75 text-white">
+                    <span class="badge bg-danger mb-1">GaN Siêu Mát</span>
+                    <h6 class="mb-0 fw-bold">Củ Sạc Nhanh Anker 67W</h6>
+                    <small class="text-light">Bảo hành đổi mới 18 tháng chính hãng</small>
+                </div>
+                <a asp-controller="Catalog" asp-action="Detail" asp-route-slug="cu-sac-anker-prime-67w-gan" class="stretched-link"></a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Value Propositions -->
+    <div class="row g-3 mb-5">
+        <div class="col-6 col-lg-3">
+            <div class="tz-feature-box shadow-sm">
+                <div class="tz-feature-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div>
+                    <h6 class="mb-1 fw-bold text-dark">100% Chính Hãng</h6>
+                    <small class="text-muted">Đền 200% nếu hàng giả</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="tz-feature-box shadow-sm">
+                <div class="tz-feature-icon">
+                    <i class="bi bi-patch-check"></i>
+                </div>
+                <div>
+                    <h6 class="mb-1 fw-bold text-dark">Bảo Hành Điện Tử</h6>
+                    <small class="text-muted">Định danh IMEI/Serial tự động</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="tz-feature-box shadow-sm">
+                <div class="tz-feature-icon">
+                    <i class="bi bi-arrow-repeat"></i>
+                </div>
+                <div>
+                    <h6 class="mb-1 fw-bold text-dark">1 Đổi 1 Trong 7 Ngày</h6>
+                    <small class="text-muted">Lỗi kỹ thuật nhà sản xuất</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="tz-feature-box shadow-sm">
+                <div class="tz-feature-icon">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <div>
+                    <h6 class="mb-1 fw-bold text-dark">Giao Hỏa Tốc GHN</h6>
+                    <small class="text-muted">Theo dõi vận đơn từng phút</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Category Grid -->
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold text-dark m-0"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Danh Mục Nổi Bật</h4>
+            <a asp-controller="Catalog" asp-action="Index" class="text-decoration-none fw-semibold small">Xem tất cả <i class="bi bi-chevron-right"></i></a>
+        </div>
+        <div class="row g-3">
+            @foreach (var cat in Model.Categories)
+            {
+                <div class="col-4 col-md-2">
+                    <a asp-controller="Catalog" asp-action="Index" asp-route-category="@cat.Slug" class="text-decoration-none">
+                        <div class="card h-100 text-center border-0 p-3 rounded-4 shadow-sm bg-white" style="transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <div class="mx-auto mb-2 text-primary" style="font-size: 2.2rem;">
+                                <i class="bi @cat.IconUrl"></i>
+                            </div>
+                            <span class="fw-semibold text-dark small">@cat.Name</span>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Flash Sale Giờ Vàng (Task 1 Survey Insight 8: Flash Sale & Promotions) -->
+    @if (Model.FlashSaleProducts.Count > 0)
+    {
+        <div class="card border-0 rounded-4 shadow-sm mb-5 overflow-hidden text-white" style="background: linear-gradient(135deg, #b91c1c 0%, #ea580c 100%);">
+            <div class="p-3 p-md-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-4"><i class="bi bi-lightning-charge-fill text-warning"></i></span>
+                            <h3 class="fw-bold text-white m-0 text-uppercase tracking-wider">FLASH SALE GIỜ VÀNG</h3>
+                        </div>
+                        <div class="d-flex align-items-center gap-1 bg-black bg-opacity-25 px-3 py-1 rounded-pill small">
+                            <span class="text-warning small me-1"><i class="bi bi-clock-history"></i> Kết thúc sau:</span>
+                            <span class="badge bg-dark fs-6" id="flashHours">02</span> :
+                            <span class="badge bg-dark fs-6" id="flashMinutes">45</span> :
+                            <span class="badge bg-dark fs-6" id="flashSeconds">30</span>
+                        </div>
+                    </div>
+                    <a asp-controller="Catalog" asp-action="Index" class="btn btn-sm btn-light fw-bold rounded-pill px-3 text-danger">
+                        Xem tất cả Deal <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="row g-3">
+                    @foreach (var prod in Model.FlashSaleProducts)
+                    {
+                        var soldPct = Math.Min(95, Math.Max(40, prod.DiscountRate * 3 + 20));
+                        <div class="col-6 col-md-3">
+                            <div class="card h-100 border-0 rounded-4 p-3 bg-white text-dark shadow-sm position-relative">
+                                @if (prod.DiscountRate > 0)
+                                {
+                                    <div class="position-absolute top-0 start-0 m-2 badge bg-danger fs-6 fw-bold">-@prod.DiscountRate%</div>
+                                }
+                                <div class="position-absolute top-0 end-0 m-2 badge bg-light text-primary border">VN/A</div>
+
+                                <div class="text-center p-2 mb-2">
+                                    <a asp-controller="Catalog" asp-action="Detail" asp-route-slug="@prod.Slug">
+                                        <img src="@prod.ThumbnailUrl" alt="@prod.Name" class="img-fluid" style="height: 140px; object-fit: contain;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/placeholder.svg';" />
+                                    </a>
+                                </div>
+
+                                <h6 class="fw-bold mb-1 text-truncate" title="@prod.Name">
+                                    <a asp-controller="Catalog" asp-action="Detail" asp-route-slug="@prod.Slug" class="text-dark text-decoration-none">
+                                        @prod.Name
+                                    </a>
+                                </h6>
+
+                                <div class="d-flex align-items-baseline gap-2 mb-1">
+                                    <span class="fw-bold text-danger fs-5">@prod.Price.ToString("N0")₫</span>
+                                    @if (prod.OriginalPrice > prod.Price)
+                                    {
+                                        <span class="text-muted small text-decoration-line-through">@prod.OriginalPrice.ToString("N0")₫</span>
+                                    }
+                                </div>
+
+                                <div class="small text-muted font-monospace mb-2" style="font-size: 0.725rem;">
+                                    <i class="bi bi-credit-card-2-front text-success me-1"></i>@prod.InstallmentText
+                                </div>
+
+                                <!-- Stock Progress Bar -->
+                                <div class="mt-auto">
+                                    <div class="progress rounded-pill bg-danger-subtle position-relative" style="height: 18px;">
+                                        <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar" style="width: @(soldPct)%;" aria-valuenow="@soldPct" aria-valuemin="0" aria-valuemax="100"></div>
+                                        <span class="position-absolute w-100 text-center small text-white fw-bold" style="font-size: 0.65rem; line-height: 18px; text-shadow: 0 1px 2px rgba(0,0,0,0.6);">
+                                            <i class="bi bi-fire text-warning"></i> ĐÃ BÁN @(soldPct)%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- 4. Featured Products -->
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-danger p-2"><i class="bi bi-fire"></i> HOT</span>
+                <h4 class="fw-bold text-dark m-0">Sản Phẩm Nổi Bật</h4>
+            </div>
+            <a asp-controller="Catalog" asp-action="Index" class="text-decoration-none fw-semibold small">Xem tất cả (@Model.FeaturedProducts.Count) <i class="bi bi-chevron-right"></i></a>
+        </div>
+
+        <div class="row g-3">
+            @foreach (var prod in Model.FeaturedProducts)
+            {
+                <partial name="_ProductCard" model="prod" />
+            }
+        </div>
+    </div>
+
+    <!-- 5. Brand Pavilion (Task 1 Survey Insight 3: Mall-ification & Authorized Reseller) -->
+    <div class="card border-0 rounded-4 p-4 shadow-sm mb-5 bg-white">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <div>
+                <h5 class="fw-bold text-dark m-0"><i class="bi bi-award-fill text-warning me-2"></i>Thương Hiệu & Đại Lý Ủy Quyền Chính Hãng</h5>
+                <small class="text-muted">TechZone cam kết 100% sản phẩm phân phối chính thức - Bảo hành Serial/IMEI toàn quốc</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark border p-2"><i class="bi bi-apple me-1"></i>Apple AAR</span>
+                <span class="badge bg-light text-dark border p-2"><i class="bi bi-shield-check text-primary me-1"></i>Samsung Authorized</span>
+            </div>
+        </div>
+        <div class="row g-2 align-items-center text-center">
+            @foreach (var brand in Model.Brands)
+            {
+                <div class="col-6 col-md-3 col-lg-3">
+                    <a asp-controller="Catalog" asp-action="Index" asp-route-brand="@brand.Slug" class="text-decoration-none">
+                        <div class="border rounded-3 p-3 bg-light hover-shadow text-dark fw-bold" style="transition: background 0.2s;">
+                            <span>@brand.Name</span>
+                            <div class="text-muted small fw-normal">@brand.CountryOfOrigin</div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- 6. New Arrivals -->
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary p-2"><i class="bi bi-stars"></i> MỚI</span>
+                <h4 class="fw-bold text-dark m-0">Sản Phẩm Mới Về</h4>
+            </div>
+            <a asp-controller="Catalog" asp-action="Index" class="text-decoration-none fw-semibold small">Xem tất cả <i class="bi bi-chevron-right"></i></a>
+        </div>
+
+        <div class="row g-3">
+            @foreach (var prod in Model.NewArrivals)
+            {
+                <partial name="_ProductCard" model="prod" />
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            let h = 2, m = 45, s = 30;
+            setInterval(() => {
+                if (s > 0) {
+                    s--;
+                } else {
+                    s = 59;
+                    if (m > 0) {
+                        m--;
+                    } else {
+                        m = 59;
+                        if (h > 0) h--;
+                    }
+                }
+                const elH = document.getElementById('flashHours');
+                const elM = document.getElementById('flashMinutes');
+                const elS = document.getElementById('flashSeconds');
+                if (elH) elH.innerText = h.toString().padStart(2, '0');
+                if (elM) elM.innerText = m.toString().padStart(2, '0');
+                if (elS) elS.innerText = s.toString().padStart(2, '0');
+            }, 1000);
+        })();
+    </script>
+}

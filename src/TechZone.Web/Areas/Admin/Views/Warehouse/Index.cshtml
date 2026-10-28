@@ -1,0 +1,1628 @@
+@using TechZone.Domain.Enums
+@model TechZone.Web.Areas.Admin.Models.WarehousePortalViewModel
+@{
+    ViewData["Title"] = "Trung Tâm Điều Hành Kho & Chuỗi Cung Ứng";
+}
+
+<div class="container-fluid px-0">
+    <!-- Header Page -->
+    <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge tz-badge-soft-success px-2.5 py-1 rounded-pill">
+                    <i class="bi bi-boxes me-1"></i>3. Warehouse &amp; Inventory Hub
+                </span>
+                <span class="badge bg-dark text-light rounded-pill px-2.5 py-1">Quản Trị Chuỗi Cung Ứng</span>
+                <span class="badge bg-secondary text-light rounded-pill px-2 py-0.5 small">
+                    <i class="bi bi-geo-alt-fill me-1"></i>@Model.CurrentWarehouseName
+                </span>
+                <span class="badge bg-info text-dark rounded-pill px-2 py-0.5 small">
+                    <i class="bi bi-person-badge-fill me-1"></i>@Model.CurrentStaffName
+                </span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-1">Trung Tâm Điều Hành Kho &amp; Định Danh IMEI</h2>
+            <p class="text-secondary small mb-0">Quản lý toàn bộ luồng di chuyển vật lý của hàng hóa: nhập kho PO nhà phân phối, định danh IMEI/Serial, Pick List đóng gói, xuất kho bưu tá và kiểm kê.</p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Fast Pick List Printable -->
+            <a href="@Url.Action("CreatePickList", "Warehouse")" target="_blank" class="btn btn-outline-primary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-sm fw-semibold">
+                <i class="bi bi-printer-fill"></i>
+                <span>In Phiếu Nhặt Hàng (Pick List)</span>
+            </a>
+
+            <!-- Fast Scan Inbound Modal Trigger -->
+            <button type="button" class="btn btn-success rounded-pill px-3.5 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-sm fw-semibold text-white" data-bs-toggle="modal" data-bs-target="#scanImeiBatchModal">
+                <i class="bi bi-upc-scan"></i>
+                <span>Quét Nhập IMEI Khui Kiện</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 6 KPI Operational Metric Cards -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Đơn PO Chờ Nhập -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-warning">
+                <span class="text-secondary small fw-semibold">PO Đã Duyệt Chờ Nhập</span>
+                <div class="fs-4 fw-bold text-warning mt-1 font-monospace">@Model.PendingPoCount</div>
+                <a href="@Url.Action("Index", "Warehouse", new { tab = "inbound", poStatus = "Approved" })" class="text-muted small text-decoration-none" style="font-size: 0.72rem;">
+                    Tiếp nhận ngay <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 2. Thiết Bị Trong Kho (In Stock) -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-success">
+                <span class="text-secondary small fw-semibold">Thiết Bị Sẵn Sàng Bán</span>
+                <div class="fs-4 fw-bold text-success mt-1 font-monospace">@Model.InStockCount</div>
+                <a href="@Url.Action("Index", "Warehouse", new { tab = "imei", imeiStatus = "InStock" })" class="text-muted small text-decoration-none" style="font-size: 0.72rem;">
+                    Tra cứu IMEI <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 3. Cảnh Báo Safety Stock -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 @(Model.LowStockAlertCount > 0 ? "border-danger" : "border-secondary")">
+                <span class="text-secondary small fw-semibold">Cảnh Báo Tồn An Toàn</span>
+                <div class="fs-4 fw-bold @(Model.LowStockAlertCount > 0 ? "text-danger" : "text-dark") mt-1 font-monospace">@Model.LowStockAlertCount</div>
+                <a href="@Url.Action("Index", "Warehouse", new { tab = "stocktake" })" class="text-muted small text-decoration-none" style="font-size: 0.72rem;">
+                    Safety Stock <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 4. Đơn Cần Đóng Gói (Outbound) -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-info">
+                <span class="text-secondary small fw-semibold">Đơn Cần Soạn &amp; Giao</span>
+                <div class="fs-4 fw-bold text-info mt-1 font-monospace">@Model.OutboundPendingOrdersCount</div>
+                <a href="@Url.Action("Index", "Warehouse", new { tab = "outbound" })" class="text-muted small text-decoration-none" style="font-size: 0.72rem;">
+                    Soạn hàng ngay <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 5. Đang Điều Chuyển Kho -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-primary">
+                <span class="text-secondary small fw-semibold">Đang Điều Chuyển</span>
+                <div class="fs-4 fw-bold text-primary mt-1 font-monospace">@Model.ActiveTransfersCount</div>
+                <a href="@Url.Action("Index", "Warehouse", new { tab = "transfer" })" class="text-muted small text-decoration-none" style="font-size: 0.72rem;">
+                    Xem lộ trình <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- 6. Hàng Lỗi / Cách Ly RMA -->
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-secondary">
+                <span class="text-secondary small fw-semibold">Hàng Lỗi / Hoàn Về</span>
+                <div class="fs-4 fw-bold text-secondary mt-1 font-monospace">@Model.DamagedDefectiveCount</div>
+                <a href="@Url.Action("Index", "Warehouse", new { tab = "returns" })" class="text-muted small text-decoration-none" style="font-size: 0.72rem;">
+                    Cách ly &amp; hoàn <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Notifications -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["WarningMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+            <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Tabs Navigation -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom pt-3 pb-0 px-4">
+            <ul class="nav nav-tabs card-header-tabs" id="warehouseTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link py-3 px-3.5 fw-semibold @(Model.ActiveTab == "inbound" ? "active text-success border-success border-bottom-3" : "text-secondary")" href="@Url.Action("Index", "Warehouse", new { tab = "inbound" })">
+                        <i class="bi bi-box-arrow-in-down me-1.5"></i>3.1 Nhập Kho &amp; Đơn PO
+                        @if (Model.PendingPoCount > 0)
+                        {
+                            <span class="badge bg-warning text-dark rounded-pill ms-1.5 font-monospace">@Model.PendingPoCount</span>
+                        }
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link py-3 px-3.5 fw-semibold @(Model.ActiveTab == "imei" ? "active text-primary border-primary border-bottom-3" : "text-secondary")" href="@Url.Action("Index", "Warehouse", new { tab = "imei" })">
+                        <i class="bi bi-upc-scan me-1.5"></i>3.2 Định Danh IMEI / Serial
+                        <span class="badge bg-light text-dark rounded-pill ms-1.5 font-monospace">@Model.InStockCount</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link py-3 px-3.5 fw-semibold @(Model.ActiveTab == "outbound" ? "active text-info border-info border-bottom-3" : "text-secondary")" href="@Url.Action("Index", "Warehouse", new { tab = "outbound" })">
+                        <i class="bi bi-box-seam me-1.5"></i>3.3 Xuất Kho &amp; Đóng Gói
+                        @if (Model.OutboundPendingOrdersCount > 0)
+                        {
+                            <span class="badge bg-danger rounded-pill ms-1.5 font-monospace">@Model.OutboundPendingOrdersCount</span>
+                        }
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link py-3 px-3.5 fw-semibold @(Model.ActiveTab == "stocktake" ? "active text-dark border-dark border-bottom-3" : "text-secondary")" href="@Url.Action("Index", "Warehouse", new { tab = "stocktake" })">
+                        <i class="bi bi-clipboard2-check me-1.5"></i>3.4 Kiểm Kê &amp; Tồn An Toàn
+                        @if (Model.LowStockAlertCount > 0)
+                        {
+                            <span class="badge bg-danger rounded-pill ms-1.5 font-monospace">@Model.LowStockAlertCount</span>
+                        }
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link py-3 px-3.5 fw-semibold @(Model.ActiveTab == "transfer" ? "active text-secondary border-secondary border-bottom-3" : "text-secondary")" href="@Url.Action("Index", "Warehouse", new { tab = "transfer" })">
+                        <i class="bi bi-arrow-left-right me-1.5"></i>3.5 Điều Chuyển Chi Nhánh
+                        <span class="badge bg-primary text-white rounded-pill ms-1.5 font-monospace">@Model.ActiveTransfersCount</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link py-3 px-3.5 fw-semibold @(Model.ActiveTab == "returns" ? "active text-danger border-danger border-bottom-3" : "text-secondary")" href="@Url.Action("Index", "Warehouse", new { tab = "returns" })">
+                        <i class="bi bi-arrow-return-left me-1.5"></i>3.6 Hàng Hoàn &amp; Cách Ly Lỗi
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body p-4">
+            <!-- ============================================================= -->
+            <!-- TAB 1: 3.1 QUẢN LÝ NHẬP KHO & NHÀ CUNG CẤP (INBOUND LOGISTICS) -->
+            <!-- ============================================================= -->
+            @if (Model.ActiveTab == "inbound")
+            {
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <h4 class="h5 fw-bold text-dark mb-1">
+                            <i class="bi bi-receipt-cutoff text-success me-2"></i>Đơn Đặt Hàng Nhập (Purchase Orders) &amp; Phiếu Nhập Kho Thực Tế (GRN)
+                        </h4>
+                        <p class="text-secondary small mb-0">Theo dõi PO đã được duyệt từ Ban Giám Đốc, lập phiếu tiếp nhận GRN, ghi nhận kết quả kiểm định kiện hàng và quét IMEI khui kiện.</p>
+                    </div>
+                    <!-- Filter form -->
+                    <form method="get" action="@Url.Action("Index", "Warehouse")" class="d-flex flex-wrap align-items-center gap-2">
+                        <input type="hidden" name="tab" value="inbound" />
+                        <select name="poStatus" class="form-select form-select-sm rounded-pill" style="width: 150px;">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option value="Approved" selected="@(Model.PoFilterStatus == "Approved")">Approved (Chờ nhận)</option>
+                            <option value="Inspecting" selected="@(Model.PoFilterStatus == "Inspecting")">Inspecting (Đang kiểm)</option>
+                            <option value="FullyReceived" selected="@(Model.PoFilterStatus == "FullyReceived")">FullyReceived (Đã nhập)</option>
+                        </select>
+                        <input type="text" name="poSearch" class="form-control form-control-sm rounded-pill" placeholder="Tìm mã PO, đối tác..." value="@Model.PoSearchQuery" style="width: 180px;" />
+                        <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                            <i class="bi bi-filter"></i> Lọc
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Purchase Orders Table -->
+                <div class="table-responsive rounded-4 border mb-4">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-secondary small text-uppercase">
+                            <tr>
+                                <th class="ps-3">Mã PO</th>
+                                <th>Nhà Cung Cấp</th>
+                                <th>Kho Đích</th>
+                                <th>Sản Phẩm &amp; SKU</th>
+                                <th class="text-center">Số Lượng Đặt</th>
+                                <th class="text-center">Thực Nhận</th>
+                                <th>Trạng Thái</th>
+                                <th class="text-end pe-3">Thao Tác Thủ Kho</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.PurchaseOrders.Any())
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">
+                                        <i class="bi bi-inbox fs-2 d-block text-secondary mb-2"></i>
+                                        Không tìm thấy đơn đặt hàng nhập PO nào phù hợp bộ lọc.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var po in Model.PurchaseOrders)
+                            {
+                                <tr>
+                                    <td class="ps-3 font-monospace fw-bold text-dark">
+                                        @po.PoCode
+                                        <div class="text-muted small fw-normal">@po.OrderDate.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">@po.SupplierName</div>
+                                        <div class="text-secondary small">Duyệt bởi: @po.ApprovedBy</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-secondary border">@po.TargetWarehouse</span>
+                                    </td>
+                                    <td>
+                                        @foreach (var item in po.Items)
+                                        {
+                                            <div class="small text-truncate" style="max-width: 250px;">
+                                                <i class="bi bi-dot"></i><strong>@item.ProductName</strong>
+                                                <span class="text-muted">(@item.Sku - Đặt: @item.OrderedQuantity | Nhận: @item.ReceivedQuantity)</span>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="text-center fw-bold">@po.TotalQuantity</td>
+                                    <td class="text-center">
+                                        <span class="badge @(po.ReceivedQuantity >= po.TotalQuantity ? "bg-success" : po.ReceivedQuantity > 0 ? "bg-warning text-dark" : "bg-light text-dark border") font-monospace">
+                                            @po.ReceivedQuantity / @po.TotalQuantity
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @switch (po.Status)
+                                        {
+                                            case "Approved":
+                                                <span class="badge tz-badge-soft-warning px-2.5 py-1 rounded-pill">Chờ Nhận Hàng</span>
+                                                break;
+                                            case "Inspecting":
+                                                <span class="badge tz-badge-soft-primary px-2.5 py-1 rounded-pill">Đang Kiểm Định</span>
+                                                break;
+                                            case "FullyReceived":
+                                                <span class="badge tz-badge-soft-success px-2.5 py-1 rounded-pill">Đã Nhập Đủ</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary px-2.5 py-1 rounded-pill">@po.Status</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="btn-group btn-group-sm">
+                                            @if (po.Status == "Approved")
+                                            {
+                                                <form method="post" action="@Url.Action("CreateReceiptFromPo", "Warehouse")" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="poId" value="@po.Id" />
+                                                    <button type="submit" class="btn btn-outline-primary" title="Lập phiếu tiếp nhận GRN">
+                                                        <i class="bi bi-file-earmark-plus"></i> Lập GRN
+                                                    </button>
+                                                </form>
+                                            }
+                                            <button type="button" class="btn btn-outline-info" title="Kiểm định ngoại quan" onclick="openInspectModal('@po.Id', '@po.PoCode')">
+                                                <i class="bi bi-search"></i> Kiểm định
+                                            </button>
+                                            @if (po.Status != "FullyReceived")
+                                            {
+                                                <button type="button" class="btn btn-success text-white" title="Quét IMEI khui kiện" onclick="openScanModal('@po.Id', '@po.PoCode', '@po.Items.FirstOrDefault()?.ProductId', '@po.Items.FirstOrDefault()?.Sku', '@po.Items.FirstOrDefault()?.ProductName')">
+                                                    <i class="bi bi-upc-scan"></i> Quét IMEI
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Goods Receipt Notes (GRN) Sub-section -->
+                <div class="mt-4">
+                    <h5 class="fw-bold text-dark mb-2">
+                        <i class="bi bi-journal-check text-primary me-2"></i>Nhật Ký Phiếu Nhập Kho Thực Tế (Goods Receipt Notes - GRN)
+                    </h5>
+                    <div class="table-responsive rounded-4 border">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light text-secondary small">
+                                <tr>
+                                    <th class="ps-3">Mã Phiếu GRN</th>
+                                    <th>Nhà Cung Cấp</th>
+                                    <th>Người Tiếp Nhận</th>
+                                    <th>Số Lượng</th>
+                                    <th>Trạng Thái Phê Duyệt</th>
+                                    <th>Thời Gian</th>
+                                    <th class="text-end pe-3">Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.InboundReceipts.Any())
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center py-3 text-muted">Chưa có phiếu GRN nào được lập.</td>
+                                    </tr>
+                                }
+                                @foreach (var grn in Model.InboundReceipts)
+                                {
+                                    <tr>
+                                        <td class="ps-3 font-monospace fw-bold text-dark">@grn.SlipCode</td>
+                                        <td>@grn.SupplierName</td>
+                                        <td>@grn.CreatedByName</td>
+                                        <td class="font-monospace fw-semibold">@grn.TotalQuantity cái</td>
+                                        <td>
+                                            @if (grn.Status == StockSlipStatus.Approved)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Hoàn Tất &amp; Đã Cộng Tồn</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Bản Nháp / Đang Xử Lý</span>
+                                            }
+                                        </td>
+                                        <td class="small text-secondary">@grn.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="text-end pe-3">
+                                            @if (grn.Status != StockSlipStatus.Approved)
+                                            {
+                                                <form method="post" action="@Url.Action("ConfirmInboundReceipt", "Warehouse")" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="slipId" value="@grn.Id" />
+                                                    <button type="submit" class="btn btn-xs btn-outline-success rounded-pill px-2.5 py-1 small">
+                                                        <i class="bi bi-check-all"></i> Xác Nhận Hoàn Tất
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-success small"><i class="bi bi-shield-check"></i> Đã Duyệt</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- ============================================================= -->
+            <!-- TAB 2: 3.2 QUẢN LÝ ĐỊNH DANH THIẾT BỊ (IMEI / SERIAL TRACKING) -->
+            <!-- ============================================================= -->
+            @if (Model.ActiveTab == "imei")
+            {
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <h4 class="h5 fw-bold text-dark mb-1">
+                            <i class="bi bi-upc text-primary me-2"></i>Tra Cứu &amp; Quản Lý Định Danh Từng Mã IMEI / Serial Number
+                        </h4>
+                        <p class="text-secondary small mb-0">Ràng buộc định danh Serial với từng SKU, cập nhật tình trạng vật lý (In Stock, Damaged, Reserved, InTransit) và in tem phụ barcode dán hộp máy.</p>
+                    </div>
+                    <!-- Filter form -->
+                    <form method="get" action="@Url.Action("Index", "Warehouse")" class="d-flex flex-wrap align-items-center gap-2">
+                        <input type="hidden" name="tab" value="imei" />
+                        <select name="imeiStatus" class="form-select form-select-sm rounded-pill" style="width: 140px;">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option value="InStock" selected="@(Model.ImeiFilterStatus == "InStock")">InStock (Trong kho)</option>
+                            <option value="AssignedToOrder" selected="@(Model.ImeiFilterStatus == "AssignedToOrder")">Assigned (Gán đơn)</option>
+                            <option value="Shipped" selected="@(Model.ImeiFilterStatus == "Shipped")">Shipped (Đang giao)</option>
+                            <option value="Delivered" selected="@(Model.ImeiFilterStatus == "Delivered")">Delivered (Đã giao)</option>
+                            <option value="Defective" selected="@(Model.ImeiFilterStatus == "Defective")">Defective (Lỗi/Hỏng)</option>
+                            <option value="InTransit" selected="@(Model.ImeiFilterStatus == "InTransit")">InTransit (Điều chuyển)</option>
+                        </select>
+                        <input type="text" name="imeiSearch" class="form-control form-control-sm rounded-pill" placeholder="Quét/Nhập IMEI, S/N..." value="@Model.ImeiSearchQuery" style="width: 200px;" />
+                        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">
+                            <i class="bi bi-search"></i> Tra Cứu
+                        </button>
+                    </form>
+                </div>
+
+                <div class="table-responsive rounded-4 border">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-secondary small text-uppercase">
+                            <tr>
+                                <th class="ps-3">Số Serial / IMEI 1</th>
+                                <th>IMEI 2</th>
+                                <th>Sản Phẩm &amp; SKU Ràng Buộc</th>
+                                <th>Vị Trí Kệ Kho</th>
+                                <th>Mã Lô Nhập (GRN/PO)</th>
+                                <th>Trạng Thái</th>
+                                <th>Đơn Hàng Gán</th>
+                                <th class="text-end pe-3">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.InventoryItems.Any())
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">
+                                        <i class="bi bi-upc-scan fs-2 d-block text-secondary mb-2"></i>
+                                        Không tìm thấy thiết bị nào khớp với tiêu chí tìm kiếm.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var item in Model.InventoryItems)
+                            {
+                                <tr>
+                                    <td class="ps-3 font-monospace fw-bold text-dark">
+                                        <i class="bi bi-upc me-1 text-primary"></i>@item.SerialNumber
+                                    </td>
+                                    <td class="font-monospace text-muted small">
+                                        @(string.IsNullOrEmpty(item.Imei2) ? "-" : item.Imei2)
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark text-truncate" style="max-width: 230px;">@item.ProductName</div>
+                                        <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.72rem;">@item.VariantSku</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-geo-alt me-1 text-danger"></i>@item.WarehouseLocation
+                                        </span>
+                                    </td>
+                                    <td class="font-monospace small text-secondary">
+                                        @(string.IsNullOrEmpty(item.ImportBatchCode) ? "KHO-BANDAU" : item.ImportBatchCode)
+                                    </td>
+                                    <td>
+                                        @switch (item.Status)
+                                        {
+                                            case InventoryStatus.InStock:
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Trong Kho (InStock)</span>
+                                                break;
+                                            case InventoryStatus.AssignedToOrder:
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Đã Gán Đơn</span>
+                                                break;
+                                            case InventoryStatus.Shipped:
+                                                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">Đang Giao Hàng</span>
+                                                break;
+                                            case InventoryStatus.Delivered:
+                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Đã Bàn Giao Khách</span>
+                                                break;
+                                            case InventoryStatus.Defective:
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Lỗi / Hư Hại</span>
+                                                break;
+                                            case InventoryStatus.InTransit:
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Đang Điều Chuyển</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-light text-dark rounded-pill">@item.Status</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.AssignedOrderCode))
+                                        {
+                                            <span class="badge bg-light text-primary border font-monospace">@item.AssignedOrderCode</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="btn-group btn-group-sm">
+                                            <!-- Print Barcode -->
+                                            <a href="@Url.Action("PrintBarcode", "Warehouse", new { serialNumber = item.SerialNumber })" target="_blank" class="btn btn-outline-secondary" title="In tem phụ Barcode">
+                                                <i class="bi bi-printer"></i> Tem
+                                            </a>
+                                            <!-- Change Status Modal Trigger -->
+                                            <button type="button" class="btn btn-outline-warning" title="Đổi trạng thái thiết bị" onclick="openStatusModal('@item.Id', '@item.SerialNumber', '@item.Status')">
+                                                <i class="bi bi-arrow-repeat"></i> Trạng thái
+                                            </button>
+                                            <!-- Bind SKU Modal Trigger -->
+                                            <button type="button" class="btn btn-outline-info" title="Gán định danh SKU" onclick="openBindSkuModal('@item.Id', '@item.SerialNumber', '@item.ProductId', '@item.VariantSku')">
+                                                <i class="bi bi-link-45deg"></i> Gán SKU
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <!-- ============================================================= -->
+            <!-- TAB 3: 3.3 QUẢN LÝ XUẤT KHO & ĐÓNG GÓI (OUTBOUND & FULFILLMENT) -->
+            <!-- ============================================================= -->
+            @if (Model.ActiveTab == "outbound")
+            {
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <h4 class="h5 fw-bold text-dark mb-1">
+                            <i class="bi bi-box-seam text-info me-2"></i>Soạn Hàng, Quét Xuất IMEI &amp; Bàn Giao Vận Chuyển
+                        </h4>
+                        <p class="text-secondary small mb-0">Quản lý các đơn hàng đã xác nhận cần đóng gói, quét IMEI cụ thể để kích hoạt bảo hành điện tử, in phiếu vận đơn và bàn giao cho bưu tá.</p>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <a href="@Url.Action("CreatePickList", "Warehouse")" target="_blank" class="btn btn-primary rounded-pill px-3 py-1.5 btn-sm d-flex align-items-center gap-1.5 fw-semibold shadow-sm">
+                            <i class="bi bi-printer-fill"></i> In Phiếu Nhặt Hàng (Pick List)
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Pick List Summary Card (Grouped by Shelf) -->
+                @if (Model.PickList.Any())
+                {
+                    <div class="card bg-light border-0 rounded-4 p-3 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold text-dark mb-0">
+                                <i class="bi bi-lightning-charge-fill text-warning me-1.5"></i>Tóm Tắt Lộ Trình Soạn Hàng Theo Kệ Kho (Pick List Optimization)
+                            </h6>
+                            <span class="badge bg-secondary text-light rounded-pill">@Model.PickList.Count mặt hàng cần lấy</span>
+                        </div>
+                        <div class="row g-2">
+                            @foreach (var pick in Model.PickList.Take(6))
+                            {
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="card border rounded-3 p-2 bg-white h-100">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <span class="badge bg-light text-danger border small"><i class="bi bi-geo-alt"></i> @pick.WarehouseLocation</span>
+                                            <span class="badge bg-primary text-white font-monospace">Cần lấy: @pick.RequiredQuantity</span>
+                                        </div>
+                                        <div class="fw-semibold text-dark text-truncate mt-1" style="font-size: 0.85rem;">@pick.ProductName</div>
+                                        <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.75rem;">
+                                            <span>SKU: @pick.Sku</span>
+                                            <span class="text-success">Tồn kệ: @pick.InStockQuantity</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Pending Orders Table -->
+                <div class="table-responsive rounded-4 border">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-secondary small text-uppercase">
+                            <tr>
+                                <th class="ps-3">Mã Đơn Hàng</th>
+                                <th>Khách Hàng &amp; Địa Chỉ</th>
+                                <th>Đơn Vị Vận Chuyển</th>
+                                <th>Mặt Hàng &amp; Tiến Độ Quét IMEI</th>
+                                <th>Trạng Thái Đơn</th>
+                                <th class="text-end pe-3">Quy Trình Fulfillment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.OutboundPendingOrders.Any())
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        <i class="bi bi-check-all fs-2 d-block text-success mb-2"></i>
+                                        Tuyệt vời! Hiện không còn đơn hàng nào tồn đọng chờ đóng gói xuất kho.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var order in Model.OutboundPendingOrders)
+                            {
+                                var allItemsScanned = order.Items.All(i => i.AssignedSerialNumbers.Count >= i.Quantity);
+                                <tr>
+                                    <td class="ps-3 font-monospace fw-bold text-dark">
+                                        @order.OrderCode
+                                        <div class="text-muted small fw-normal">@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">@order.CustomerName</div>
+                                        <div class="text-secondary small">@order.CustomerPhone - @order.ShippingAddress.Province</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-primary border">@order.CarrierName</span>
+                                        @if (!string.IsNullOrEmpty(order.TrackingNumber))
+                                        {
+                                            <div class="font-monospace small text-muted">@order.TrackingNumber</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @foreach (var item in order.Items)
+                                        {
+                                            var isItemDone = item.AssignedSerialNumbers.Count >= item.Quantity;
+                                            <div class="small mb-1">
+                                                <span class="badge @(isItemDone ? "bg-success" : "bg-warning text-dark") font-monospace me-1">
+                                                    @item.AssignedSerialNumbers.Count / @item.Quantity IMEI
+                                                </span>
+                                                <strong>@item.ProductName</strong>
+                                                @if (item.AssignedSerialNumbers.Any())
+                                                {
+                                                    <div class="text-muted small font-monospace ps-2">
+                                                        <i class="bi bi-arrow-return-right"></i> @string.Join(", ", item.AssignedSerialNumbers)
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge @(order.OrderStatus == OrderStatus.Preparing ? "bg-info text-dark" : "bg-secondary text-light") rounded-pill">
+                                            @order.OrderStatus
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="btn-group btn-group-sm">
+                                            <!-- Scan IMEI Trigger -->
+                                            <button type="button" class="btn btn-outline-primary" title="Quét IMEI gắn vào đơn" onclick="openDispatchModal('@order.Id', '@order.OrderCode', '@order.Items.FirstOrDefault()?.VariantSku', '@order.Items.FirstOrDefault()?.ProductName')">
+                                                <i class="bi bi-upc-scan"></i> Quét IMEI
+                                            </button>
+                                            <!-- Print Shipping Label -->
+                                            <a href="@Url.Action("PrintShippingLabel", "Warehouse", new { orderId = order.Id })" target="_blank" class="btn btn-outline-secondary" title="In phiếu giao nhận & vận đơn">
+                                                <i class="bi bi-printer"></i> Vận đơn
+                                            </a>
+                                            <!-- Handover Carrier Trigger -->
+                                            @if (allItemsScanned)
+                                            {
+                                                <button type="button" class="btn btn-success text-white" title="Bàn giao đối tác vận chuyển" onclick="openHandoverModal('@order.Id', '@order.OrderCode', '@order.CarrierName')">
+                                                    <i class="bi bi-truck"></i> Giao Bưu Tá
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <!-- ============================================================= -->
+            <!-- TAB 4: 3.4 KIỂM KÊ KHO & NGƯỠNG AN TOÀN (STOCKTAKE & SAFETY)  -->
+            <!-- ============================================================= -->
+            @if (Model.ActiveTab == "stocktake")
+            {
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <h4 class="h5 fw-bold text-dark mb-1">
+                            <i class="bi bi-clipboard2-check text-dark me-2"></i>Kiểm Kê Kho Định Kỳ, Đối Soát Chênh Lệch &amp; Mức Tồn An Toàn
+                        </h4>
+                        <p class="text-secondary small mb-0">Thực hiện đếm thực tế đối soát với số liệu hệ thống, ghi nhận biên bản chênh lệch kho, cách ly hàng hư hại vật lý và cài đặt mức Safety Stock.</p>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-danger rounded-pill px-3 py-1.5 btn-sm d-flex align-items-center gap-1.5 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#adjustDamagedModal">
+                            <i class="bi bi-shield-slash"></i> Giảm Tồn Hàng Hư Hại
+                        </button>
+                        <button type="button" class="btn btn-dark rounded-pill px-3.5 py-1.5 btn-sm d-flex align-items-center gap-1.5 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#createStocktakeModal">
+                            <i class="bi bi-plus-circle-fill"></i> Tạo Phiên Kiểm Kê Mới
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stocktake Sessions List -->
+                <h6 class="fw-bold text-dark mb-2">
+                    <i class="bi bi-list-task me-1.5"></i>Danh Sách Phiên Kiểm Kê Kho
+                </h6>
+                <div class="table-responsive rounded-4 border mb-4">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-secondary small text-uppercase">
+                            <tr>
+                                <th class="ps-3">Mã Phiên</th>
+                                <th>Tên Đợt Kiểm Kê</th>
+                                <th>Khu Vực Kho</th>
+                                <th>Thủ Kho Thực Hiện</th>
+                                <th class="text-center">Số Mặt Hàng Đã Đếm</th>
+                                <th class="text-center">Chênh Lệch Kho</th>
+                                <th>Trạng Thái</th>
+                                <th class="text-end pe-3">Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.StocktakeSessions.Any())
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">Chưa có phiên kiểm kê nào được tạo.</td>
+                                </tr>
+                            }
+                            @foreach (var session in Model.StocktakeSessions)
+                            {
+                                <tr>
+                                    <td class="ps-3 font-monospace fw-bold text-dark">
+                                        @session.SessionCode
+                                        <div class="text-muted small fw-normal">@session.ConductedDate.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </td>
+                                    <td class="fw-semibold text-dark">@session.Title</td>
+                                    <td><span class="badge bg-light text-dark border">@session.WarehouseLocation</span></td>
+                                    <td>@session.ConductedByStaff</td>
+                                    <td class="text-center font-monospace">@session.Items.Count mặt hàng</td>
+                                    <td class="text-center">
+                                        @if (session.DiscrepancyCount == 0)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill font-monospace">Khớp 100%</span>
+                                        }
+                                        else if (session.DiscrepancyCount > 0)
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill font-monospace">+@session.DiscrepancyCount Thừa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill font-monospace">@session.DiscrepancyCount Thiếu</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge @(session.Status == "Completed" ? "bg-success" : "bg-warning text-dark") rounded-pill">
+                                            @session.Status
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        @if (session.Status == "InProgress")
+                                        {
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-primary" onclick="openCountModal('@session.Id', '@session.SessionCode')">
+                                                    <i class="bi bi-upc"></i> Nhập Đếm
+                                                </button>
+                                                <form method="post" action="@Url.Action("CompleteStocktakeSession", "Warehouse")" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="sessionId" value="@session.Id" />
+                                                    <button type="submit" class="btn btn-outline-success">
+                                                        <i class="bi bi-check-lg"></i> Chốt Sổ
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small"><i class="bi bi-archive"></i> Đã Lưu Trữ</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Safety Stock Alerts Table -->
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-shield-exclamation text-danger me-1.5"></i>Cảnh Báo Tồn An Toàn &amp; Cấu Hình Safety Stock (inventory.threshold_alert)
+                        </h6>
+                        <span class="text-muted small">Cảnh báo tự động khi số lượng tồn kho khả dụng thấp hơn mức an toàn</span>
+                    </div>
+                    <div class="table-responsive rounded-4 border">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light text-secondary small">
+                                <tr>
+                                    <th class="ps-3">Sản Phẩm</th>
+                                    <th>SKU</th>
+                                    <th class="text-center">Tồn Vật Lý</th>
+                                    <th class="text-center">Tồn Khả Dụng</th>
+                                    <th class="text-center">Ngưỡng An Toàn (Safety Stock)</th>
+                                    <th>Đánh Giá Cảnh Báo</th>
+                                    <th class="text-end pe-3">Cài Đặt Ngưỡng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.SafetyStockAlertProducts.Any())
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center py-3 text-muted">Tất cả sản phẩm đều đang duy trì trên ngưỡng tồn an toàn.</td>
+                                    </tr>
+                                }
+                                @foreach (var prod in Model.SafetyStockAlertProducts)
+                                {
+                                    var isCritical = prod.AvailableQuantity <= 0;
+                                    <tr>
+                                        <td class="ps-3 fw-semibold text-dark">@prod.Name</td>
+                                        <td class="font-monospace text-muted small">@prod.Sku</td>
+                                        <td class="text-center font-monospace">@prod.StockQuantity</td>
+                                        <td class="text-center font-monospace fw-bold @(isCritical ? "text-danger" : "text-warning")">@prod.AvailableQuantity</td>
+                                        <td class="text-center font-monospace">@prod.MinStockThreshold</td>
+                                        <td>
+                                            @if (isCritical)
+                                            {
+                                                <span class="badge bg-danger rounded-pill"><i class="bi bi-exclamation-octagon-fill me-1"></i>Hết Hàng Khả Dụng</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-exclamation-triangle-fill me-1"></i>Sắp Chạm Ngưỡng</span>
+                                            }
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1 small" onclick="openThresholdModal('@prod.Id', '@prod.Name', @prod.MinStockThreshold)">
+                                                <i class="bi bi-sliders"></i> Cấu hình
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- ============================================================= -->
+            <!-- TAB 5: 3.5 ĐIỀU CHUYỂN KHO CHI NHÁNH (STOCK TRANSFER)         -->
+            <!-- ============================================================= -->
+            @if (Model.ActiveTab == "transfer")
+            {
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <h4 class="h5 fw-bold text-dark mb-1">
+                            <i class="bi bi-arrow-left-right text-primary me-2"></i>Điều Chuyển Hàng Hóa Giữa Các Chi Nhánh / Showroom (Stock Transfer)
+                        </h4>
+                        <p class="text-secondary small mb-0">Lập phiếu điều chuyển thiết bị kèm danh sách Serial/IMEI, theo dõi lộ trình vận chuyển và xác nhận tiếp nhận tại kho đích.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary rounded-pill px-3.5 py-2 btn-sm d-flex align-items-center gap-1.5 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#createTransferModal">
+                        <i class="bi bi-plus-circle-fill"></i> Lập Phiếu Điều Chuyển
+                    </button>
+                </div>
+
+                <div class="table-responsive rounded-4 border">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-secondary small text-uppercase">
+                            <tr>
+                                <th class="ps-3">Mã Phiếu Chuyển</th>
+                                <th>Kho Gửi</th>
+                                <th>Kho Đích</th>
+                                <th>Thiết Bị &amp; IMEI Điều Chuyển</th>
+                                <th class="text-center">Số Lượng</th>
+                                <th>Đơn Vị Vận Chuyển</th>
+                                <th>Trạng Thái</th>
+                                <th class="text-end pe-3">Xác Nhận Tiếp Nhận</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.StockTransfers.Any())
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">Chưa có phiếu điều chuyển kho nào.</td>
+                                </tr>
+                            }
+                            @foreach (var trf in Model.StockTransfers)
+                            {
+                                <tr>
+                                    <td class="ps-3 font-monospace fw-bold text-dark">
+                                        @trf.TransferCode
+                                        <div class="text-muted small fw-normal">@trf.SentDate.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">@trf.FromWarehouse</span></td>
+                                    <td><span class="badge bg-light text-primary border">@trf.ToWarehouse</span></td>
+                                    <td>
+                                        @foreach (var row in trf.Items)
+                                        {
+                                            <div class="small">
+                                                <strong>@row.ProductName</strong> (@row.Sku)
+                                                @if (row.SerialNumbers.Any())
+                                                {
+                                                    <div class="text-muted small font-monospace">@string.Join(", ", row.SerialNumbers)</div>
+                                                }
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="text-center font-monospace fw-bold">@trf.TotalItems cái</td>
+                                    <td>
+                                        <div class="small fw-semibold">@trf.CarrierName</div>
+                                        <div class="text-muted font-monospace small">@trf.TrackingNumber</div>
+                                    </td>
+                                    <td>
+                                        @if (trf.Status == "Received")
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Đã Nhập Kho Đích</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Đang Vận Chuyển</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        @if (trf.Status != "Received")
+                                        {
+                                            <form method="post" action="@Url.Action("ReceiveTransfer", "Warehouse")" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="transferId" value="@trf.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1">
+                                                    <i class="bi bi-box-arrow-in-down"></i> Tiếp Nhận
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success small"><i class="bi bi-check-circle-fill"></i> Đã Tiếp Nhận</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <!-- ============================================================= -->
+            <!-- TAB 6: 3.6 TIẾP NHẬN HÀNG HOÀN & CÁCH LY LỖI (REVERSE LOGISTICS) -->
+            <!-- ============================================================= -->
+            @if (Model.ActiveTab == "returns")
+            {
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <h4 class="h5 fw-bold text-dark mb-1">
+                            <i class="bi bi-arrow-return-left text-danger me-2"></i>Tiếp Nhận Hàng Hoàn, Đối Chiếu IMEI &amp; Cách Ly Lỗi (Reverse Logistics)
+                        </h4>
+                        <p class="text-secondary small mb-0">Tiếp nhận hàng giao không thành công (bom hàng) hoặc khách đổi trả; thẩm định đối chiếu IMEI gốc để nhập lại kho bán hoặc cách ly chờ trả hãng.</p>
+                    </div>
+                    <button type="button" class="btn btn-danger rounded-pill px-3.5 py-2 btn-sm d-flex align-items-center gap-1.5 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#processReturnModal">
+                        <i class="bi bi-box-arrow-in-down-left"></i> Tiếp Nhận Hàng Hoàn
+                    </button>
+                </div>
+
+                <div class="table-responsive rounded-4 border">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-secondary small text-uppercase">
+                            <tr>
+                                <th class="ps-3">Serial / IMEI Thiết Bị</th>
+                                <th>Sản Phẩm</th>
+                                <th>Vị Trí Lưu Kho / Cách Ly</th>
+                                <th>Trạng Thái Định Danh</th>
+                                <th>Đơn Hàng Gốc</th>
+                                <th>Nhật Ký &amp; Ghi Chú Lỗi</th>
+                                <th class="text-end pe-3">Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.ReverseLogisticsItems.Any())
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">Chưa có thiết bị nào trong khu vực hàng hoàn hoặc cách ly lỗi.</td>
+                                </tr>
+                            }
+                            @foreach (var item in Model.ReverseLogisticsItems)
+                            {
+                                <tr>
+                                    <td class="ps-3 font-monospace fw-bold text-dark">
+                                        <i class="bi bi-upc me-1 text-danger"></i>@item.SerialNumber
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">@item.ProductName</div>
+                                        <div class="text-muted small font-monospace">@item.VariantSku</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-danger border">@item.WarehouseLocation</span>
+                                    </td>
+                                    <td>
+                                        @if (item.Status == InventoryStatus.Defective)
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Cách Ly Lỗi (Defective)</span>
+                                        }
+                                        else if (item.Status == InventoryStatus.InRepair)
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Đang Sửa / RMA</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Hàng Hoàn (Returned)</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-primary border font-monospace">@(string.IsNullOrEmpty(item.AssignedOrderCode) ? "Không có" : item.AssignedOrderCode)</span>
+                                    </td>
+                                    <td class="small text-secondary" style="max-width: 250px;">
+                                        @item.Notes
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-2.5 py-1" onclick="openStatusModal('@item.Id', '@item.SerialNumber', '@item.Status')">
+                                            <i class="bi bi-arrow-repeat"></i> Đổi Kho
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODALS CỦA PHÂN HỆ THỦ KHO & VẬN HÀNH (WAREHOUSE MODALS)                   -->
+<!-- ========================================================================= -->
+
+<!-- 1. Modal Kiểm Định Ngoại Quan PO -->
+<div class="modal fade" id="inspectPoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("InspectInboundBatch", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="poId" id="inspect_poId" />
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-search text-info me-2"></i>Kiểm Định Ngoại Quan Kiện Hàng PO
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mã Đơn Đặt Hàng PO</label>
+                        <input type="text" id="inspect_poCode" class="form-control font-monospace bg-light" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Kết Quả Kiểm Định <span class="text-danger">*</span></label>
+                        <select name="inspectionResult" class="form-select" required>
+                            <option value="Đạt 100% (Seal nguyên vẹn, bao bì chuẩn hãng)">Đạt 100% (Seal nguyên vẹn, bao bì chuẩn hãng)</option>
+                            <option value="Đạt một phần (Có kiện cấn móp vỏ thùng bên ngoài)">Đạt một phần (Có kiện cấn móp vỏ thùng bên ngoài)</option>
+                            <option value="Không đạt (Phát hiện rách seal, thiếu phụ kiện hoặc ướt nước)">Không đạt (Phát hiện rách seal, thiếu phụ kiện hoặc ướt nước)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Ghi Chú Chi Tiết Biên Bản</label>
+                        <textarea name="defectNotes" class="form-control" rows="3" placeholder="Ghi chú chi tiết nếu có hư hại..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-info text-dark rounded-pill px-4 fw-semibold">Lưu Biên Bản</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Modal Quét Nhập IMEI Khui Kiện (Batch Scan) -->
+<div class="modal fade" id="scanImeiBatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("ScanImeiBatch", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-upc-scan text-success me-2"></i>Quét &amp; Import Danh Sách IMEI Khui Kiện (Batch Scan)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Đơn Hàng Nhập PO <span class="text-danger">*</span></label>
+                            <select name="poId" id="scan_poId" class="form-select" required onchange="onPoSelectChanged(this)">
+                                @foreach (var po in Model.PurchaseOrders.Where(p => p.Status != "FullyReceived"))
+                                {
+                                    <option value="@po.Id" data-productid="@po.Items.FirstOrDefault()?.ProductId" data-sku="@po.Items.FirstOrDefault()?.Sku" data-prodname="@po.Items.FirstOrDefault()?.ProductName">
+                                        @po.PoCode - @po.SupplierName (@po.Items.FirstOrDefault()?.ProductName)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Vị Trí Kệ Kho Xếp Hàng</label>
+                            <input type="text" name="warehouseLocation" class="form-control" value="Kệ A1-Kho Tổng" required />
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Sản Phẩm Mục Tiêu <span class="text-danger">*</span></label>
+                            <select name="productId" id="scan_productId" class="form-select" required>
+                                @foreach (var p in Model.AvailableProducts)
+                                {
+                                    <option value="@p.Id">@p.Name (@p.Sku)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Mã SKU Biến Thể <span class="text-danger">*</span></label>
+                            <input type="text" name="variantSku" id="scan_sku" class="form-control font-monospace" placeholder="VD: IP15PM-256-NATURAL" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary d-flex justify-content-between">
+                            <span>Danh Sách Mã IMEI / Serial Number (Mỗi mã 1 dòng hoặc cách nhau bởi dấu phẩy)</span>
+                            <span class="text-muted small" id="scan_count_label">0 mã</span>
+                        </label>
+                        <textarea name="rawSerials" id="scan_rawSerials" class="form-control font-monospace" rows="6" placeholder="Quét trực tiếp từ máy barcode scanner hoặc dán danh sách IMEI...&#10;352490123456789&#10;352490123456790" required oninput="updateScanCount(this)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success text-white rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-box-arrow-in-down me-1"></i> Xác Nhận Nhập Kho
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Modal Đổi Trạng Thái IMEI -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("UpdateSerialStatus", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="status_itemId" />
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-arrow-repeat text-warning me-2"></i>Chuyển Trạng Thái Thiết Bị
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Số Serial / IMEI</label>
+                        <input type="text" id="status_serial" class="form-control font-monospace bg-light" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Trạng Thái Mới <span class="text-danger">*</span></label>
+                        <select name="newStatus" id="status_select" class="form-select" required>
+                            <option value="InStock">InStock - Trong kho sẵn sàng bán</option>
+                            <option value="Reserved">Reserved - Đã giữ chỗ đơn hàng</option>
+                            <option value="Defective">Defective - Lỗi phần cứng / Hư hại</option>
+                            <option value="InTransit">InTransit - Đang điều chuyển chi nhánh</option>
+                            <option value="InRepair">InRepair - Đang sửa chữa tại TTBH</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Lý Do Điều Chỉnh</label>
+                        <input type="text" name="reason" class="form-control" placeholder="VD: Khách hoàn hàng seal lỗi, chuyển kệ cách ly..." required />
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-semibold">Cập Nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Modal Gán Lại SKU Cho IMEI -->
+<div class="modal fade" id="bindSkuModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("BindSerialSku", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="bind_itemId" />
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-link-45deg text-info me-2"></i>Gán Định Danh Serial Với SKU Sản Phẩm
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Số Serial / IMEI</label>
+                        <input type="text" id="bind_serial" class="form-control font-monospace bg-light" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Sản Phẩm Mục Tiêu <span class="text-danger">*</span></label>
+                        <select name="newProductId" id="bind_productId" class="form-select" required>
+                            @foreach (var prod in Model.AvailableProducts)
+                            {
+                                <option value="@prod.Id">@prod.Name (@prod.Sku)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mã SKU Biến Thể Mới <span class="text-danger">*</span></label>
+                        <input type="text" name="newVariantSku" id="bind_sku" class="form-control font-monospace" required />
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-info text-dark rounded-pill px-4 fw-semibold">Lưu Ràng Buộc</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Modal Quét Xuất IMEI Gán Vào Đơn Hàng (Scan Dispatch) -->
+<div class="modal fade" id="scanDispatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("ScanDispatchSerial", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="orderId" id="dispatch_orderId" />
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-upc-scan text-primary me-2"></i>Quét IMEI Xuất Đơn Hàng &amp; Kích Hoạt Bảo Hành
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mã Đơn Hàng</label>
+                        <input type="text" id="dispatch_orderCode" class="form-control font-monospace bg-light" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">SKU Xuất Bán <span class="text-danger">*</span></label>
+                        <input type="text" name="sku" id="dispatch_sku" class="form-control font-monospace" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Quét / Nhập Số IMEI Thiết Bị <span class="text-danger">*</span></label>
+                        <input type="text" name="serialNumber" id="dispatch_serial" class="form-control font-monospace form-control-lg text-primary fw-bold" placeholder="Dùng máy quét barcode vào ô này..." autofocus required />
+                        <div class="form-text small">Hệ thống sẽ tự động gán máy vào đơn và kích hoạt hồ sơ bảo hành điện tử chính thức.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-check-circle-fill me-1"></i> Ràng Buộc &amp; Xuất Kho
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 6. Modal Bàn Giao Kiện Hàng Cho Bưu Tá (Handover Carrier) -->
+<div class="modal fade" id="handoverCarrierModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("HandoverCarrier", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="orderId" id="handover_orderId" />
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-truck text-success me-2"></i>Bàn Giao Kiện Hàng Cho Bưu Tá
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mã Đơn Hàng</label>
+                        <input type="text" id="handover_orderCode" class="form-control font-monospace bg-light" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Đơn Vị Vận Chuyển <span class="text-danger">*</span></label>
+                        <select name="carrierName" id="handover_carrier" class="form-select" required>
+                            <option value="Giao Hàng Nhanh (GHN)">Giao Hàng Nhanh (GHN)</option>
+                            <option value="Giao Hàng Tiết Kiệm (GHTK)">Giao Hàng Tiết Kiệm (GHTK)</option>
+                            <option value="Viettel Post">Viettel Post</option>
+                            <option value="GrabExpress">GrabExpress (Giao Hỏa Tốc 2H)</option>
+                            <option value="AhaMove">AhaMove (Nội Thành)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mã Vận Đơn (Tracking Number)</label>
+                        <input type="text" name="trackingNumber" class="form-control font-monospace" placeholder="VD: GHN-1029384756 (Để trống nếu dùng mã tự sinh)" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success text-white rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-box-seam me-1"></i> Xác Nhận Bàn Giao
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 7. Modal Khởi Tạo Phiên Kiểm Kê Kho Mới -->
+<div class="modal fade" id="createStocktakeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("CreateStocktakeSession", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-clipboard2-check text-dark me-2"></i>Khởi Tạo Phiên Kiểm Kê Kho Mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Tiêu Đề Đợt Kiểm Kê <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" value="Kiểm kê định kỳ tháng @DateTime.UtcNow.Month/@DateTime.UtcNow.Year" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Khu Vực Kho Kiểm Kê <span class="text-danger">*</span></label>
+                        <select name="warehouseLocation" class="form-select" required>
+                            <option value="Tổng Kho Tân Bình - TP.HCM">Tổng Kho Tân Bình - TP.HCM</option>
+                            <option value="Kho Chi Nhánh Quận 1">Kho Chi Nhánh Quận 1</option>
+                            <option value="Khu Vực Kệ A1 (Điện Thoại)">Khu Vực Kệ A1 (Điện Thoại)</option>
+                            <option value="Khu Vực Kệ L1 (Laptop)">Khu Vực Kệ L1 (Laptop)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-4 fw-semibold">Bắt Đầu Phiên</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 8. Modal Nhập Số Liệu Đếm Thực Tế & Chênh Lệch -->
+<div class="modal fade" id="submitStocktakeCountModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("SubmitStocktakeCount", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="sessionId" id="count_sessionId" />
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-upc text-primary me-2"></i>Ghi Nhận Số Liệu Đếm Thực Tế
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mã Phiên Kiểm Kê</label>
+                        <input type="text" id="count_sessionCode" class="form-control font-monospace bg-light" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Sản Phẩm Đếm <span class="text-danger">*</span></label>
+                        <select name="productId" id="count_productId" class="form-select" required>
+                            @foreach (var prod in Model.AvailableProducts)
+                            {
+                                <option value="@prod.Id" data-sku="@prod.Sku">@prod.Name (@prod.Sku)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Mã SKU</label>
+                            <input type="text" name="sku" id="count_sku" class="form-control font-monospace" placeholder="Mã SKU" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Số Lượng Thực Đếm <span class="text-danger">*</span></label>
+                            <input type="number" name="countedQty" class="form-control font-monospace fw-bold" min="0" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Lý Do Chênh Lệch (Nếu có)</label>
+                        <input type="text" name="discrepancyReason" class="form-control" placeholder="VD: Thất thoát trong lưu kho, hàng trả chưa nhập sổ..." />
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Lưu Kết Quả Đếm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 9. Modal Giảm Tồn Hàng Hư Hại Vật Lý -->
+<div class="modal fade" id="adjustDamagedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("AdjustDamagedStock", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-shield-slash text-danger me-2"></i>Giảm Tồn &amp; Cách Ly Hàng Hư Hại Vật Lý
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Số Serial / IMEI Bị Hư Hại <span class="text-danger">*</span></label>
+                        <input type="text" name="serialNumber" class="form-control font-monospace" placeholder="Nhập hoặc quét IMEI thiết bị..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Khu Vực Cách Ly Hàng Lỗi</label>
+                        <input type="text" name="shelfLocation" class="form-control" value="Khu Cách Ly Hàng Lỗi - Kệ X" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Lý Do Hư Hại <span class="text-danger">*</span></label>
+                        <textarea name="damageReason" class="form-control" rows="3" placeholder="Mô tả chi tiết: Rơi vỡ trong lúc xếp hàng, ẩm mốc, lỗi kỹ thuật phát hiện khi lưu kho..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Cách Ly &amp; Giảm Tồn</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 10. Modal Cấu Hình Ngưỡng An Toàn Safety Stock -->
+<div class="modal fade" id="safetyThresholdModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("ConfigureSafetyStockThreshold", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="productId" id="threshold_productId" />
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-sliders text-secondary me-2"></i>Cài Đặt Mức Tồn An Toàn (Safety Stock)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Tên Sản Phẩm</label>
+                        <input type="text" id="threshold_prodName" class="form-control bg-light" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mức Tồn An Toàn Tối Thiểu (Cảnh báo khi &le; số này) <span class="text-danger">*</span></label>
+                        <input type="number" name="minStockThreshold" id="threshold_val" class="form-control font-monospace fw-bold" min="0" required />
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Lưu Ngưỡng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 11. Modal Lập Phiếu Điều Chuyển Chi Nhánh -->
+<div class="modal fade" id="createTransferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("CreateTransfer", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-arrow-left-right text-primary me-2"></i>Lập Phiếu Điều Chuyển Hàng Hóa Nội Bộ
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Kho Xuất Hàng <span class="text-danger">*</span></label>
+                            <input type="text" name="fromWarehouse" class="form-control" value="Tổng Kho Tân Bình - TP.HCM" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Kho Đích Nhận Hàng <span class="text-danger">*</span></label>
+                            <select name="toWarehouse" class="form-select" required>
+                                <option value="Chi Nhánh Showroom Quận 1">Chi Nhánh Showroom Quận 1</option>
+                                <option value="Chi Nhánh Showroom Cầu Giấy - Hà Nội">Chi Nhánh Showroom Cầu Giấy - Hà Nội</option>
+                                <option value="Kho Trung Tâm Đà Nẵng">Kho Trung Tâm Đà Nẵng</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Sản Phẩm Điều Chuyển <span class="text-danger">*</span></label>
+                            <select name="productId" id="trf_productId" class="form-select" required onchange="onTrfProductChanged(this)">
+                                @foreach (var prod in Model.AvailableProducts)
+                                {
+                                    <option value="@prod.Id" data-sku="@prod.Sku">@prod.Name (@prod.Sku)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Mã SKU</label>
+                            <input type="text" name="sku" id="trf_sku" class="form-control font-monospace" placeholder="Mã SKU" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Danh Sách Serial / IMEI Điều Chuyển (Mỗi mã 1 dòng)</label>
+                        <textarea name="serialsRaw" class="form-control font-monospace" rows="4" placeholder="Quét danh sách Serial máy điều chuyển vào đây..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Đơn Vị Vận Chuyển Nội Bộ</label>
+                        <input type="text" name="carrierName" class="form-control" value="Đội Giao Hàng Nội Bộ TechZone" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Xuất Điều Chuyển</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 12. Modal Tiếp Nhận Hàng Hoàn & Cách Ly (Reverse Logistics) -->
+<div class="modal fade" id="processReturnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" action="@Url.Action("ProcessCustomerReturn", "Warehouse")">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-arrow-return-left text-danger me-2"></i>Tiếp Nhận &amp; Đối Chiếu IMEI Hàng Hoàn
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mã Đơn Hàng Gốc <span class="text-danger">*</span></label>
+                        <input type="text" name="orderCode" class="form-control font-monospace" placeholder="VD: ORD-202610-A1B2" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Mã IMEI / Serial Trên Vỏ Hộp Hoàn Về <span class="text-danger">*</span></label>
+                        <input type="text" name="serialNumber" class="form-control font-monospace form-control-lg text-danger fw-bold" placeholder="Quét barcode IMEI..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Phân Loại Xử Lý Sau Khi Kiểm Định <span class="text-danger">*</span></label>
+                        <select name="returnType" class="form-select" required>
+                            <option value="RestockGood">Nhập lại kho khả dụng (Nguyên seal, khách bom/hủy trước khi bóc)</option>
+                            <option value="QuarantineDefective">Cách ly kho lỗi / Đổi trả Hãng (Đã bóc seal, trầy xước, lỗi NSX)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Kết Luận Ngoại Quan <span class="text-danger">*</span></label>
+                        <input type="text" name="inspectionResult" class="form-control" placeholder="VD: Hộp nguyên vẹn 100%, chưa kích hoạt bảo hành..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Ghi Chú Bàn Giao</label>
+                        <textarea name="actionNotes" class="form-control" rows="2" placeholder="Ghi chú thêm..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Xác Nhận Tiếp Nhận</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openInspectModal(poId, poCode) {
+            document.getElementById('inspect_poId').value = poId;
+            document.getElementById('inspect_poCode').value = poCode;
+            new bootstrap.Modal(document.getElementById('inspectPoModal')).show();
+        }
+
+        function openScanModal(poId, poCode, prodId, sku, prodName) {
+            var poSelect = document.getElementById('scan_poId');
+            if (poSelect) {
+                poSelect.value = poId;
+            }
+            if (prodId) {
+                document.getElementById('scan_productId').value = prodId;
+            }
+            if (sku) {
+                document.getElementById('scan_sku').value = sku;
+            }
+            new bootstrap.Modal(document.getElementById('scanImeiBatchModal')).show();
+        }
+
+        function onPoSelectChanged(selectElem) {
+            var selectedOption = selectElem.options[selectElem.selectedIndex];
+            var prodId = selectedOption.getAttribute('data-productid');
+            var sku = selectedOption.getAttribute('data-sku');
+            if (prodId) {
+                document.getElementById('scan_productId').value = prodId;
+            }
+            if (sku) {
+                document.getElementById('scan_sku').value = sku;
+            }
+        }
+
+        function updateScanCount(textarea) {
+            var lines = textarea.value.split(/[\r\n,;]+/).filter(function(s) { return s.trim().length > 0; });
+            document.getElementById('scan_count_label').innerText = lines.length + ' mã';
+        }
+
+        function openStatusModal(id, serial, currentStatus) {
+            document.getElementById('status_itemId').value = id;
+            document.getElementById('status_serial').value = serial;
+            document.getElementById('status_select').value = currentStatus;
+            new bootstrap.Modal(document.getElementById('updateStatusModal')).show();
+        }
+
+        function openBindSkuModal(id, serial, prodId, sku) {
+            document.getElementById('bind_itemId').value = id;
+            document.getElementById('bind_serial').value = serial;
+            document.getElementById('bind_productId').value = prodId;
+            document.getElementById('bind_sku').value = sku;
+            new bootstrap.Modal(document.getElementById('bindSkuModal')).show();
+        }
+
+        function openDispatchModal(orderId, orderCode, sku, prodName) {
+            document.getElementById('dispatch_orderId').value = orderId;
+            document.getElementById('dispatch_orderCode').value = orderCode;
+            document.getElementById('dispatch_sku').value = sku || '';
+            document.getElementById('dispatch_serial').value = '';
+            new bootstrap.Modal(document.getElementById('scanDispatchModal')).show();
+        }
+
+        function openHandoverModal(orderId, orderCode, carrierName) {
+            document.getElementById('handover_orderId').value = orderId;
+            document.getElementById('handover_orderCode').value = orderCode;
+            if (carrierName) {
+                document.getElementById('handover_carrier').value = carrierName;
+            }
+            new bootstrap.Modal(document.getElementById('handoverCarrierModal')).show();
+        }
+
+        function openCountModal(sessionId, sessionCode) {
+            document.getElementById('count_sessionId').value = sessionId;
+            document.getElementById('count_sessionCode').value = sessionCode;
+            new bootstrap.Modal(document.getElementById('submitStocktakeCountModal')).show();
+        }
+
+        function openThresholdModal(prodId, prodName, currentThreshold) {
+            document.getElementById('threshold_productId').value = prodId;
+            document.getElementById('threshold_prodName').value = prodName;
+            document.getElementById('threshold_val').value = currentThreshold;
+            new bootstrap.Modal(document.getElementById('safetyThresholdModal')).show();
+        }
+
+        function onTrfProductChanged(selectElem) {
+            var selectedOption = selectElem.options[selectElem.selectedIndex];
+            var sku = selectedOption.getAttribute('data-sku');
+            if (sku) {
+                document.getElementById('trf_sku').value = sku;
+            }
+        }
+    </script>
+}

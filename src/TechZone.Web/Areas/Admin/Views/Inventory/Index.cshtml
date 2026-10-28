@@ -1,0 +1,1288 @@
+@model InventoryManagementViewModel
+@{
+    ViewData["Title"] = "Quản Lý Kho & Thiết Bị Đặc Thù Điện Tử";
+    var currentUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<!-- Page Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+            <span class="tz-stat-icon-wrapper" style="width: 38px; height: 38px; border-radius: 10px; background: rgba(234, 88, 12, 0.12); color: #ea580c; font-size: 1.15rem;">
+                <i class="bi bi-upc-scan"></i>
+            </span>
+            <span>Kho Hàng & Thiết Bị Đặc Thù Điện Tử</span>
+        </h3>
+        <small class="text-muted">Kiểm soát tồn kho vật lý & khả dụng, lập phiếu nhập/xuất kho (GRN/GDN), định danh vòng đời IMEI và công nợ nhà cung cấp (Mục 1.2)</small>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <button type="button" class="btn btn-primary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-2 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#importBatchModal">
+            <i class="bi bi-box-arrow-in-down fs-6"></i>
+            <span>Lập Phiếu Nhập (GRN)</span>
+        </button>
+        <button type="button" class="btn btn-outline-warning rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-2 shadow-2xs fw-semibold" data-bs-toggle="modal" data-bs-target="#exportSlipModal">
+            <i class="bi bi-box-arrow-up-right fs-6"></i>
+            <span>Lập Phiếu Xuất (GDN)</span>
+        </button>
+        <button type="button" class="btn btn-outline-primary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-2 shadow-2xs fw-semibold" data-bs-toggle="modal" data-bs-target="#adjustStockModal">
+            <i class="bi bi-sliders fs-6"></i>
+            <span>Kiểm Kê Kho</span>
+        </button>
+        <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-2 shadow-2xs fw-semibold" data-bs-toggle="modal" data-bs-target="#createSupplierModal">
+            <i class="bi bi-building-add fs-6"></i>
+            <span>Thêm Nhà Cung Cấp</span>
+        </button>
+    </div>
+</div>
+
+<!-- KPI Cards (5 Cards) -->
+<div class="row g-3 mb-4">
+    <!-- Card 1: Tổng IMEI / Serial -->
+    <div class="col-sm-6 col-xl">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #0284c7;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Định Danh IMEI/Serial</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(2, 132, 199, 0.12); color: #0284c7;">
+                    <i class="bi bi-cpu"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-dark mb-1">@Model.TotalItems</div>
+            <div class="text-muted small" style="font-size: 0.72rem;">Đã quản lý mã định danh duy nhất</div>
+        </div>
+    </div>
+
+    <!-- Card 2: Sẵn Sàng Xuất Bán -->
+    <div class="col-sm-6 col-xl">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #10b981;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Trong Kho (Sẵn Sàng)</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-success mb-1">@Model.InStockCount <small class="fs-6 text-muted">máy</small></div>
+            <div class="text-muted small" style="font-size: 0.72rem;">Giá trị vốn: <strong class="text-dark">@Model.TotalInventoryValue.ToString("N0") ₫</strong></div>
+        </div>
+    </div>
+
+    <!-- Card 3: Đã Xuất Bán Giao Khách -->
+    <div class="col-sm-6 col-xl">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #6366f1;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Đã Xuất Bán</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(99, 102, 241, 0.12); color: #4f46e5;">
+                    <i class="bi bi-truck"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-dark mb-1">@Model.SoldCount <small class="fs-6 text-muted">máy</small></div>
+            <div class="text-muted small" style="font-size: 0.72rem;">Đang giữ đơn: <strong class="text-warning">@Model.ReservedCount máy</strong></div>
+        </div>
+    </div>
+
+    <!-- Card 4: Hàng Lỗi / Cách Ly -->
+    <div class="col-sm-6 col-xl">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #f43f5e;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Hàng Lỗi / Cách Ly</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(244, 63, 94, 0.12); color: #e11d48;">
+                    <i class="bi bi-exclamation-octagon-fill"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-danger mb-1">@Model.DamagedCount <small class="fs-6 text-muted">máy</small></div>
+            <div class="text-muted small" style="font-size: 0.72rem;">Chờ xuất trả NCC / đổi bảo hành</div>
+        </div>
+    </div>
+
+    <!-- Card 5: Công Nợ Nhà Cung Cấp -->
+    <div class="col-sm-6 col-xl">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #f59e0b;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Công Nợ Phải Trả NCC</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.15); color: #b45309;">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-warning mb-1">@Model.TotalSupplierDebt.ToString("N0") <small class="fs-6 text-muted">₫</small></div>
+            <div class="text-muted small" style="font-size: 0.72rem;">Từ <strong>@Model.Suppliers.Count</strong> nhà phân phối đối tác</div>
+        </div>
+    </div>
+</div>
+
+<!-- 4 Main Navigation Tabs -->
+<ul class="nav nav-pills p-2 bg-white rounded-4 shadow-sm mb-4 gap-1">
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-3 py-2 fw-semibold @(Model.ActiveTab == "imei" ? "active" : "")" href="/Admin/Inventory?tab=imei">
+            <i class="bi bi-upc me-1"></i>1. Định Danh & Vòng Đời IMEI (@Model.TotalItems)
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-3 py-2 fw-semibold @(Model.ActiveTab == "stock" ? "active" : "")" href="/Admin/Inventory?tab=stock">
+            <i class="bi bi-boxes me-1"></i>2. Tồn Kho & Kiểm Kê (@Model.StockOverview.Count sản phẩm)
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-3 py-2 fw-semibold @(Model.ActiveTab == "slips" ? "active" : "")" href="/Admin/Inventory?tab=slips">
+            <i class="bi bi-receipt-cutoff me-1"></i>3. Phiếu Nhập / Xuất Kho (@Model.StockSlips.Count phiếu)
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-3 py-2 fw-semibold @(Model.ActiveTab == "suppliers" ? "active" : "")" href="/Admin/Inventory?tab=suppliers">
+            <i class="bi bi-building me-1"></i>4. Nhà Cung Cấp & Công Nợ (@Model.Suppliers.Count NCC)
+        </a>
+    </li>
+</ul>
+
+<!-- TAB 1: Định Danh & Vòng Đời IMEI / Serial (imei_serial.track) -->
+@if (Model.ActiveTab == "imei")
+{
+    <!-- Filters Card -->
+    <div class="card border-0 rounded-4 shadow-sm p-3 bg-white mb-4">
+        <!-- Filter Tabs -->
+        <div class="d-flex align-items-center gap-1 overflow-auto pb-2 border-bottom mb-3">
+            <a href="/Admin/Inventory?tab=imei" class="btn btn-sm @(!Model.StatusFilter.HasValue ? "btn-primary" : "btn-light border") rounded-pill px-3 text-nowrap">
+                Tất cả thiết bị
+            </a>
+            <a href="/Admin/Inventory?tab=imei&status=@InventoryStatus.InStock" class="btn btn-sm @(Model.StatusFilter == InventoryStatus.InStock ? "btn-primary" : "btn-light border") rounded-pill px-3 text-nowrap">
+                <i class="bi bi-check2 text-success me-1"></i>Trong kho (@Model.InStockCount)
+            </a>
+            <a href="/Admin/Inventory?tab=imei&status=@InventoryStatus.Reserved" class="btn btn-sm @(Model.StatusFilter == InventoryStatus.Reserved ? "btn-primary" : "btn-light border") rounded-pill px-3 text-nowrap">
+                <i class="bi bi-hourglass-split text-warning me-1"></i>Đang giữ đơn (@Model.ReservedCount)
+            </a>
+            <a href="/Admin/Inventory?tab=imei&status=@InventoryStatus.Delivered" class="btn btn-sm @(Model.StatusFilter == InventoryStatus.Delivered ? "btn-primary" : "btn-light border") rounded-pill px-3 text-nowrap">
+                <i class="bi bi-truck text-primary me-1"></i>Đã xuất bán (@Model.SoldCount)
+            </a>
+            <a href="/Admin/Inventory?tab=imei&status=@InventoryStatus.Defective" class="btn btn-sm @(Model.StatusFilter == InventoryStatus.Defective ? "btn-primary" : "btn-light border") rounded-pill px-3 text-nowrap">
+                <i class="bi bi-x-circle text-danger me-1"></i>Hàng lỗi (@Model.DamagedCount)
+            </a>
+        </div>
+
+        <!-- Filter Form -->
+        <form asp-action="Index" method="get" class="row g-2 align-items-center">
+            <input type="hidden" name="tab" value="imei" />
+            @if (Model.StatusFilter.HasValue)
+            {
+                <input type="hidden" name="status" value="@Model.StatusFilter.Value" />
+            }
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-upc-scan text-muted"></i></span>
+                    <input type="text" name="search" value="@Model.SearchKeyword" class="form-control border-start-0" placeholder="Quét Barcode hoặc tìm theo Serial, IMEI, tên máy, mã GRN..." />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select name="productId" class="form-select">
+                    <option value="">-- Tất cả dòng sản phẩm --</option>
+                    @foreach (var prod in Model.Products)
+                    {
+                        <option value="@prod.Id" selected="@(Model.SelectedProductId == prod.Id ? "selected" : null)">@prod.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary fw-bold flex-grow-1">Tìm Kiếm</button>
+                @if (!string.IsNullOrEmpty(Model.SearchKeyword) || Model.StatusFilter.HasValue || !string.IsNullOrEmpty(Model.SelectedProductId))
+                {
+                    <a href="/Admin/Inventory?tab=imei" class="btn btn-outline-secondary" title="Xóa bộ lọc">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card border-0 rounded-4 shadow-sm overflow-hidden bg-white mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+                <thead style="background-color: #f8fafc; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b;">
+                    <tr>
+                        <th class="ps-3 py-2 text-nowrap">Mã Serial / IMEI</th>
+                        <th class="px-2 py-2">Sản phẩm & SKU</th>
+                        <th class="px-2 py-2 text-nowrap">Vị trí kệ kho</th>
+                        <th class="px-2 py-2 text-nowrap">Lô nhập & Nhà cung cấp</th>
+                        <th class="px-2 py-2 text-nowrap">Giá vốn</th>
+                        <th class="px-2 py-2 text-nowrap">Trạng thái kho</th>
+                        <th class="px-2 py-2 text-nowrap">Đơn hàng ràng buộc</th>
+                        <th class="pe-3 py-2 text-end text-nowrap">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items.Items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-upc-scan fs-1 d-block text-secondary opacity-50 mb-2"></i>
+                                <div class="fw-bold">Chưa có mã Serial / IMEI nào phù hợp</div>
+                                <small>Bấm "Lập Phiếu Nhập (GRN)" ở trên để nhập danh sách IMEI thiết bị vào kho</small>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.Items.Items)
+                        {
+                            <tr>
+                                <!-- Serial / IMEI -->
+                                <td class="ps-3 py-2 text-nowrap">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="font-monospace fw-bold text-dark bg-light px-2 py-1 rounded border" style="font-size: 0.78rem;">
+                                            <i class="bi bi-upc me-1 text-primary"></i>@item.SerialNumber
+                                        </span>
+                                        @if (!string.IsNullOrEmpty(item.Imei2))
+                                        {
+                                            <span class="badge bg-light text-muted border font-monospace" style="font-size: 0.68rem;" title="IMEI 2: @item.Imei2">SIM 2</span>
+                                        }
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">Nhập: @item.ReceivedDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                </td>
+
+                                <!-- Product & SKU -->
+                                <td class="px-2 py-2">
+                                    <div class="fw-bold text-dark text-truncate" style="max-width: 220px;" title="@item.ProductName">
+                                        @item.ProductName
+                                    </div>
+                                    <div class="text-muted font-monospace" style="font-size: 0.7rem;">SKU: @item.VariantSku</div>
+                                </td>
+
+                                <!-- Warehouse Location -->
+                                <td class="px-2 py-2 text-nowrap">
+                                    <span class="badge tz-badge-soft-secondary rounded-pill px-2 py-1" style="font-size: 0.72rem;">
+                                        <i class="bi bi-geo-alt-fill text-danger me-1"></i>@item.WarehouseLocation
+                                    </span>
+                                </td>
+
+                                <!-- Batch Code & Supplier -->
+                                <td class="px-2 py-2 text-nowrap">
+                                    <div class="fw-semibold text-dark font-monospace" style="font-size: 0.74rem;">@item.ImportBatchCode</div>
+                                    <div class="text-muted small" style="font-size: 0.7rem;"><i class="bi bi-building me-1"></i>@(item.SupplierName ?? "Đối tác phân phối")</div>
+                                </td>
+
+                                <!-- Cost Price -->
+                                <td class="px-2 py-2 text-nowrap">
+                                    <span class="fw-bold text-secondary">@item.CostPrice.ToString("N0") ₫</span>
+                                </td>
+
+                                <!-- Status Badge -->
+                                <td class="px-2 py-2 text-nowrap">
+                                    @switch (item.Status)
+                                    {
+                                        case InventoryStatus.InStock:
+                                            <span class="badge tz-badge-soft-success rounded-pill px-2 py-1" style="font-size: 0.74rem;">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Trong kho
+                                            </span>
+                                            break;
+                                        case InventoryStatus.Reserved:
+                                            <span class="badge tz-badge-soft-warning rounded-pill px-2 py-1" style="font-size: 0.74rem;">
+                                                <i class="bi bi-hourglass-split me-1"></i>Đang giữ đơn
+                                            </span>
+                                            break;
+                                        case InventoryStatus.Delivered:
+                                        case InventoryStatus.Shipped:
+                                            <span class="badge tz-badge-soft-primary rounded-pill px-2 py-1" style="font-size: 0.74rem;">
+                                                <i class="bi bi-bag-check-fill me-1"></i>Đã xuất bán
+                                            </span>
+                                            break;
+                                        case InventoryStatus.Defective:
+                                            <span class="badge tz-badge-soft-danger rounded-pill px-2 py-1" style="font-size: 0.74rem;">
+                                                <i class="bi bi-x-octagon-fill me-1"></i>Hàng lỗi
+                                            </span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-secondary text-white rounded-pill px-2 py-1">@item.Status</span>
+                                            break;
+                                    }
+                                </td>
+
+                                <!-- Assigned Order -->
+                                <td class="px-2 py-2 text-nowrap">
+                                    @if (!string.IsNullOrEmpty(item.AssignedOrderCode))
+                                    {
+                                        <a href="/Admin/Order/Detail/@item.AssignedOrderId" class="badge tz-badge-soft-primary text-decoration-none rounded-pill px-2 py-1" style="font-size: 0.72rem;">
+                                            <i class="bi bi-receipt me-1"></i>#@item.AssignedOrderCode
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" style="font-size: 0.72rem;">Chưa xuất đơn</span>
+                                    }
+                                </td>
+
+                                <!-- Action Buttons -->
+                                <td class="pe-3 py-2 text-end text-nowrap">
+                                    <!-- Lifecycle Modal Trigger -->
+                                    <button type="button" class="btn btn-xs btn-outline-info rounded-pill px-2 py-1" data-bs-toggle="modal" data-bs-target="#lifecycleModal-@item.Id" title="Xem vòng đời thiết bị">
+                                        <i class="bi bi-clock-history me-1"></i>Vòng đời
+                                    </button>
+
+                                    <!-- Status Modal Trigger -->
+                                    <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1" data-bs-toggle="modal" data-bs-target="#editItemModal-@item.Id" title="Chuyển trạng thái IMEI">
+                                        <i class="bi bi-gear-fill me-1"></i>Trạng thái
+                                    </button>
+
+                                    <!-- Modal Vòng Đời Máy (Lifecycle Modal) -->
+                                    <div class="modal fade" id="lifecycleModal-@item.Id" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content border-0 rounded-4 shadow">
+                                                <div class="modal-header bg-light rounded-top-4 border-bottom-0">
+                                                    <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                                                        <i class="bi bi-clock-history text-primary"></i>
+                                                        <span>Vòng Đời Thiết Bị (IMEI: @item.SerialNumber)</span>
+                                                    </h6>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body p-4 text-start">
+                                                    <div class="mb-3">
+                                                        <h6 class="fw-bold text-dark m-0">@item.ProductName</h6>
+                                                        <small class="text-muted">SKU: @item.VariantSku</small>
+                                                    </div>
+
+                                                    <div class="timeline ps-2 border-start border-3 border-primary ms-2 d-flex flex-column gap-3 small">
+                                                        <div>
+                                                            <div class="fw-bold text-primary"><i class="bi bi-box-arrow-in-down me-1"></i>Nhập Kho (GRN)</div>
+                                                            <div class="text-dark">Lô nhập: <span class="font-monospace fw-semibold">@item.ImportBatchCode</span></div>
+                                                            <div class="text-muted">Nhà cung cấp: <strong>@(item.SupplierName ?? "Đối tác phân phối")</strong></div>
+                                                            <div class="text-muted">Giá vốn nhập: @item.CostPrice.ToString("N0") ₫</div>
+                                                            <div class="text-muted">Thời gian: @item.ReceivedDate.ToLocalTime().ToString("HH:mm dd/MM/yyyy")</div>
+                                                        </div>
+
+                                                        <div>
+                                                            <div class="fw-bold text-secondary"><i class="bi bi-geo-alt me-1"></i>Lưu Kho & Vị Trí Kệ</div>
+                                                            <div class="text-dark">Vị trí hiện tại: <span class="badge bg-light text-dark border">@item.WarehouseLocation</span></div>
+                                                            <div class="text-muted">Trạng thái: <strong>@item.Status</strong></div>
+                                                        </div>
+
+                                                        @if (!string.IsNullOrEmpty(item.AssignedOrderCode))
+                                                        {
+                                                            <div>
+                                                                <div class="fw-bold text-success"><i class="bi bi-truck me-1"></i>Xuất Bán Cho Khách Hàng</div>
+                                                                <div class="text-dark">Đơn hàng: <a href="/Admin/Order/Detail/@item.AssignedOrderId" class="fw-bold text-decoration-none">#@item.AssignedOrderCode</a></div>
+                                                                <div class="text-muted">Ngày xuất: @(item.ShippedDate?.ToLocalTime().ToString("HH:mm dd/MM/yyyy") ?? "Đã quét xuất kho")</div>
+                                                            </div>
+                                                        }
+
+                                                        @if (!string.IsNullOrEmpty(item.ExportSlipCode))
+                                                        {
+                                                            <div>
+                                                                <div class="fw-bold text-danger"><i class="bi bi-box-arrow-up-right me-1"></i>Phiếu Xuất Kho (GDN)</div>
+                                                                <div class="text-dark">Mã phiếu xuất: <span class="font-monospace">@item.ExportSlipCode</span></div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-top-0 pt-0">
+                                                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal Update Status -->
+                                    <div class="modal fade" id="editItemModal-@item.Id" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered modal-sm">
+                                            <div class="modal-content border-0 rounded-4 shadow">
+                                                <div class="modal-header border-bottom-0 pb-0">
+                                                    <h6 class="modal-title fw-bold text-dark">Chuyển Trạng Thái Thiết Bị</h6>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form asp-action="UpdateItemStatus" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="itemId" value="@item.Id" />
+                                                    <div class="modal-body text-start py-3">
+                                                        <div class="small fw-bold text-dark font-monospace mb-1">@item.SerialNumber</div>
+                                                        <div class="small text-muted mb-3">@item.ProductName</div>
+
+                                                        <label class="form-label small fw-semibold text-secondary">Chọn trạng thái mới:</label>
+                                                        <select name="newStatus" class="form-select small">
+                                                            <option value="InStock" selected="@(item.Status == InventoryStatus.InStock)">Trong kho (Sẵn sàng)</option>
+                                                            <option value="Reserved" selected="@(item.Status == InventoryStatus.Reserved)">Đang giữ (Chờ xuất)</option>
+                                                            <option value="Delivered" selected="@(item.Status == InventoryStatus.Delivered || item.Status == InventoryStatus.Shipped)">Đã xuất bán (Giao khách)</option>
+                                                            <option value="Defective" selected="@(item.Status == InventoryStatus.Defective)">Hàng lỗi (Cấn móp / Trả hãng)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="modal-footer border-top-0 pt-0">
+                                                        <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                                                        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold">Lưu thay đổi</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.Items.TotalPages > 1)
+        {
+            <div class="p-3 border-top bg-light d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <span class="text-muted small">
+                    Hiển thị <strong class="text-dark">@((Model.Items.PageIndex - 1) * Model.Items.PageSize + 1)</strong> - <strong class="text-dark">@Math.Min(Model.Items.PageIndex * Model.Items.PageSize, Model.Items.TotalCount)</strong> trên tổng số <strong class="text-dark">@Model.Items.TotalCount</strong> thiết bị
+                </span>
+                <ul class="pagination pagination-sm m-0 gap-1">
+                    <li class="page-item @(!Model.Items.HasPreviousPage ? "disabled" : "")">
+                        <a class="page-link rounded-pill px-3" href="/Admin/Inventory?tab=imei&page=@(Model.Items.PageIndex - 1)&search=@Model.SearchKeyword&status=@Model.StatusFilter&productId=@Model.SelectedProductId">
+                            <i class="bi bi-chevron-left me-1"></i>Trước
+                        </a>
+                    </li>
+                    @for (int p = 1; p <= Model.Items.TotalPages; p++)
+                    {
+                        <li class="page-item @(p == Model.Items.PageIndex ? "active" : "")">
+                            <a class="page-link rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;" href="/Admin/Inventory?tab=imei&page=@p&search=@Model.SearchKeyword&status=@Model.StatusFilter&productId=@Model.SelectedProductId">
+                                @p
+                            </a>
+                        </li>
+                    }
+                    <li class="page-item @(!Model.Items.HasNextPage ? "disabled" : "")">
+                        <a class="page-link rounded-pill px-3" href="/Admin/Inventory?tab=imei&page=@(Model.Items.PageIndex + 1)&search=@Model.SearchKeyword&status=@Model.StatusFilter&productId=@Model.SelectedProductId">
+                            Sau<i class="bi bi-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        }
+    </div>
+}
+
+<!-- TAB 2: Tra Cứu Tồn Kho & Điều Chỉnh Kiểm Kê (inventory.view | adjust) -->
+@if (Model.ActiveTab == "stock")
+{
+    @if (Model.LowStockProductsCount > 0)
+    {
+        <div class="alert alert-warning border-0 rounded-4 shadow-sm p-3 mb-4 d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+                <div>
+                    <strong class="text-dark">Cảnh báo tồn kho:</strong> Hiện có <span class="badge bg-danger">@Model.LowStockProductsCount sản phẩm</span> có số lượng tồn kho vật lý thấp (&le; 5 chiếc).
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#importBatchModal">
+                <i class="bi bi-plus-lg me-1"></i>Nhập Hàng Ngay
+            </button>
+        </div>
+    }
+
+    <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden mb-4">
+        <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+            <span class="fw-bold text-dark small">
+                <i class="bi bi-boxes text-primary me-2"></i>Bảng Tổng Hợp Tồn Kho Vật Lý & Khả Dụng Theo Sản Phẩm (@Model.StockOverview.Count dòng thiết bị)
+            </span>
+            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-3 py-1 fw-bold" data-bs-toggle="modal" data-bs-target="#adjustStockModal">
+                <i class="bi bi-sliders me-1"></i>Điều Chỉnh Kiểm Kê
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+                <thead style="background-color: #f8fafc; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b;">
+                    <tr>
+                        <th class="ps-3 py-2">Sản phẩm & Model</th>
+                        <th class="px-2 py-2 text-nowrap">Danh mục / Hãng</th>
+                        <th class="px-2 py-2 text-nowrap">Giá bán lẻ</th>
+                        <th class="px-2 py-2 text-center text-nowrap">Tồn vật lý</th>
+                        <th class="px-2 py-2 text-center text-nowrap">Khả dụng</th>
+                        <th class="px-2 py-2 text-center text-nowrap">Giữ đơn</th>
+                        <th class="px-2 py-2 text-center text-nowrap">Lỗi cách ly</th>
+                        <th class="px-2 py-2 text-nowrap">Trạng thái tồn</th>
+                        <th class="pe-3 py-2 text-end text-nowrap">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var prod in Model.StockOverview)
+                    {
+                        <tr>
+                            <td class="ps-3 py-2">
+                                <div class="fw-bold text-dark">@prod.ProductName</div>
+                                <span class="font-monospace text-muted" style="font-size: 0.72rem;">SKU: @prod.Sku</span>
+                            </td>
+                            <td class="px-2 py-2 text-nowrap">
+                                <span class="badge bg-light text-dark border">@prod.CategoryName</span>
+                                <span class="badge bg-light text-secondary border">@prod.BrandName</span>
+                            </td>
+                            <td class="px-2 py-2 text-nowrap fw-bold text-danger">
+                                @prod.Price.ToString("N0") ₫
+                            </td>
+                            <td class="px-2 py-2 text-center text-nowrap">
+                                <span class="fs-6 fw-bold text-dark">@prod.StockQuantity</span>
+                            </td>
+                            <td class="px-2 py-2 text-center text-nowrap">
+                                <span class="fs-6 fw-bold text-success">@prod.AvailableQuantity</span>
+                            </td>
+                            <td class="px-2 py-2 text-center text-nowrap">
+                                <span class="fw-bold text-warning">@prod.ReservedQuantity</span>
+                            </td>
+                            <td class="px-2 py-2 text-center text-nowrap">
+                                <span class="fw-bold text-danger">@prod.DefectiveCount</span>
+                            </td>
+                            <td class="px-2 py-2 text-nowrap">
+                                @if (prod.StockQuantity > 5)
+                                {
+                                    <span class="badge tz-badge-soft-success rounded-pill px-2 py-1">
+                                        <i class="bi bi-check2-circle me-1"></i>Sẵn hàng dồi dào
+                                    </span>
+                                }
+                                else if (prod.StockQuantity > 0)
+                                {
+                                    <span class="badge tz-badge-soft-warning rounded-pill px-2 py-1">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>Sắp hết hàng
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge tz-badge-soft-danger rounded-pill px-2 py-1">
+                                        <i class="bi bi-x-circle me-1"></i>Hết hàng
+                                    </span>
+                                }
+                            </td>
+                            <td class="pe-3 py-2 text-end text-nowrap">
+                                <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" onclick="openAdjustModal('@prod.ProductId', '@prod.ProductName', @prod.StockQuantity)">
+                                    <i class="bi bi-sliders me-1"></i>Kiểm kê
+                                </button>
+                                <a href="/Admin/Inventory?tab=imei&productId=@prod.ProductId" class="btn btn-xs btn-light border rounded-pill px-2 py-1" title="Xem danh sách IMEI máy này">
+                                    <i class="bi bi-upc"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- TAB 3: Phiếu Nhập & Xuất Kho (stock.import | export) -->
+@if (Model.ActiveTab == "slips")
+{
+    <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden mb-4">
+        <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light flex-wrap gap-2">
+            <span class="fw-bold text-dark small">
+                <i class="bi bi-receipt-cutoff text-primary me-2"></i>Danh Sách Phiếu Nhập (GRN) & Phiếu Xuất (GDN) (@Model.StockSlips.Count phiếu)
+            </span>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-xs btn-primary rounded-pill px-3 py-1 fw-bold" data-bs-toggle="modal" data-bs-target="#importBatchModal">
+                    <i class="bi bi-box-arrow-in-down me-1"></i>Lập Phiếu Nhập
+                </button>
+                <button type="button" class="btn btn-xs btn-warning rounded-pill px-3 py-1 fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#exportSlipModal">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Lập Phiếu Xuất
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+                <thead style="background-color: #f8fafc; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b;">
+                    <tr>
+                        <th class="ps-3 py-2 text-nowrap">Mã Phiếu</th>
+                        <th class="px-2 py-2 text-nowrap">Loại Phiếu</th>
+                        <th class="px-2 py-2">Nhà Cung Cấp / Đối Tác</th>
+                        <th class="px-2 py-2 text-nowrap">Vị trí kho</th>
+                        <th class="px-2 py-2 text-center text-nowrap">Số lượng máy</th>
+                        <th class="px-2 py-2 text-nowrap">Tổng tiền hàng</th>
+                        <th class="px-2 py-2 text-nowrap">Trạng thái</th>
+                        <th class="px-2 py-2 text-nowrap">Người lập & duyệt</th>
+                        <th class="pe-3 py-2 text-end text-nowrap">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.StockSlips.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-receipt-cutoff fs-1 d-block text-secondary opacity-50 mb-2"></i>
+                                <div class="fw-bold">Chưa có phiếu xuất nhập kho nào</div>
+                                <small>Lập phiếu nhập kho GRN đầu tiên để theo dõi dòng hàng hóa</small>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var slip in Model.StockSlips)
+                        {
+                            <tr>
+                                <td class="ps-3 py-2 text-nowrap font-monospace fw-bold text-dark">
+                                    @slip.SlipCode
+                                </td>
+                                <td class="px-2 py-2 text-nowrap">
+                                    @if (slip.Type == StockSlipType.Import)
+                                    {
+                                        <span class="badge tz-badge-soft-success rounded-pill px-2 py-1">
+                                            <i class="bi bi-box-arrow-in-down me-1"></i>Nhập Kho (GRN)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge tz-badge-soft-warning rounded-pill px-2 py-1">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>Xuất Kho (@slip.ExportReason)
+                                        </span>
+                                    }
+                                </td>
+                                <td class="px-2 py-2">
+                                    <div class="fw-semibold text-dark">@(slip.SupplierName ?? "Nội bộ TechZone")</div>
+                                    <div class="text-muted small" style="font-size: 0.7rem;">@slip.Note</div>
+                                </td>
+                                <td class="px-2 py-2 text-nowrap">
+                                    <span class="badge bg-light text-dark border">@slip.WarehouseLocation</span>
+                                </td>
+                                <td class="px-2 py-2 text-center text-nowrap fw-bold fs-6">
+                                    @slip.TotalQuantity chiếc
+                                </td>
+                                <td class="px-2 py-2 text-nowrap fw-bold text-primary">
+                                    @slip.TotalAmount.ToString("N0") ₫
+                                </td>
+                                <td class="px-2 py-2 text-nowrap">
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i>@slip.Status
+                                    </span>
+                                </td>
+                                <td class="px-2 py-2 text-nowrap" style="font-size: 0.72rem;">
+                                    <div class="text-dark">Lập: <strong>@slip.CreatedByName</strong></div>
+                                    <div class="text-muted">Ngày: @slip.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                </td>
+                                <td class="pe-3 py-2 text-end text-nowrap">
+                                    <button type="button" class="btn btn-xs btn-outline-info rounded-pill px-2 py-1" data-bs-toggle="modal" data-bs-target="#slipDetailModal-@slip.Id">
+                                        <i class="bi bi-eye me-1"></i>Chi tiết
+                                    </button>
+
+                                    <!-- Slip Detail Modal -->
+                                    <div class="modal fade" id="slipDetailModal-@slip.Id" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                                            <div class="modal-content border-0 rounded-4 shadow">
+                                                <div class="modal-header bg-light rounded-top-4 border-bottom-0">
+                                                    <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                                                        <i class="bi bi-receipt text-primary"></i>
+                                                        <span>Chi Tiết Phiếu: @slip.SlipCode</span>
+                                                    </h6>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body p-4 text-start">
+                                                    <div class="row g-3 mb-4">
+                                                        <div class="col-md-6">
+                                                            <div class="text-muted small">Đối tác / Nhà cung cấp:</div>
+                                                            <div class="fw-bold text-dark">@(slip.SupplierName ?? "Nội bộ")</div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <div class="text-muted small">Loại phiếu:</div>
+                                                            <div class="fw-bold">@slip.Type</div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <div class="text-muted small">Kho hàng:</div>
+                                                            <div class="fw-bold">@slip.WarehouseLocation</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <h6 class="fw-bold text-dark mb-2">Danh mục hàng hóa và IMEI gắn liền:</h6>
+                                                    <div class="table-responsive border rounded-3 mb-3">
+                                                        <table class="table table-sm align-middle mb-0">
+                                                            <thead class="table-light">
+                                                                <tr>
+                                                                    <th>Tên thiết bị</th>
+                                                                    <th>SKU</th>
+                                                                    <th class="text-center">Số lượng</th>
+                                                                    <th class="text-end">Đơn giá</th>
+                                                                    <th class="text-end">Thành tiền</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach (var item in slip.Items)
+                                                                {
+                                                                    <tr>
+                                                                        <td class="fw-bold text-dark">@item.ProductName</td>
+                                                                        <td class="font-monospace small">@item.Sku</td>
+                                                                        <td class="text-center fw-bold">@item.Quantity</td>
+                                                                        <td class="text-end">@item.UnitPrice.ToString("N0") ₫</td>
+                                                                        <td class="text-end fw-bold text-primary">@item.SubTotal.ToString("N0") ₫</td>
+                                                                    </tr>
+                                                                    @if (item.SerialNumbers.Count > 0)
+                                                                    {
+                                                                        <tr>
+                                                                            <td colspan="5" class="bg-light p-2 small">
+                                                                                <div class="fw-semibold text-secondary mb-1">Danh sách mã Serial / IMEI (@item.SerialNumbers.Count máy):</div>
+                                                                                <div class="d-flex flex-wrap gap-1 font-monospace" style="font-size: 0.72rem;">
+                                                                                    @foreach (var sn in item.SerialNumbers)
+                                                                                    {
+                                                                                        <span class="badge bg-white text-dark border">@sn</span>
+                                                                                    }
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    }
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+
+                                                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                                                        <span class="fw-bold text-dark">Tổng giá trị phiếu:</span>
+                                                        <span class="fs-5 fw-bold text-danger">@slip.TotalAmount.ToString("N0") ₫</span>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-top-0 pt-0">
+                                                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- TAB 4: Nhà Cung Cấp & Công Nợ (supplier.manage) -->
+@if (Model.ActiveTab == "suppliers")
+{
+    <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden mb-4">
+        <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light flex-wrap gap-2">
+            <span class="fw-bold text-dark small">
+                <i class="bi bi-building text-primary me-2"></i>Danh Bạ Nhà Cung Cấp, Điều Khoản Nhập Hàng & Công Nợ (@Model.Suppliers.Count đối tác)
+            </span>
+            <button type="button" class="btn btn-xs btn-primary rounded-pill px-3 py-1 fw-bold" data-bs-toggle="modal" data-bs-target="#createSupplierModal">
+                <i class="bi bi-building-add me-1"></i>Thêm Nhà Cung Cấp
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+                <thead style="background-color: #f8fafc; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b;">
+                    <tr>
+                        <th class="ps-3 py-2">Nhà Cung Cấp / Đối Tác</th>
+                        <th class="px-2 py-2 text-nowrap">Đại diện & Liên hệ</th>
+                        <th class="px-2 py-2 text-nowrap">Mã số thuế & Trụ sở</th>
+                        <th class="px-2 py-2 text-nowrap">Điều khoản nhập hàng</th>
+                        <th class="px-2 py-2 text-nowrap">Công nợ hiện tại</th>
+                        <th class="px-2 py-2 text-nowrap">Tổng nhập lũy kế</th>
+                        <th class="px-2 py-2 text-nowrap">Trạng thái</th>
+                        <th class="pe-3 py-2 text-end text-nowrap">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sup in Model.Suppliers)
+                    {
+                        <tr>
+                            <td class="ps-3 py-2">
+                                <div class="fw-bold text-dark">@sup.Name</div>
+                                <span class="badge bg-light text-primary border font-monospace">@sup.Code</span>
+                                <div class="text-muted small mt-1" style="font-size: 0.7rem;">@sup.Note</div>
+                            </td>
+                            <td class="px-2 py-2 text-nowrap">
+                                <div class="fw-semibold text-dark">@sup.ContactPerson</div>
+                                <div class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-telephone me-1"></i>@sup.Phone</div>
+                                <div class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-envelope me-1"></i>@sup.Email</div>
+                            </td>
+                            <td class="px-2 py-2">
+                                <div class="font-monospace text-dark">MST: @(sup.TaxCode ?? "Chưa cập nhật")</div>
+                                <div class="text-muted text-truncate" style="max-width: 200px; font-size: 0.7rem;" title="@sup.Address">@sup.Address</div>
+                            </td>
+                            <td class="px-2 py-2 text-nowrap">
+                                <span class="badge tz-badge-soft-primary rounded-pill px-2 py-1">
+                                    <i class="bi bi-file-earmark-ruled me-1"></i>@sup.PaymentTerms
+                                </span>
+                            </td>
+                            <td class="px-2 py-2 text-nowrap">
+                                @if (sup.TotalDebt > 0)
+                                {
+                                    <span class="fs-6 fw-bold text-danger">@sup.TotalDebt.ToString("N0") ₫</span>
+                                }
+                                else
+                                {
+                                    <span class="badge tz-badge-soft-success rounded-pill px-2 py-1">Đã tất toán</span>
+                                }
+                            </td>
+                            <td class="px-2 py-2 text-nowrap fw-semibold text-secondary">
+                                @sup.TotalImportAmount.ToString("N0") ₫
+                            </td>
+                            <td class="px-2 py-2 text-nowrap">
+                                @if (sup.IsActive)
+                                {
+                                    <span class="badge tz-badge-soft-success rounded-pill px-2 py-1">Đang hợp tác</span>
+                                }
+                                else
+                                {
+                                    <span class="badge tz-badge-soft-secondary rounded-pill px-2 py-1">Tạm ngưng</span>
+                                }
+                            </td>
+                            <td class="pe-3 py-2 text-end text-nowrap">
+                                @if (sup.TotalDebt > 0)
+                                {
+                                    <button type="button" class="btn btn-xs btn-outline-success rounded-pill px-2 py-1" onclick="openPaymentModal('@sup.Id', '@sup.Name', @sup.TotalDebt)">
+                                        <i class="bi bi-cash me-1"></i>Trả nợ
+                                    </button>
+                                }
+                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1" onclick="openEditSupplierModal('@sup.Id', '@sup.Name', '@sup.Code', '@sup.ContactPerson', '@sup.Phone', '@sup.Email', '@sup.Address', '@sup.TaxCode', '@sup.PaymentTerms', '@sup.Note')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form asp-action="ToggleSupplierActive" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@sup.Id" />
+                                    <button type="submit" class="btn btn-xs btn-light border rounded-pill px-2 py-1" title="@(sup.IsActive ? "Tạm ngưng" : "Kích hoạt")">
+                                        <i class="bi @(sup.IsActive ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- MODAL 1: Lập Phiếu Nhập Kho (GRN) -->
+<div class="modal fade" id="importBatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header bg-light rounded-top-4 border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <span class="tz-stat-icon-wrapper" style="width: 32px; height: 32px; border-radius: 8px; background: rgba(2, 132, 199, 0.12); color: #0284c7; font-size: 1rem;">
+                        <i class="bi bi-box-arrow-in-down"></i>
+                    </span>
+                    <span>Lập Phiếu Nhập Kho (GRN)</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="ImportBatch" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Chọn dòng sản phẩm nhập kho <span class="text-danger">*</span>:</label>
+                        <select name="productId" class="form-select" required>
+                            <option value="">-- Chọn máy / linh kiện --</option>
+                            @foreach (var prod in Model.Products)
+                            {
+                                <option value="@prod.Id">@prod.Name (SKU: @prod.Sku)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Nhà phân phối / Nhà cung cấp (Tự động ghi nợ theo điều khoản):</label>
+                        <select name="supplierId" class="form-select">
+                            <option value="">-- Không chỉ định (Nhập nội bộ) --</option>
+                            @foreach (var sup in Model.Suppliers)
+                            {
+                                <option value="@sup.Id">@sup.Name (@sup.Code - @sup.PaymentTerms)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Mã lô hàng (PO/GRN):</label>
+                            <input type="text" name="batchCode" class="form-control text-uppercase" placeholder="VD: GRN-2610-01" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Vị trí kệ kho:</label>
+                            <input type="text" name="warehouseLocation" class="form-control" value="Kệ A1-Kho Tổng" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Giá vốn nhập kho (VNĐ / máy):</label>
+                        <div class="input-group">
+                            <input type="number" name="costPrice" class="form-control" placeholder="Để trống tự tính 80% giá niêm yết" min="0" step="10000" />
+                            <span class="input-group-text bg-light">₫</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Danh sách số Serial / IMEI (Mỗi mã 1 dòng hoặc cách nhau bởi dấu phẩy) <span class="text-danger">*</span>:</label>
+                        <textarea name="serialNumbersText" class="form-control font-monospace" rows="4" placeholder="VD:&#10;SN26101401&#10;SN26101402&#10;SN26101403" required></textarea>
+                        <div class="form-text small text-muted" style="font-size: 0.72rem;">Hỗ trợ quét trực tiếp từ máy đọc mã vạch (Barcode Scanner). Tồn kho vật lý sẽ tự động tăng tương ứng.</div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-secondary">Ghi chú phiếu nhập:</label>
+                        <input type="text" name="note" class="form-control" placeholder="Ghi chú số hóa đơn VAT, chứng từ kèm theo..." />
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold">Xác Nhận Nhập Kho</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: Lập Phiếu Xuất Kho (GDN) -->
+<div class="modal fade" id="exportSlipModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header bg-light rounded-top-4 border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <span class="tz-stat-icon-wrapper" style="width: 32px; height: 32px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); color: #b45309; font-size: 1rem;">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </span>
+                    <span>Lập Phiếu Xuất Kho (GDN)</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateExportSlip" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Chọn sản phẩm cần xuất kho <span class="text-danger">*</span>:</label>
+                        <select name="productId" class="form-select" required>
+                            <option value="">-- Chọn sản phẩm --</option>
+                            @foreach (var prod in Model.Products)
+                            {
+                                <option value="@prod.Id">@prod.Name (Tồn: @prod.StockQuantity máy)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Lý do xuất kho <span class="text-danger">*</span>:</label>
+                            <select name="exportReason" class="form-select">
+                                <option value="ReturnToSupplier">Xuất trả NCC (Lỗi NSX/DOA)</option>
+                                <option value="Liquidation">Xuất thanh lý (Like New/Cũ)</option>
+                                <option value="Disposal">Xuất hủy (Hư hỏng nặng)</option>
+                                <option value="Transfer">Xuất chuyển chi nhánh kho</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Nhà cung cấp nhận trả:</label>
+                            <select name="supplierId" class="form-select">
+                                <option value="">-- Chọn nhà cung cấp --</option>
+                                @foreach (var sup in Model.Suppliers)
+                                {
+                                    <option value="@sup.Id">@sup.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Mã phiếu xuất (GDN):</label>
+                            <input type="text" name="slipCode" class="form-control text-uppercase" placeholder="VD: GDN-2610-01" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Kho xuất đi:</label>
+                            <input type="text" name="warehouseLocation" class="form-control" value="Kho Lỗi Cách Ly" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Danh sách IMEI/Serial cần xuất (Mỗi mã 1 dòng) <span class="text-danger">*</span>:</label>
+                        <textarea name="serialNumbersText" class="form-control font-monospace" rows="3" placeholder="Nhập hoặc quét mã vạch Serial/IMEI cần xuất kho..." required></textarea>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-secondary">Ghi chú xuất kho:</label>
+                        <input type="text" name="note" class="form-control" placeholder="Ghi chú lý do trả hãng, biên bản kiểm định..." />
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-warning rounded-pill px-4 fw-bold text-dark">Xác Nhận Xuất Kho</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 3: Điều Chỉnh Kiểm Kê Kho (inventory.adjust) -->
+<div class="modal fade" id="adjustStockModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header bg-light rounded-top-4 border-bottom-0 pb-0">
+                <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-sliders text-primary"></i>
+                    <span>Kiểm Kê Kho (inventory.adjust)</span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AdjustStock" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Chọn sản phẩm kiểm kê:</label>
+                        <select name="productId" id="adjustProductId" class="form-select small" required>
+                            <option value="">-- Chọn sản phẩm --</option>
+                            @foreach (var prod in Model.Products)
+                            {
+                                <option value="@prod.Id" data-stock="@prod.StockQuantity">@prod.Name (Tồn cũ: @prod.StockQuantity)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Số lượng tồn kho thực tế đếm được <span class="text-danger">*</span>:</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-123"></i></span>
+                            <input type="number" name="actualPhysicalStock" id="adjustActualStock" class="form-control fw-bold text-center fs-5" min="0" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Lý do điều chỉnh kiểm kê:</label>
+                        <select name="reason" class="form-select small">
+                            <option value="Kiểm kê định kỳ phát hiện chênh lệch">Kiểm kê định kỳ</option>
+                            <option value="Hao hụt thất thoát trong kho">Hao hụt thất thoát</option>
+                            <option value="Sai sót nhập liệu trước đó">Sai sót nhập liệu</option>
+                            <option value="Hàng khách hoàn trả chưa nhập hệ thống">Khách hoàn trả chưa nhập</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-secondary">Ghi chú bổ sung:</label>
+                        <input type="text" name="note" class="form-control small" placeholder="Số biên bản kiểm kê kho..." />
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold">Cập Nhật Kiểm Kê</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 4: Thêm Nhà Cung Cấp Mới (supplier.manage) -->
+<div class="modal fade" id="createSupplierModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header bg-light rounded-top-4 border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-building-add text-primary"></i>
+                    <span>Thêm Nhà Cung Cấp / Đối Tác Phân Phối</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateSupplier" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body py-3">
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label small fw-semibold text-secondary">Tên nhà cung cấp <span class="text-danger">*</span>:</label>
+                            <input type="text" name="name" class="form-control" placeholder="VD: Công ty TNHH Apple Việt Nam" required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small fw-semibold text-secondary">Mã viết tắt <span class="text-danger">*</span>:</label>
+                            <input type="text" name="code" class="form-control text-uppercase" placeholder="VD: NCC-APPLE" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Người đại diện liên hệ:</label>
+                            <input type="text" name="contactPerson" class="form-control" placeholder="VD: Trần Minh Quân" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Mã số thuế (MST):</label>
+                            <input type="text" name="taxCode" class="form-control font-monospace" placeholder="VD: 0313504825" />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Số điện thoại:</label>
+                            <input type="tel" name="phone" class="form-control" placeholder="02838271000" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Email liên hệ:</label>
+                            <input type="email" name="email" class="form-control" placeholder="b2b@supplier.vn" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Điều khoản thanh toán & nhập hàng:</label>
+                        <select name="paymentTerms" class="form-select">
+                            <option value="Net 30 ngày">Net 30 ngày (Thanh toán sau 30 ngày)</option>
+                            <option value="Net 45 ngày">Net 45 ngày</option>
+                            <option value="Net 60 ngày (Bảo lãnh ngân hàng)">Net 60 ngày (Bảo lãnh ngân hàng)</option>
+                            <option value="Thanh toán ngay khi giao hàng (COD B2B)">Thanh toán ngay khi giao hàng (COD B2B)</option>
+                            <option value="Ký quỹ 20% - Trả chậm 30 ngày">Ký quỹ 20% - Trả chậm 30 ngày</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Địa chỉ trụ sở / kho đối tác:</label>
+                        <input type="text" name="address" class="form-control" placeholder="Số 33 Lê Duẩn, Quận 1, TP.HCM..." />
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-secondary">Ghi chú đối tác:</label>
+                        <input type="text" name="note" class="form-control" placeholder="Chính sách chiết khấu, hạn mức công nợ..." />
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold">Lưu Nhà Cung Cấp</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 5: Thanh Toán Công Nợ Nhà Cung Cấp -->
+<div class="modal fade" id="supplierPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header bg-light rounded-top-4 border-bottom-0 pb-0">
+                <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-cash-stack text-success"></i>
+                    <span>Thanh Toán Công Nợ NCC</span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="RecordSupplierPayment" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="supplierId" id="paySupplierId" />
+                <div class="modal-body py-3">
+                    <div class="small fw-bold text-dark mb-1" id="paySupplierName">Nhà cung cấp</div>
+                    <div class="small text-danger mb-3">Công nợ hiện tại: <strong id="paySupplierDebt">0 ₫</strong></div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Số tiền thanh toán (VNĐ) <span class="text-danger">*</span>:</label>
+                        <div class="input-group">
+                            <input type="number" name="amount" class="form-control fw-bold text-center fs-5 text-success" min="1000" step="10000" placeholder="10000000" required />
+                            <span class="input-group-text bg-light">₫</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Hình thức chi trả:</label>
+                        <select name="paymentMethod" class="form-select small">
+                            <option value="Chuyển khoản ngân hàng (Ủy nhiệm chi)">Chuyển khoản (Ủy nhiệm chi)</option>
+                            <option value="Tiền mặt">Tiền mặt tại kho</option>
+                            <option value="Bù trừ công nợ đổi trả hàng">Bù trừ công nợ đổi trả</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-secondary">Ghi chú thanh toán:</label>
+                        <input type="text" name="note" class="form-control small" placeholder="Số UNC, mã giao dịch ngân hàng..." />
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">Xác Nhận Chi Trả</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 6: Chỉnh Sửa Nhà Cung Cấp -->
+<div class="modal fade" id="editSupplierModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header bg-light rounded-top-4 border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-pencil-square text-primary"></i>
+                    <span>Chỉnh Sửa Nhà Cung Cấp</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="UpdateSupplier" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="editSupId" />
+                <div class="modal-body py-3">
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label small fw-semibold text-secondary">Tên nhà cung cấp <span class="text-danger">*</span>:</label>
+                            <input type="text" name="name" id="editSupName" class="form-control" required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small fw-semibold text-secondary">Mã viết tắt <span class="text-danger">*</span>:</label>
+                            <input type="text" name="code" id="editSupCode" class="form-control text-uppercase" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Người đại diện:</label>
+                            <input type="text" name="contactPerson" id="editSupContact" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Mã số thuế (MST):</label>
+                            <input type="text" name="taxCode" id="editSupTax" class="form-control font-monospace" />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Số điện thoại:</label>
+                            <input type="tel" name="phone" id="editSupPhone" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Email liên hệ:</label>
+                            <input type="email" name="email" id="editSupEmail" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Điều khoản nhập hàng:</label>
+                        <input type="text" name="paymentTerms" id="editSupTerms" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Địa chỉ trụ sở:</label>
+                        <input type="text" name="address" id="editSupAddress" class="form-control" />
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-secondary">Ghi chú đối tác:</label>
+                        <input type="text" name="note" id="editSupNote" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold">Cập Nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openAdjustModal(prodId, prodName, currentStock) {
+            document.getElementById('adjustProductId').value = prodId;
+            document.getElementById('adjustActualStock').value = currentStock;
+            var modal = new bootstrap.Modal(document.getElementById('adjustStockModal'));
+            modal.show();
+        }
+
+        document.getElementById('adjustProductId')?.addEventListener('change', function() {
+            var selectedOpt = this.options[this.selectedIndex];
+            var stock = selectedOpt.getAttribute('data-stock');
+            if (stock !== null) {
+                document.getElementById('adjustActualStock').value = stock;
+            }
+        });
+
+        function openPaymentModal(supId, supName, currentDebt) {
+            document.getElementById('paySupplierId').value = supId;
+            document.getElementById('paySupplierName').innerText = supName;
+            document.getElementById('paySupplierDebt').innerText = currentDebt.toLocaleString('vi-VN') + ' ₫';
+            var modal = new bootstrap.Modal(document.getElementById('supplierPaymentModal'));
+            modal.show();
+        }
+
+        function openEditSupplierModal(id, name, code, contact, phone, email, addr, tax, terms, note) {
+            document.getElementById('editSupId').value = id;
+            document.getElementById('editSupName').value = name;
+            document.getElementById('editSupCode').value = code;
+            document.getElementById('editSupContact').value = contact || '';
+            document.getElementById('editSupPhone').value = phone || '';
+            document.getElementById('editSupEmail').value = email || '';
+            document.getElementById('editSupAddress').value = addr || '';
+            document.getElementById('editSupTax').value = tax || '';
+            document.getElementById('editSupTerms').value = terms || 'Net 30 ngày';
+            document.getElementById('editSupNote').value = note || '';
+            var modal = new bootstrap.Modal(document.getElementById('editSupplierModal'));
+            modal.show();
+        }
+    </script>
+}

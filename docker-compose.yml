@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # 1. Cơ sở dữ liệu MongoDB 7.0 (Lưu trữ đơn hàng, sản phẩm, serial/IMEI)
+  # =========================================================================
+  mongodb:
+    image: mongo:7.0
+    container_name: techzone_mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=TechZoneDb
+    volumes:
+      - mongo_data:/data/db
+      - ./backups/mongodb:/mongo_backup
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - techzone_net
+
+  # =========================================================================
+  # 2. Redis 7.2 Cache (Bộ nhớ đệm danh mục, giỏ hàng session, rate limit)
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: techzone_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - techzone_net
+
+  # =========================================================================
+  # 3. Ứng dụng Web TechZone (.NET 10 MVC)
+  # =========================================================================
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: techzone_web:latest
+    container_name: techzone_web
+    restart: always
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - MongoDbSettings__ConnectionString=mongodb://mongodb:27017
+      - MongoDbSettings__DatabaseName=TechZoneDb
+      - RedisSettings__ConnectionString=redis:6379
+      - RedisSettings__InstanceName=TechZone:
+      - RedisSettings__Enabled=true
+    volumes:
+      - web_uploads:/app/uploads
+      - ./backups/logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - techzone_net
+
+  # =========================================================================
+  # 4. (Tùy chọn) Cloudflare Tunnel Daemon chạy bên trong Docker
+  # Nếu bạn cấu hình Cloudflare Tunnel trên Host thì có thể bỏ qua phần này.
+  # Nếu dùng, chỉ cần thay YOUR_CLOUDFLARE_TUNNEL_TOKEN bằng token từ Cloudflare Zero Trust.
+  # =========================================================================
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: techzone_tunnel
+  #   restart: always
+  #   command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+  #   networks:
+  #     - techzone_net
+
+networks:
+  techzone_net:
+    driver: bridge
+
+volumes:
+  mongo_data:
+    driver: local
+  redis_data:
+    driver: local
+  web_uploads:
+    driver: local

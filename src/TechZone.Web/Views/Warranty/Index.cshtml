@@ -1,0 +1,148 @@
+@model WarrantyLookupResultDto?
+@{
+    ViewData["Title"] = "Cổng Tra Cứu Bảo Hành Điện Tử (E-Warranty) - TechZone";
+}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Search Box -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 p-md-5 bg-white mb-4 text-center">
+                <div class="mb-3">
+                    <i class="bi bi-patch-check-fill text-primary display-3"></i>
+                </div>
+                <h3 class="fw-bold text-dark">Tra Cứu Bảo Hành Điện Tử (E-Warranty)</h3>
+                <p class="text-muted small">
+                    Hệ thống quản lý định danh thiết bị duy nhất theo số <strong>Serial Number (S/N)</strong> hoặc <strong>IMEI</strong> máy.
+                </p>
+
+                <form asp-action="Index" method="get" class="row g-3 justify-content-center mt-2">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-upc-scan"></i></span>
+                            <input type="text" name="serialNumber" value="@(Model?.SerialNumber ?? Context.Request.Query["serialNumber"])" class="form-control text-uppercase" placeholder="Nhập số Serial hoặc IMEI (VD: TZ001001)" required />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">
+                            <i class="bi bi-search me-1"></i> Kiểm Tra
+                        </button>
+                    </div>
+                </form>
+
+                @if (ViewBag.ErrorMessage != null)
+                {
+                    <div class="alert alert-warning rounded-3 mt-4 mb-0 small text-center">
+                        <i class="bi bi-exclamation-circle me-1"></i> @ViewBag.ErrorMessage
+                    </div>
+                }
+
+                <div class="mt-4 pt-3 border-top small text-muted">
+                    <span class="fw-semibold">Mẹo tìm số Serial / IMEI:</span>
+                    <div>• iPhone/iPad: <em>Cài đặt > Cài đặt chung > Giới thiệu</em></div>
+                    <div>• Laptop: <em>Tem dán ở mặt đáy máy hoặc trên hộp sản phẩm</em></div>
+                </div>
+            </div>
+
+            <!-- Warranty Result Card -->
+            @if (Model != null)
+            {
+                <div class="card border-0 rounded-4 shadow-sm p-4 p-md-5 bg-white mb-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center pb-3 border-bottom mb-4">
+                        <div>
+                            <span class="text-muted small">Thông tin máy:</span>
+                            <h4 class="fw-bold text-dark mb-0">@Model.ProductName</h4>
+                            <span class="badge bg-light text-secondary border small">@Model.VariantName</span>
+                        </div>
+                        <div class="text-end">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success fs-6 p-2 rounded-3">
+                                    <i class="bi bi-check-circle me-1"></i> CÒN HẠN BẢO HÀNH
+                                </span>
+                                <div class="text-success small fw-semibold mt-1">Còn lại: @Model.DaysRemaining ngày</div>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary fs-6 p-2 rounded-3">
+                                    <i class="bi bi-x-circle me-1"></i> HẾT HẠN BẢO HÀNH
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Details Table -->
+                    <div class="row g-3 small mb-4">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="text-muted d-block">Số Serial Number (S/N):</span>
+                                <strong class="fs-6 text-primary">@Model.SerialNumber</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="text-muted d-block">Mã đơn hàng liên kết:</span>
+                                <strong class="fs-6 text-dark">@Model.OrderCode</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="text-muted d-block">Ngày kích hoạt bảo hành:</span>
+                                <strong>@Model.StartDate.ToLocalTime().ToString("dd/MM/yyyy")</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="text-muted d-block">Ngày hết hạn bảo hành:</span>
+                                <strong>@Model.EndDate.ToLocalTime().ToString("dd/MM/yyyy") (@Model.WarrantyMonths tháng)</strong>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="text-muted d-block">Số điện thoại khách hàng (PII Masked):</span>
+                                <code>@Model.MaskedPhone</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Repair / Claim History -->
+                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-tools text-primary me-2"></i>Lịch Sử Tiếp Nhận & Sửa Chữa</h6>
+                    @if (Model.Claims.Count > 0)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle small">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Mã phiếu</th>
+                                        <th>Mô tả lỗi</th>
+                                        <th>Ngày tiếp nhận</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ghi chú kỹ thuật</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var claim in Model.Claims)
+                                    {
+                                        <tr>
+                                            <td><strong>@claim.ClaimCode</strong></td>
+                                            <td>@claim.FaultDescription</td>
+                                            <td>@claim.ReceivedDate.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                            <td><span class="badge bg-primary">@claim.Status</span></td>
+                                            <td>@(claim.TechnicianNotes ?? "Đang xử lý")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-3 bg-light rounded-3 text-muted small text-center">
+                            <i class="bi bi-shield-check text-success me-1"></i> Thiết bị chưa từng phát sinh yêu cầu bảo hành hoặc sửa chữa.
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

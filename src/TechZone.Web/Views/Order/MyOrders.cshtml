@@ -1,0 +1,81 @@
+@model IReadOnlyList<OrderDto>
+@{
+    ViewData["Title"] = "Đơn Mua Của Tôi - TechZone";
+}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold text-dark m-0"><i class="bi bi-bag-check text-primary me-2"></i>Lịch Sử Mua Hàng</h3>
+                <a asp-controller="Catalog" asp-action="Index" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i class="bi bi-plus-lg me-1"></i> Mua thêm thiết bị
+                </a>
+            </div>
+
+            @if (Model.Count > 0)
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var order in Model)
+                    {
+                        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center pb-3 border-bottom mb-3">
+                                <div>
+                                    <span class="text-muted small">Mã đơn:</span>
+                                    <strong class="text-primary ms-1">@order.OrderCode</strong>
+                                    <span class="text-muted small ms-3">Ngày đặt: @order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                    @if (order.DeliveryType == "StorePickup")
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle ms-2"><i class="bi bi-shop me-1"></i>Nhận tại siêu thị</span>
+                                    }
+                                    @if (order.RequireVatInvoice)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1"><i class="bi bi-receipt me-1"></i>VAT</span>
+                                    }
+                                </div>
+                                <div>
+                                    <span class="badge @(order.OrderStatus == OrderStatus.Delivered ? "bg-success" : (order.OrderStatus == OrderStatus.Cancelled ? "bg-danger" : "bg-primary"))">
+                                        @order.OrderStatus
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="row align-items-center g-3">
+                                <div class="col-md-7">
+                                    @foreach (var item in order.Items)
+                                    {
+                                        <div class="d-flex align-items-center gap-3 mb-2">
+                                            <img src="@item.ThumbnailUrl" alt="@item.ProductName" class="rounded border p-1" style="width: 45px; height: 45px; object-fit: contain;" />
+                                            <div class="small">
+                                                <div class="fw-semibold text-dark">@item.ProductName</div>
+                                                <span class="text-muted">@item.VariantName x @item.Quantity</span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="col-md-5 text-md-end">
+                                    <div class="text-muted small">Tổng tiền thanh toán:</div>
+                                    <div class="fs-4 fw-bold text-danger mb-2">@order.TotalAmount.ToString("N0")₫</div>
+                                    <a asp-controller="Order" asp-action="Track" asp-route-orderCode="@order.OrderCode" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                        <i class="bi bi-truck me-1"></i> Chi tiết hành trình
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="card border-0 rounded-4 shadow-sm p-5 text-center bg-white">
+                    <i class="bi bi-bag-x text-muted display-4 mb-3"></i>
+                    <h5 class="fw-bold text-dark">Bạn chưa có đơn hàng nào</h5>
+                    <p class="text-muted small">Hãy khám phá các thiết bị công nghệ hấp dẫn tại TechZone ngay hôm nay!</p>
+                    <div>
+                        <a asp-controller="Catalog" asp-action="Index" class="btn btn-primary rounded-pill px-4">Bắt đầu mua sắm</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

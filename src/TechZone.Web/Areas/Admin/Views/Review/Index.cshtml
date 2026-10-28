@@ -1,0 +1,450 @@
+@model ReviewManagementViewModel
+@{
+    ViewData["Title"] = "Quản Lý Đánh Giá & Bình Luận";
+    var currentUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<!-- Page Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+            <span class="tz-stat-icon-wrapper" style="width: 38px; height: 38px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); color: #b45309; font-size: 1.15rem;">
+                <i class="bi bi-star-half"></i>
+            </span>
+            <span>Quản Lý Đánh Giá & Bình Luận</span>
+        </h3>
+        <small class="text-muted">Kiểm duyệt nội dung đánh giá của khách hàng, phản hồi chính thức từ QTV TechZone và xóa bình luận vi phạm</small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="/Admin/Product" class="btn btn-outline-primary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1 shadow-2xs">
+            <i class="bi bi-phone"></i>
+            <span>Xem Danh Sách Sản Phẩm</span>
+        </a>
+        <a href="/Catalog" target="_blank" class="btn btn-outline-secondary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1 shadow-2xs">
+            <i class="bi bi-shop text-primary"></i>
+            <span>Xem Trang Bán Lẻ Storefront</span>
+            <i class="bi bi-arrow-up-right small opacity-75 ms-1"></i>
+        </a>
+    </div>
+</div>
+
+<!-- KPI Summary Cards (5 Cards) -->
+<div class="row g-3 mb-4">
+    <!-- Card 1: Tổng Đánh Giá -->
+    <div class="col-sm-6 col-xl">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #0284c7;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Tổng Đánh Giá</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(2, 132, 199, 0.12); color: #0284c7;">
+                    <i class="bi bi-chat-quote-fill"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-dark mb-1">@Model.TotalReviews</div>
+            <div class="small text-muted" style="font-size: 0.75rem;">Toàn bộ lượt nhận xét trên sàn</div>
+        </div>
+    </div>
+
+    <!-- Card 2: Điểm Đánh Giá TB -->
+    <div class="col-sm-6 col-xl">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #f59e0b;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Điểm TB Toàn Sàn</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.15); color: #b45309;">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-warning mb-1">@Model.AverageRating.ToString("0.0") <small class="fs-6 text-muted">/ 5★</small></div>
+            <div class="small text-muted" style="font-size: 0.75rem;">
+                5★: <strong>@Model.Star5Count</strong> | 4★: <strong>@Model.Star4Count</strong> | 1-3★: <strong>@(Model.Star3Count + Model.Star2Count + Model.Star1Count)</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Đã Kiểm Duyệt -->
+    <div class="col-sm-6 col-xl">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #10b981;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Đang Hiển Thị</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-success mb-1">@Model.ApprovedCount</div>
+            <div class="small text-muted" style="font-size: 0.75rem;">Đã duyệt xuất hiện trên Storefront</div>
+        </div>
+    </div>
+
+    <!-- Card 4: Chờ Kiểm Duyệt / Tạm Ẩn -->
+    <div class="col-sm-6 col-xl">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #ef4444;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Chờ Duyệt / Tạm Ẩn</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.12); color: #dc2626;">
+                    <i class="bi bi-shield-exclamation"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-danger mb-1">@Model.PendingApprovalCount</div>
+            <div class="small text-muted" style="font-size: 0.75rem;">Cần kiểm tra hoặc ẩn nghi ngờ spam</div>
+        </div>
+    </div>
+
+    <!-- Card 5: Đã Phản Hồi (QTV) -->
+    <div class="col-sm-6 col-xl">
+        <div class="tz-stat-card h-100" style="border-top: 3px solid #8b5cf6;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">Đã Phản Hồi</span>
+                <div class="tz-stat-icon-wrapper" style="background: rgba(139, 92, 246, 0.12); color: #7c3aed;">
+                    <i class="bi bi-reply-all-fill"></i>
+                </div>
+            </div>
+            <div class="fs-3 fw-bold text-primary mb-1">@Model.RespondedCount</div>
+            <div class="small text-muted" style="font-size: 0.75rem;">QTV TechZone đã trả lời trực tiếp</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card border-0 rounded-4 shadow-sm p-3 bg-white mb-4">
+    <form asp-action="Index" method="get" class="row g-2 align-items-center">
+        <!-- Search Keyword -->
+        <div class="col-md-3">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" value="@Model.SearchKeyword" class="form-control border-start-0" placeholder="Tìm tên khách, sản phẩm, nội dung..." />
+            </div>
+        </div>
+
+        <!-- Filter by Product -->
+        <div class="col-md-3">
+            <select name="productId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- Tất cả sản phẩm --</option>
+                @foreach (var prod in Model.Products)
+                {
+                    <option value="@prod.Id" selected="@(prod.Id == Model.SelectedProductId)">@prod.Name</option>
+                }
+            </select>
+        </div>
+
+        <!-- Filter by Status -->
+        <div class="col-md-2">
+            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="all" selected="@(string.IsNullOrEmpty(Model.StatusFilter) || Model.StatusFilter == "all")">Tất cả trạng thái</option>
+                <option value="approved" selected="@(Model.StatusFilter == "approved")">Đã duyệt (Hiển thị)</option>
+                <option value="pending" selected="@(Model.StatusFilter == "pending" || Model.StatusFilter == "hidden")">Chờ duyệt / Tạm ẩn</option>
+            </select>
+        </div>
+
+        <!-- Filter by Rating -->
+        <div class="col-md-2">
+            <select name="rating" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Tất cả số sao</option>
+                <option value="5" selected="@(Model.RatingFilter == 5)">⭐⭐⭐⭐⭐ (5 sao)</option>
+                <option value="4" selected="@(Model.RatingFilter == 4)">⭐⭐⭐⭐ (4 sao)</option>
+                <option value="3" selected="@(Model.RatingFilter == 3)">⭐⭐⭐ (3 sao)</option>
+                <option value="2" selected="@(Model.RatingFilter == 2)">⭐⭐ (2 sao)</option>
+                <option value="1" selected="@(Model.RatingFilter == 1)">⭐ (1 sao)</option>
+            </select>
+        </div>
+
+        <!-- Filter by Replied -->
+        <div class="col-md-2">
+            <select name="replied" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="all" selected="@(string.IsNullOrEmpty(Model.RepliedFilter) || Model.RepliedFilter == "all")">Tất cả phản hồi</option>
+                <option value="replied" selected="@(Model.RepliedFilter == "replied")">Đã phản hồi (QTV)</option>
+                <option value="unreplied" selected="@(Model.RepliedFilter == "unreplied")">Chưa phản hồi</option>
+            </select>
+        </div>
+    </form>
+</div>
+
+<!-- Reviews List -->
+<div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden mb-4">
+    <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+        <span class="fw-bold text-dark small">
+            <i class="bi bi-chat-left-text-fill text-primary me-2"></i>Danh Sách Đánh Giá & Bình Luận (@Model.Reviews.TotalCount mục)
+        </span>
+        <span class="badge bg-white text-muted border small">
+            Trang @Model.Reviews.PageIndex / @Math.Max(Model.Reviews.TotalPages, 1)
+        </span>
+    </div>
+
+    @if (Model.Reviews.Items.Count == 0)
+    {
+        <div class="text-center py-5">
+            <div class="display-6 text-muted mb-2"><i class="bi bi-chat-square-dots"></i></div>
+            <h6 class="fw-bold text-dark">Không tìm thấy đánh giá nào</h6>
+            <p class="text-muted small">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm để xem kết quả khác.</p>
+            <a href="/Admin/Review" class="btn btn-sm btn-outline-primary rounded-pill px-3">Xóa tất cả bộ lọc</a>
+        </div>
+    }
+    else
+    {
+        <div class="list-group list-group-flush">
+            @foreach (var review in Model.Reviews.Items)
+            {
+                <div class="list-group-item p-3 p-md-4 @(!review.IsApproved ? "bg-warning bg-opacity-10" : "")">
+                    <div class="row g-3">
+                        <!-- Left Info: Reviewer & Product -->
+                        <div class="col-md-4 border-end-md">
+                            <!-- Customer Info -->
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 0.95rem;">
+                                    @(string.IsNullOrEmpty(review.UserName) ? "K" : review.UserName.Substring(0, 1).ToUpper())
+                                </div>
+                                <div class="flex-grow-1 text-truncate">
+                                    <div class="fw-bold text-dark small text-truncate">@review.UserName</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">
+                                        @if (!string.IsNullOrEmpty(review.UserPhone))
+                                        {
+                                            <span><i class="bi bi-telephone me-1"></i>@review.UserPhone • </span>
+                                        }
+                                        <span>@review.CreatedAt.ToString("HH:mm dd/MM/yyyy")</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (review.IsVerifiedBuyer)
+                            {
+                                <div class="mb-2">
+                                    <span class="badge tz-badge-soft-success rounded-pill px-2 py-1" style="font-size: 0.68rem;">
+                                        <i class="bi bi-patch-check-fill me-1"></i>Đã mua tại TechZone
+                                    </span>
+                                </div>
+                            }
+
+                            <!-- Product Linked -->
+                            <div class="p-2 border rounded-3 bg-light d-flex align-items-center gap-2 mt-2">
+                                <i class="bi bi-phone text-primary fs-5"></i>
+                                <div class="flex-grow-1 text-truncate">
+                                    <div class="fw-semibold text-dark small text-truncate" title="@review.ProductName">@review.ProductName</div>
+                                    <div class="d-flex align-items-center gap-2" style="font-size: 0.72rem;">
+                                        <a href="/Admin/Product/Details/@review.ProductId" class="text-decoration-none text-primary">Xem thiết bị</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Info: Rating, Content, Staff Reply, Action Buttons -->
+                        <div class="col-md-8 d-flex flex-column justify-content-between">
+                            <div>
+                                <!-- Rating Stars & Status Badges -->
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="text-warning small fs-6">
+                                            @for (int s = 1; s <= 5; s++)
+                                            {
+                                                <i class="bi @(s <= review.Rating ? "bi-star-fill" : "bi-star")"></i>
+                                            }
+                                        </div>
+                                        <span class="badge bg-warning bg-opacity-15 text-warning-emphasis fw-bold rounded-pill px-2" style="font-size: 0.75rem;">
+                                            @review.Rating sao
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        @if (review.IsApproved)
+                                        {
+                                            <span class="badge tz-badge-soft-success rounded-pill px-2 py-1" style="font-size: 0.74rem;">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Đang hiển thị
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge tz-badge-soft-warning rounded-pill px-2 py-1" style="font-size: 0.74rem;">
+                                                <i class="bi bi-eye-slash-fill me-1"></i>Chờ duyệt / Tạm ẩn
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Review Content -->
+                                <div class="text-secondary small mb-3 p-2 rounded-2 bg-light bg-opacity-50 border" style="line-height: 1.6;">
+                                    @review.Content
+                                </div>
+
+                                <!-- QTV Staff Reply Box -->
+                                @if (!string.IsNullOrEmpty(review.StaffReply))
+                                {
+                                    <div class="p-3 bg-light rounded-3 border-start border-4 border-primary mb-3 position-relative">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <div class="fw-bold text-primary small d-flex align-items-center gap-1">
+                                                <i class="bi bi-patch-check-fill"></i>
+                                                <span>@(review.StaffReplyByName ?? "Quản trị viên TechZone (QTV)")</span>
+                                            </div>
+                                            <small class="text-muted" style="font-size: 0.7rem;">
+                                                @(review.StaffReplyAt?.ToString("HH:mm dd/MM/yyyy") ?? "")
+                                            </small>
+                                        </div>
+                                        <p class="small text-dark mb-2">@review.StaffReply</p>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" data-bs-toggle="modal" data-bs-target="#replyModal-@review.Id">
+                                                <i class="bi bi-pencil me-1"></i>Sửa phản hồi
+                                            </button>
+                                            <form asp-action="DeleteReply" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@review.Id" />
+                                                <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                                <button type="submit" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1" onclick="return confirm('Bạn có muốn thu hồi câu trả lời này?');">
+                                                    <i class="bi bi-x-circle me-1"></i>Thu hồi
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Action Buttons Bar -->
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
+                                <div class="d-flex align-items-center gap-2">
+                                    <!-- Toggle Approve Form -->
+                                    <form asp-action="ToggleApprove" method="post" class="d-inline m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@review.Id" />
+                                        <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                        @if (review.IsApproved)
+                                        {
+                                            <button type="submit" class="btn btn-xs btn-outline-warning rounded-pill px-3 py-1 tz-order-btn" title="Tạm ẩn đánh giá này khỏi website">
+                                                <i class="bi bi-eye-slash me-1"></i>Tạm ẩn
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-xs btn-outline-success rounded-pill px-3 py-1 tz-order-btn" title="Duyệt mở hiển thị công khai trên website">
+                                                <i class="bi bi-check-circle me-1"></i>Duyệt hiển thị
+                                            </button>
+                                        }
+                                    </form>
+
+                                    <!-- Reply Button -->
+                                    @if (string.IsNullOrEmpty(review.StaffReply))
+                                    {
+                                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-3 py-1 tz-order-btn" data-bs-toggle="modal" data-bs-target="#replyModal-@review.Id">
+                                            <i class="bi bi-reply-fill me-1"></i>Trả lời đánh giá
+                                        </button>
+                                    }
+                                </div>
+
+                                <!-- Delete Button -->
+                                <div>
+                                    <button type="button" class="btn btn-xs btn-outline-danger rounded-pill px-2 py-1" data-bs-toggle="modal" data-bs-target="#delReviewModal-@review.Id" title="Xóa đánh giá này">
+                                        <i class="bi bi-trash me-1"></i>Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reply Modal for this review -->
+                    <div class="modal fade" id="replyModal-@review.Id" tabindex="-1" aria-labelledby="replyModalLabel-@review.Id" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 rounded-4 shadow">
+                                <div class="modal-header bg-light rounded-top-4 border-bottom-0">
+                                    <h6 class="modal-title fw-bold text-dark" id="replyModalLabel-@review.Id">
+                                        <i class="bi bi-reply-all-fill text-primary me-2"></i>Phản Hồi Đánh Giá Khách Hàng
+                                    </h6>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form asp-action="Reply" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@review.Id" />
+                                    <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                    <div class="modal-body p-4 text-start">
+                                        <div class="p-3 bg-light rounded-3 mb-3 small">
+                                            <div class="fw-bold text-dark">@review.UserName (@review.Rating sao)</div>
+                                            <div class="text-secondary fst-italic">"@review.Content"</div>
+                                        </div>
+
+                                        <label class="form-label small fw-bold text-dark">Nội dung phản hồi chính thức từ QTV TechZone <span class="text-danger">*</span></label>
+                                        <textarea name="staffReply" class="form-control rounded-3" rows="4" placeholder="Dạ chào anh/chị, cảm ơn anh/chị đã tin tưởng lựa chọn mua sắm thiết bị tại TechZone..." required>@review.StaffReply</textarea>
+                                        <div class="form-text small text-muted mt-2" style="font-size: 0.72rem;">
+                                            Phản hồi này sẽ hiển thị trực tiếp bên dưới nhận xét của khách hàng trên trang chi tiết sản phẩm.
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-top-0 pt-0">
+                                        <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                                        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold">Gửi Phản Hồi Ngay</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Modal for this review -->
+                    <div class="modal fade" id="delReviewModal-@review.Id" tabindex="-1" aria-labelledby="delReviewModalLabel-@review.Id" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-sm">
+                            <div class="modal-content border-0 rounded-4 shadow">
+                                <div class="modal-header border-bottom-0 pb-0">
+                                    <h6 class="modal-title fw-bold text-danger" id="delReviewModalLabel-@review.Id">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Xác Nhận Xóa
+                                    </h6>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-start py-3 small text-muted">
+                                    Bạn có chắc chắn muốn xóa vĩnh viễn đánh giá của <strong>@review.UserName</strong>? Điểm sao trung bình của sản phẩm sẽ được tự động tính toán lại.
+                                </div>
+                                <div class="modal-footer border-top-0 pt-0">
+                                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                                    <form asp-action="Delete" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@review.Id" />
+                                        <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                        <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold">Xóa Đánh Giá</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Pagination Footer -->
+    @if (Model.Reviews.TotalPages > 1)
+    {
+        <div class="p-3 border-top bg-light d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <span class="text-muted small">
+                Hiển thị <strong class="text-dark">@((Model.Reviews.PageIndex - 1) * Model.Reviews.PageSize + 1)</strong> - <strong class="text-dark">@Math.Min(Model.Reviews.PageIndex * Model.Reviews.PageSize, Model.Reviews.TotalCount)</strong> trên tổng số <strong class="text-dark">@Model.Reviews.TotalCount</strong> đánh giá
+            </span>
+            <ul class="pagination pagination-sm m-0 gap-1">
+                <li class="page-item @(!Model.Reviews.HasPreviousPage ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-3" asp-action="Index"
+                       asp-route-page="@(Model.Reviews.PageIndex - 1)"
+                       asp-route-search="@Model.SearchKeyword"
+                       asp-route-productId="@Model.SelectedProductId"
+                       asp-route-status="@Model.StatusFilter"
+                       asp-route-rating="@Model.RatingFilter"
+                       asp-route-replied="@Model.RepliedFilter">
+                        <i class="bi bi-chevron-left me-1"></i>Trước
+                    </a>
+                </li>
+                @for (int p = 1; p <= Model.Reviews.TotalPages; p++)
+                {
+                    <li class="page-item @(p == Model.Reviews.PageIndex ? "active" : "")">
+                        <a class="page-link rounded-circle text-center" style="width: 32px; height: 32px; padding: 0; line-height: 32px;"
+                           asp-action="Index"
+                           asp-route-page="@p"
+                           asp-route-search="@Model.SearchKeyword"
+                           asp-route-productId="@Model.SelectedProductId"
+                           asp-route-status="@Model.StatusFilter"
+                           asp-route-rating="@Model.RatingFilter"
+                           asp-route-replied="@Model.RepliedFilter">
+                            @p
+                        </a>
+                    </li>
+                }
+                <li class="page-item @(!Model.Reviews.HasNextPage ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-3" asp-action="Index"
+                       asp-route-page="@(Model.Reviews.PageIndex + 1)"
+                       asp-route-search="@Model.SearchKeyword"
+                       asp-route-productId="@Model.SelectedProductId"
+                       asp-route-status="@Model.StatusFilter"
+                       asp-route-rating="@Model.RatingFilter"
+                       asp-route-replied="@Model.RepliedFilter">
+                        Sau<i class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    }
+</div>

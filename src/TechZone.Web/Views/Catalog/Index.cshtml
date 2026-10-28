@@ -1,0 +1,699 @@
+@model CatalogViewModel
+@{
+    ViewData["Title"] = Model.SelectedCategoryName ?? Model.SelectedBrandName ?? (!string.IsNullOrEmpty(Model.CurrentFilter.SearchKeyword) ? $"Tìm kiếm: {Model.CurrentFilter.SearchKeyword}" : "Tất Cả Sản Phẩm Công Nghệ");
+    
+    // Check if any filter is active
+    bool hasActiveFilter = !string.IsNullOrEmpty(Model.CurrentFilter.CategorySlug) ||
+                           !string.IsNullOrEmpty(Model.CurrentFilter.BrandSlug) ||
+                           !string.IsNullOrEmpty(Model.CurrentFilter.SearchKeyword) ||
+                           Model.CurrentFilter.MinPrice.HasValue ||
+                           Model.CurrentFilter.MaxPrice.HasValue ||
+                           Model.CurrentFilter.MinRating.HasValue ||
+                           Model.CurrentFilter.InStockOnly;
+}
+
+<div class="container my-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Catalog" asp-action="Index" class="text-decoration-none text-muted">Sản phẩm</a></li>
+            @if (!string.IsNullOrEmpty(Model.SelectedCategoryName))
+            {
+                <li class="breadcrumb-item active" aria-current="page">@Model.SelectedCategoryName</li>
+            }
+            else if (!string.IsNullOrEmpty(Model.SelectedBrandName))
+            {
+                <li class="breadcrumb-item active" aria-current="page">@Model.SelectedBrandName</li>
+            }
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <!-- 1. Sidebar Filters (5 filter groups) -->
+        <div class="col-lg-3">
+            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold m-0"><i class="bi bi-funnel-fill text-primary me-2"></i>Bộ Lọc Tìm Kiếm</h6>
+                    @if (hasActiveFilter)
+                    {
+                        <a asp-action="Index" class="small text-danger text-decoration-none fw-semibold">
+                            <i class="bi bi-arrow-counterclockwise"></i> Xóa tất cả
+                        </a>
+                    }
+                </div>
+
+                <!-- Group 1: Categories -->
+                <div class="mb-4">
+                    <label class="fw-semibold text-secondary small text-uppercase mb-2">
+                        <i class="bi bi-grid-fill text-primary me-1"></i>1. Danh mục
+                    </label>
+                    <div class="d-flex flex-column gap-1">
+                        <a asp-action="Index" 
+                           asp-route-category="" 
+                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                           asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                           asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="tz-sidebar-filter-link @(string.IsNullOrEmpty(Model.CurrentFilter.CategorySlug) ? "active" : "")">
+                            <span><i class="bi bi-grid-3x3-gap me-2"></i>Tất cả danh mục</span>
+                            <i class="bi bi-chevron-right small opacity-50"></i>
+                        </a>
+                        @foreach (var cat in Model.Categories)
+                        {
+                            <a asp-action="Index" 
+                               asp-route-category="@cat.Slug" 
+                               asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                               asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                               asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                               asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                               asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                               asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                               asp-route-sort="@Model.CurrentFilter.SortBy" 
+                               class="tz-sidebar-filter-link @(Model.CurrentFilter.CategorySlug == cat.Slug ? "active" : "")">
+                                <span><i class="bi @(string.IsNullOrEmpty(cat.IconUrl) ? "bi-tag" : cat.IconUrl) me-2"></i>@cat.Name</span>
+                                <i class="bi bi-chevron-right small opacity-50"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+
+                <hr class="text-muted opacity-25" />
+
+                <!-- Group 2: Brands -->
+                <div class="mb-4">
+                    <label class="fw-semibold text-secondary small text-uppercase mb-2">2. Thương hiệu</label>
+                    <div class="d-flex flex-wrap gap-1">
+                        <a asp-action="Index" 
+                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                           asp-route-brand="" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                           asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                           asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="badge @(string.IsNullOrEmpty(Model.CurrentFilter.BrandSlug) ? "bg-primary text-white" : "bg-light text-dark border") text-decoration-none p-2">
+                            Tất cả
+                        </a>
+                        @foreach (var brand in Model.Brands)
+                        {
+                            <a asp-action="Index" 
+                               asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                               asp-route-brand="@brand.Slug" 
+                               asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                               asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                               asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                               asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                               asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                               asp-route-sort="@Model.CurrentFilter.SortBy" 
+                               class="badge @(Model.CurrentFilter.BrandSlug == brand.Slug ? "bg-primary text-white" : "bg-light text-dark border") text-decoration-none p-2">
+                                @brand.Name
+                            </a>
+                        }
+                    </div>
+                </div>
+
+                <hr class="text-muted opacity-25" />
+
+                <!-- Group 3: Price Ranges -->
+                <div class="mb-4">
+                    <label class="fw-semibold text-secondary small text-uppercase mb-2">
+                        <i class="bi bi-cash-stack text-success me-1"></i>3. Mức giá
+                    </label>
+                    <div class="d-flex flex-column gap-1 small">
+                        <a asp-action="Index" 
+                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="" 
+                           asp-route-maxPrice="" 
+                           asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="tz-sidebar-filter-link @(!Model.CurrentFilter.MinPrice.HasValue && !Model.CurrentFilter.MaxPrice.HasValue ? "active" : "")">
+                            <span><i class="bi bi-tag-fill me-2 text-muted"></i>Tất cả mức giá</span>
+                            <i class="bi bi-chevron-right small opacity-50"></i>
+                        </a>
+                        <a asp-action="Index" 
+                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="0" 
+                           asp-route-maxPrice="5000000" 
+                           asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="tz-sidebar-filter-link @(Model.CurrentFilter.MinPrice == 0 && Model.CurrentFilter.MaxPrice == 5000000 ? "active" : "")">
+                            <span><i class="bi bi-wallet2 me-2 text-success"></i>Dưới 5 triệu</span>
+                            <i class="bi bi-chevron-right small opacity-50"></i>
+                        </a>
+                        <a asp-action="Index" 
+                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="5000000" 
+                           asp-route-maxPrice="15000000" 
+                           asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="tz-sidebar-filter-link @(Model.CurrentFilter.MinPrice == 5000000 && Model.CurrentFilter.MaxPrice == 15000000 ? "active" : "")">
+                            <span><i class="bi bi-cash me-2 text-primary"></i>Từ 5 - 15 triệu</span>
+                            <i class="bi bi-chevron-right small opacity-50"></i>
+                        </a>
+                        <a asp-action="Index" 
+                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="15000000" 
+                           asp-route-maxPrice="30000000" 
+                           asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="tz-sidebar-filter-link @(Model.CurrentFilter.MinPrice == 15000000 && Model.CurrentFilter.MaxPrice == 30000000 ? "active" : "")">
+                            <span><i class="bi bi-credit-card me-2 text-warning"></i>Từ 15 - 30 triệu</span>
+                            <i class="bi bi-chevron-right small opacity-50"></i>
+                        </a>
+                        <a asp-action="Index" 
+                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="30000000" 
+                           asp-route-maxPrice="" 
+                           asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="tz-sidebar-filter-link @(Model.CurrentFilter.MinPrice == 30000000 && !Model.CurrentFilter.MaxPrice.HasValue ? "active" : "")">
+                            <span><i class="bi bi-gem me-2 text-danger"></i>Trên 30 triệu (Flagship)</span>
+                            <i class="bi bi-chevron-right small opacity-50"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <hr class="text-muted opacity-25" />
+
+                <!-- Group 4: Rating Filter (Interactive & Animated) -->
+                <div class="mb-4">
+                    <label class="fw-semibold text-secondary small text-uppercase mb-2">
+                        <i class="bi bi-star-half text-warning me-1"></i>4. Đánh giá sao
+                    </label>
+                    <div class="d-flex flex-column gap-2 small">
+                        <a asp-action="Index" 
+                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                           asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                           asp-route-minRating="" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="tz-rating-filter-card @(!Model.CurrentFilter.MinRating.HasValue ? "active" : "")">
+                            <span class="d-flex align-items-center gap-2">
+                                <i class="bi bi-stars text-warning fs-6"></i>
+                                <span>Tất cả đánh giá</span>
+                            </span>
+                            <i class="bi bi-check-circle-fill tz-rating-check"></i>
+                        </a>
+
+                        <a asp-action="Index" 
+                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                           asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                           asp-route-minRating="4.5" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="tz-rating-filter-card @(Model.CurrentFilter.MinRating == 4.5 ? "active" : "")">
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="tz-rating-stars-animated">
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-half"></i>
+                                </span>
+                                <span>Từ 4.5 sao trở lên</span>
+                            </span>
+                            <i class="bi bi-check-circle-fill tz-rating-check"></i>
+                        </a>
+
+                        <a asp-action="Index" 
+                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                           asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                           asp-route-minRating="4.0" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="tz-rating-filter-card @(Model.CurrentFilter.MinRating == 4.0 ? "active" : "")">
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="tz-rating-stars-animated">
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star"></i>
+                                </span>
+                                <span>Từ 4.0 sao trở lên</span>
+                            </span>
+                            <i class="bi bi-check-circle-fill tz-rating-check"></i>
+                        </a>
+
+                        <a asp-action="Index" 
+                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                           asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                           asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                           asp-route-minRating="3.5" 
+                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                           asp-route-sort="@Model.CurrentFilter.SortBy" 
+                           class="tz-rating-filter-card @(Model.CurrentFilter.MinRating == 3.5 ? "active" : "")">
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="tz-rating-stars-animated">
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-half"></i>
+                                    <i class="bi bi-star"></i>
+                                </span>
+                                <span>Từ 3.5 sao trở lên</span>
+                            </span>
+                            <i class="bi bi-check-circle-fill tz-rating-check"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <hr class="text-muted opacity-25" />
+
+                <!-- Group 5: Stock Availability Filter -->
+                <div class="mb-2">
+                    <label class="fw-semibold text-secondary small text-uppercase mb-2">5. Tình trạng hàng</label>
+                    <div class="form-check small">
+                        <input class="form-check-input cursor-pointer" type="checkbox" id="stockFilter" 
+                               checked="@Model.CurrentFilter.InStockOnly" 
+                               onchange="window.location.href='@Url.Action("Index", new { 
+                                   category = Model.CurrentFilter.CategorySlug, 
+                                   brand = Model.CurrentFilter.BrandSlug, 
+                                   keyword = Model.CurrentFilter.SearchKeyword, 
+                                   minPrice = Model.CurrentFilter.MinPrice, 
+                                   maxPrice = Model.CurrentFilter.MaxPrice, 
+                                   minRating = Model.CurrentFilter.MinRating, 
+                                   inStockOnly = !Model.CurrentFilter.InStockOnly, 
+                                   sort = Model.CurrentFilter.SortBy 
+                               })'" />
+                        <label class="form-check-label cursor-pointer text-dark fw-semibold" for="stockFilter">
+                            Chỉ xem sản phẩm Còn hàng
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Products List Area -->
+        <div class="col-lg-9">
+            <!-- Header Bar with Sort Toolbar -->
+            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white mb-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h5 class="fw-bold text-dark m-0">
+                            @(Model.SelectedCategoryName ?? Model.SelectedBrandName ?? (!string.IsNullOrEmpty(Model.CurrentFilter.SearchKeyword) ? $"Kết quả tìm kiếm cho: \"{Model.CurrentFilter.SearchKeyword}\"" : "Tất cả thiết bị công nghệ"))
+                        </h5>
+                        <small class="text-muted">
+                            Hiển thị <strong>@Model.PagedProducts.Items.Count</strong> / <strong>@Model.PagedProducts.TotalCount</strong> sản phẩm
+                        </small>
+                    </div>
+
+                    <!-- 6 Sorting Options -->
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="small text-muted text-nowrap"><i class="bi bi-sort-down me-1"></i>Sắp xếp:</span>
+                        <div class="btn-group btn-group-sm flex-wrap">
+                            <a asp-action="Index" 
+                               asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                               asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                               asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                               asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                               asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                               asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                               asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                               asp-route-sort="featured" 
+                               class="btn @(Model.CurrentFilter.SortBy == "featured" ? "btn-primary" : "btn-outline-secondary")">Nổi bật</a>
+                            
+                            <a asp-action="Index" 
+                               asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                               asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                               asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                               asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                               asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                               asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                               asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                               asp-route-sort="best_seller" 
+                               class="btn @(Model.CurrentFilter.SortBy == "best_seller" ? "btn-primary" : "btn-outline-secondary")">Bán chạy</a>
+
+                            <a asp-action="Index" 
+                               asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                               asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                               asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                               asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                               asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                               asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                               asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                               asp-route-sort="price_asc" 
+                               class="btn @(Model.CurrentFilter.SortBy == "price_asc" ? "btn-primary" : "btn-outline-secondary")">Giá tăng</a>
+
+                            <a asp-action="Index" 
+                               asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                               asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                               asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                               asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                               asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                               asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                               asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                               asp-route-sort="price_desc" 
+                               class="btn @(Model.CurrentFilter.SortBy == "price_desc" ? "btn-primary" : "btn-outline-secondary")">Giá giảm</a>
+
+                            <a asp-action="Index" 
+                               asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                               asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                               asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                               asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                               asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                               asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                               asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                               asp-route-sort="rating_desc" 
+                               class="btn @(Model.CurrentFilter.SortBy == "rating_desc" ? "btn-primary" : "btn-outline-secondary")">Đánh giá cao</a>
+
+                            <a asp-action="Index" 
+                               asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                               asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                               asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                               asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                               asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                               asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                               asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                               asp-route-sort="new" 
+                               class="btn @(Model.CurrentFilter.SortBy == "new" ? "btn-primary" : "btn-outline-secondary")">Mới nhất</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Survey (Task 5): Quick Needs & Budget Chips -->
+            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white mb-3">
+                <!-- Row 1: Nhu cầu -->
+                <div class="d-flex align-items-center gap-2 overflow-auto pb-2 border-bottom mb-2">
+                    <span class="small fw-bold text-secondary text-nowrap"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Nhu cầu:</span>
+                    <a asp-action="Index" 
+                       asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                       asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                       asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                       asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                       asp-route-sort="@Model.CurrentFilter.SortBy" 
+                       class="btn btn-sm @(string.IsNullOrEmpty(Model.CurrentFilter.SearchKeyword) ? "btn-danger text-white" : "btn-outline-secondary") rounded-pill px-3 text-nowrap">
+                       Tất cả
+                    </a>
+                    <a asp-action="Index" 
+                       asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                       asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                       asp-route-keyword="Gaming" 
+                       asp-route-sort="@Model.CurrentFilter.SortBy" 
+                       class="btn btn-sm @(Model.CurrentFilter.SearchKeyword == "Gaming" ? "btn-danger text-white" : "btn-outline-secondary") rounded-pill px-3 text-nowrap">
+                       🎮 Gaming / Đồ họa
+                    </a>
+                    <a asp-action="Index" 
+                       asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                       asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                       asp-route-keyword="Pro" 
+                       asp-route-sort="@Model.CurrentFilter.SortBy" 
+                       class="btn btn-sm @(Model.CurrentFilter.SearchKeyword == "Pro" ? "btn-danger text-white" : "btn-outline-secondary") rounded-pill px-3 text-nowrap">
+                       📸 Chụp ảnh Pro / Quay phim
+                    </a>
+                    <a asp-action="Index" 
+                       asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                       asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                       asp-route-keyword="Ultra" 
+                       asp-route-sort="@Model.CurrentFilter.SortBy" 
+                       class="btn btn-sm @(Model.CurrentFilter.SearchKeyword == "Ultra" ? "btn-danger text-white" : "btn-outline-secondary") rounded-pill px-3 text-nowrap">
+                       💎 Flagship Cao Cấp
+                    </a>
+                    <a asp-action="Index" 
+                       asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                       asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                       asp-route-keyword="Pin" 
+                       asp-route-sort="@Model.CurrentFilter.SortBy" 
+                       class="btn btn-sm @(Model.CurrentFilter.SearchKeyword == "Pin" ? "btn-danger text-white" : "btn-outline-secondary") rounded-pill px-3 text-nowrap">
+                       🔋 Pin trâu sử dụng dài lâu
+                    </a>
+                </div>
+
+                <!-- Row 2: Tầm giá (Khảo sát SV & NVVP 18-35 tuổi) -->
+                <div class="d-flex align-items-center gap-2 overflow-auto pt-1">
+                    <span class="small fw-bold text-secondary text-nowrap"><i class="bi bi-cash-stack text-success me-1"></i>Tầm giá:</span>
+                    <a asp-action="Index" 
+                       asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                       asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                       asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                       asp-route-sort="@Model.CurrentFilter.SortBy" 
+                       class="btn btn-sm @(!Model.CurrentFilter.MinPrice.HasValue && !Model.CurrentFilter.MaxPrice.HasValue ? "btn-success text-white" : "btn-outline-secondary") rounded-pill px-3 text-nowrap">
+                       Tất cả
+                    </a>
+                    <a asp-action="Index" 
+                       asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                       asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                       asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                       asp-route-maxPrice="5000000" 
+                       asp-route-sort="@Model.CurrentFilter.SortBy" 
+                       class="btn btn-sm @(Model.CurrentFilter.MaxPrice == 5000000 && !Model.CurrentFilter.MinPrice.HasValue ? "btn-success text-white" : "btn-outline-secondary") rounded-pill px-3 text-nowrap">
+                       Dưới 5 triệu (Sinh viên)
+                    </a>
+                    <a asp-action="Index" 
+                       asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                       asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                       asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                       asp-route-minPrice="5000000" 
+                       asp-route-maxPrice="10000000" 
+                       asp-route-sort="@Model.CurrentFilter.SortBy" 
+                       class="btn btn-sm @(Model.CurrentFilter.MinPrice == 5000000 && Model.CurrentFilter.MaxPrice == 10000000 ? "btn-success text-white" : "btn-outline-secondary") rounded-pill px-3 text-nowrap">
+                       5 - 10 triệu
+                    </a>
+                    <a asp-action="Index" 
+                       asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                       asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                       asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                       asp-route-minPrice="10000000" 
+                       asp-route-maxPrice="20000000" 
+                       asp-route-sort="@Model.CurrentFilter.SortBy" 
+                       class="btn btn-sm @(Model.CurrentFilter.MinPrice == 10000000 && Model.CurrentFilter.MaxPrice == 20000000 ? "btn-success text-white" : "btn-outline-secondary") rounded-pill px-3 text-nowrap">
+                       10 - 20 triệu (Văn phòng)
+                    </a>
+                    <a asp-action="Index" 
+                       asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                       asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                       asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                       asp-route-minPrice="20000000" 
+                       asp-route-sort="@Model.CurrentFilter.SortBy" 
+                       class="btn btn-sm @(Model.CurrentFilter.MinPrice == 20000000 && !Model.CurrentFilter.MaxPrice.HasValue ? "btn-success text-white" : "btn-outline-secondary") rounded-pill px-3 text-nowrap">
+                       Trên 20 triệu (Flagship)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Active Filter Pills Bar (BR-FLT-05) -->
+            @if (hasActiveFilter)
+            {
+                <div class="card border-0 rounded-4 shadow-sm p-3 bg-white mb-3">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span class="small fw-bold text-secondary me-1"><i class="bi bi-tags-fill me-1"></i>Đang lọc:</span>
+
+                        @if (!string.IsNullOrEmpty(Model.SelectedCategoryName))
+                        {
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle p-2 rounded-pill small">
+                                Danh mục: @Model.SelectedCategoryName
+                                <a asp-action="Index" 
+                                   asp-route-category="" 
+                                   asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                                   asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                                   asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                                   asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                                   asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                                   asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                                   asp-route-sort="@Model.CurrentFilter.SortBy" 
+                                   class="text-primary ms-1 text-decoration-none">✖</a>
+                            </span>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.SelectedBrandName))
+                        {
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle p-2 rounded-pill small">
+                                Thương hiệu: @Model.SelectedBrandName
+                                <a asp-action="Index" 
+                                   asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                                   asp-route-brand="" 
+                                   asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                                   asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                                   asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                                   asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                                   asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                                   asp-route-sort="@Model.CurrentFilter.SortBy" 
+                                   class="text-primary ms-1 text-decoration-none">✖</a>
+                            </span>
+                        }
+
+                        @if (Model.CurrentFilter.MinPrice.HasValue || Model.CurrentFilter.MaxPrice.HasValue)
+                        {
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle p-2 rounded-pill small">
+                                Mức giá: @(Model.CurrentFilter.MinPrice.HasValue ? Model.CurrentFilter.MinPrice.Value.ToString("N0") + "₫" : "0₫") - @(Model.CurrentFilter.MaxPrice.HasValue ? Model.CurrentFilter.MaxPrice.Value.ToString("N0") + "₫" : "Tối đa")
+                                <a asp-action="Index" 
+                                   asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                                   asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                                   asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                                   asp-route-minPrice="" 
+                                   asp-route-maxPrice="" 
+                                   asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                                   asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                                   asp-route-sort="@Model.CurrentFilter.SortBy" 
+                                   class="text-primary ms-1 text-decoration-none">✖</a>
+                            </span>
+                        }
+
+                        @if (Model.CurrentFilter.MinRating.HasValue)
+                        {
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle p-2 rounded-pill small">
+                                Đánh giá: Từ @Model.CurrentFilter.MinRating sao
+                                <a asp-action="Index" 
+                                   asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                                   asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                                   asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                                   asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                                   asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                                   asp-route-minRating="" 
+                                   asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                                   asp-route-sort="@Model.CurrentFilter.SortBy" 
+                                   class="text-primary ms-1 text-decoration-none">✖</a>
+                            </span>
+                        }
+
+                        @if (Model.CurrentFilter.InStockOnly)
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle p-2 rounded-pill small">
+                                Tình trạng: Còn hàng
+                                <a asp-action="Index" 
+                                   asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                                   asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                                   asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                                   asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                                   asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                                   asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                                   asp-route-inStockOnly="false" 
+                                   asp-route-sort="@Model.CurrentFilter.SortBy" 
+                                   class="text-success ms-1 text-decoration-none">✖</a>
+                            </span>
+                        }
+
+                        <a asp-action="Index" class="btn btn-sm btn-link text-danger text-decoration-none p-0 ms-2 small">
+                            [ Xóa tất cả ]
+                        </a>
+                    </div>
+                </div>
+            }
+
+            <!-- Product Cards Grid -->
+            @if (Model.PagedProducts.Items.Count > 0)
+            {
+                <div class="row g-3">
+                    @foreach (var product in Model.PagedProducts.Items)
+                    {
+                        <partial name="_ProductCard" model="product" />
+                    }
+                </div>
+
+                <!-- Pagination & Progress Counter -->
+                <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mt-4 text-center">
+                    <div class="text-muted small mb-2">
+                        Đang xem trang <strong>@Model.PagedProducts.PageIndex</strong> trên tổng số <strong>@Model.PagedProducts.TotalPages</strong> trang (Tổng cộng: <strong>@Model.PagedProducts.TotalCount</strong> sản phẩm)
+                    </div>
+
+                    @if (Model.PagedProducts.TotalPages > 1)
+                    {
+                        <nav>
+                            <ul class="pagination justify-content-center mb-0">
+                                @if (Model.PagedProducts.HasPreviousPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link rounded-start-pill px-3" 
+                                           asp-action="Index" 
+                                           asp-route-page="@(Model.PagedProducts.PageIndex - 1)" 
+                                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                                           asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                                           asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                                           asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                                           asp-route-sort="@Model.CurrentFilter.SortBy">
+                                            <i class="bi bi-chevron-left me-1"></i> Trước
+                                        </a>
+                                    </li>
+                                }
+                                
+                                @for (int p = 1; p <= Model.PagedProducts.TotalPages; p++)
+                                {
+                                    <li class="page-item @(p == Model.PagedProducts.PageIndex ? "active" : "")">
+                                        <a class="page-link px-3" 
+                                           asp-action="Index" 
+                                           asp-route-page="@p" 
+                                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                                           asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                                           asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                                           asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                                           asp-route-sort="@Model.CurrentFilter.SortBy">@p</a>
+                                    </li>
+                                }
+
+                                @if (Model.PagedProducts.HasNextPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link rounded-end-pill px-3" 
+                                           asp-action="Index" 
+                                           asp-route-page="@(Model.PagedProducts.PageIndex + 1)" 
+                                           asp-route-category="@Model.CurrentFilter.CategorySlug" 
+                                           asp-route-brand="@Model.CurrentFilter.BrandSlug" 
+                                           asp-route-keyword="@Model.CurrentFilter.SearchKeyword" 
+                                           asp-route-minPrice="@Model.CurrentFilter.MinPrice" 
+                                           asp-route-maxPrice="@Model.CurrentFilter.MaxPrice" 
+                                           asp-route-minRating="@Model.CurrentFilter.MinRating" 
+                                           asp-route-inStockOnly="@Model.CurrentFilter.InStockOnly" 
+                                           asp-route-sort="@Model.CurrentFilter.SortBy">
+                                            Sau <i class="bi bi-chevron-right ms-1"></i>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="card border-0 rounded-4 p-5 text-center bg-white shadow-sm my-3">
+                    <i class="bi bi-search text-muted display-4 mb-3"></i>
+                    <h5 class="fw-bold text-dark">Không tìm thấy sản phẩm nào phù hợp</h5>
+                    <p class="text-muted small">Hãy thử bỏ bớt tiêu chí lọc hoặc chọn khoảng giá rộng hơn.</p>
+                    <div>
+                        <a asp-action="Index" class="btn btn-primary rounded-pill px-4">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Xóa tất cả bộ lọc
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

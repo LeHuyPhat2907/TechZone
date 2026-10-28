@@ -1,0 +1,371 @@
+@model ManualOrderCreateDto
+@{
+    ViewData["Title"] = "Tạo Đơn Hàng Thủ Công (Telesales / Fanpage)";
+    var products = ViewBag.AvailableProducts as List<ManualOrderProductOptionDto> ?? new();
+    var carriers = ViewBag.ShippingCarriers as List<ShippingCarrierConfig> ?? new();
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary rounded-pill px-3 mb-2">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách đơn hàng
+        </a>
+        <h3 class="fw-bold text-dark m-0"><i class="bi bi-telephone-plus-fill text-primary me-2"></i>Tạo Đơn Hàng Thủ Công</h3>
+        <small class="text-muted">Hỗ trợ Telesales Hotline, Fanpage Facebook, Zalo OA và Khách mua trực tiếp tại Showroom</small>
+    </div>
+</div>
+
+<form asp-action="CreateManual" method="post" id="manualOrderForm">
+    @Html.AntiForgeryToken()
+
+    <div class="row g-4">
+        <!-- Left: Customer Information & Delivery -->
+        <div class="col-lg-7">
+            <!-- Channel & Customer Info -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-lines-fill text-primary me-2"></i>1. Kênh Bán Hàng & Thông Tin Khách</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Kênh tiếp nhận đơn <span class="text-danger">*</span></label>
+                        <select asp-for="SourceChannel" class="form-select">
+                            <option value="Telesales">📞 Telesales / Hotline Bán hàng</option>
+                            <option value="Fanpage">💬 Fanpage Facebook TechZone</option>
+                            <option value="Zalo">📱 Zalo OA Doanh Nghiệp</option>
+                            <option value="DirectStore">🏪 Mua trực tiếp tại Showroom</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Họ tên khách hàng <span class="text-danger">*</span></label>
+                        <input asp-for="CustomerName" class="form-control" placeholder="Ví dụ: Nguyễn Văn An" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Số điện thoại liên hệ <span class="text-danger">*</span></label>
+                        <input asp-for="CustomerPhone" class="form-control" placeholder="0901234567" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Email nhận thông báo</label>
+                        <input asp-for="CustomerEmail" type="email" class="form-control" placeholder="khachhang@gmail.com" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Method & Address -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-primary me-2"></i>2. Hình Thức & Địa Chỉ Nhận Hàng</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Hình thức nhận:</label>
+                    <div class="d-flex gap-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" asp-for="DeliveryType" value="HomeDelivery" id="deliveryHome" checked onchange="toggleDeliveryMode(false)">
+                            <label class="form-check-label fw-semibold" for="deliveryHome">
+                                <i class="bi bi-truck text-primary me-1"></i>Giao hàng tận nơi
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" asp-for="DeliveryType" value="StorePickup" id="deliveryStore" onchange="toggleDeliveryMode(true)">
+                            <label class="form-check-label fw-semibold" for="deliveryStore">
+                                <i class="bi bi-shop text-success me-1"></i>Nhận tại Siêu thị TechZone
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Store Pickup Selector -->
+                <div id="storePickupSection" class="d-none mb-3">
+                    <label class="form-label small fw-semibold">Chọn chi nhánh siêu thị nhận máy:</label>
+                    <select asp-for="PickupStoreAddress" class="form-select">
+                        <option value="TechZone Flagship - 123 Cách Mạng Tháng 8, Quận 3, TP.HCM">TechZone Flagship - 123 Cách Mạng Tháng 8, Quận 3, TP.HCM</option>
+                        <option value="TechZone Landmark 81 - Tầng B1 Vincom Landmark 81, Bình Thạnh, TP.HCM">TechZone Landmark 81 - Tầng B1 Vincom Landmark 81, Bình Thạnh, TP.HCM</option>
+                        <option value="TechZone Hà Nội - 45 Thái Hà, Đống Đa, Hà Nội">TechZone Hà Nội - 45 Thái Hà, Đống Đa, Hà Nội</option>
+                        <option value="TechZone Đà Nẵng - 150 Nguyễn Văn Linh, Hải Châu, Đà Nẵng">TechZone Đà Nẵng - 150 Nguyễn Văn Linh, Hải Châu, Đà Nẵng</option>
+                    </select>
+                </div>
+
+                <!-- Home Delivery Address Inputs -->
+                <div id="homeDeliverySection">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Tỉnh / Thành phố</label>
+                            <input asp-for="Province" class="form-control" value="Hồ Chí Minh" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Quận / Huyện</label>
+                            <input asp-for="District" class="form-control" placeholder="Quận 1 / Quận 7..." />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Phường / Xã</label>
+                            <input asp-for="Ward" class="form-control" placeholder="Phường Bến Nghé..." />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Địa chỉ chi tiết (Số nhà, tên đường, tòa nhà)</label>
+                            <input asp-for="DetailAddress" class="form-control" placeholder="Ví dụ: Căn hộ 12B, Chung cư Sunrise City, 27 Nguyễn Hữu Thọ" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- B2B Electronic VAT Invoice Card -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark m-0"><i class="bi bi-receipt text-danger me-2"></i>3. Hóa Đơn Điện Tử (VAT) Doanh Nghiệp</h5>
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" asp-for="RequireVatInvoice" id="vatToggle" onchange="toggleVatFields(this.checked)">
+                        <label class="form-check-label fw-bold small" for="vatToggle">Yêu cầu xuất HĐĐT</label>
+                    </div>
+                </div>
+                
+                <div id="vatFieldsSection" class="d-none">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Tên công ty / Doanh nghiệp</label>
+                            <input asp-for="CompanyName" class="form-control" placeholder="Công ty TNHH Giải Pháp Công Nghệ ABC" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Mã số thuế (MST)</label>
+                            <input asp-for="TaxId" class="form-control" placeholder="0312345678" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Địa chỉ trụ sở công ty</label>
+                            <input asp-for="CompanyAddress" class="form-control" placeholder="Tòa nhà Bitexco, Q.1, TP.HCM" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Email nhận HĐĐT XML/PDF</label>
+                            <input asp-for="InvoiceEmail" type="email" class="form-control" placeholder="ketoan@doanhnghiep.vn" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Products Selector, Payment & Calculation -->
+        <div class="col-lg-5">
+            <!-- Order Products Card -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark m-0"><i class="bi bi-cart-check text-primary me-2"></i>4. Sản Phẩm & Biến Thể</h5>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="addProductRow()">
+                        <i class="bi bi-plus-lg me-1"></i>Thêm máy
+                    </button>
+                </div>
+
+                <div id="orderItemsContainer" class="d-flex flex-column gap-3 mb-3">
+                    <!-- Item Row 0 (Default) -->
+                    <div class="item-row p-3 rounded-3 bg-light border position-relative" data-index="0">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-secondary">Chọn thiết bị:</label>
+                            <select name="Items[0].ProductId" class="form-select form-select-sm product-selector" onchange="onProductSelect(this, 0)" required>
+                                <option value="">-- Chọn sản phẩm trong kho --</option>
+                                @foreach (var p in products)
+                                {
+                                    <option value="@p.Id" data-price="@p.Price" data-stock="@p.AvailableQuantity" data-sku="@p.Sku" data-img="@p.ThumbnailUrl">
+                                        @p.Name (Kho khả dụng: @p.AvailableQuantity | @p.Price.ToString("N0")₫)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-7">
+                                <label class="form-label small text-muted">Đơn giá bán (₫):</label>
+                                <input type="number" name="Items[0].UnitPrice" class="form-control form-control-sm item-price" value="0" oninput="calculateOrderTotal()" />
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small text-muted">Số lượng:</label>
+                                <input type="number" name="Items[0].Quantity" class="form-control form-control-sm item-qty" value="1" min="1" oninput="calculateOrderTotal()" />
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-7">
+                                <input type="text" name="Items[0].VariantName" class="form-control form-control-sm" placeholder="Biến thể (vd: 256GB Titan)" />
+                            </div>
+                            <div class="col-5">
+                                <input type="number" name="Items[0].WarrantyMonths" class="form-control form-control-sm" value="12" placeholder="Bảo hành (tháng)" />
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="Items[0].VariantSku" class="item-sku" />
+                        <input type="hidden" name="Items[0].ThumbnailUrl" class="item-thumb" />
+                    </div>
+                </div>
+
+                <hr class="my-3 opacity-25" />
+
+                <!-- Shipping & Discount -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Phí vận chuyển (₫):</label>
+                        <input asp-for="ShippingFee" type="number" class="form-control form-control-sm" id="shippingFeeInput" value="30000" oninput="calculateOrderTotal()" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Giảm giá / Voucher (₫):</label>
+                        <input asp-for="OrderDiscountAmount" type="number" class="form-control form-control-sm" id="discountInput" value="0" oninput="calculateOrderTotal()" />
+                    </div>
+                </div>
+
+                <!-- Logistics Carrier Selection -->
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Đối tác vận chuyển:</label>
+                    <select asp-for="CarrierName" class="form-select form-select-sm">
+                        @foreach (var c in carriers)
+                        {
+                            <option value="@c.CarrierName">@c.CarrierName (@c.EstimatedDeliveryTime)</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Payment Method & Initial Status -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Thanh toán:</label>
+                        <select asp-for="PaymentMethod" class="form-select form-select-sm">
+                            <option value="@PaymentMethod.COD">COD (Nhận hàng thu tiền)</option>
+                            <option value="@PaymentMethod.BankTransfer">Chuyển khoản VietQR</option>
+                            <option value="@PaymentMethod.VnPay">Cổng VNPay QR</option>
+                            <option value="@PaymentMethod.MoMo">Ví điện tử MoMo</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Trạng thái thanh toán:</label>
+                        <select asp-for="PaymentStatus" class="form-select form-select-sm">
+                            <option value="@PaymentStatus.Pending">Chưa thanh toán (Pending)</option>
+                            <option value="@PaymentStatus.Completed">Đã thanh toán (Completed)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Order Notes -->
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Ghi chú Telesales nội bộ:</label>
+                    <textarea asp-for="AdminNotes" class="form-control form-control-sm" rows="2" placeholder="VD: Khách chốt qua cuộc gọi chiều nay, hẹn giao sáng mai..."></textarea>
+                </div>
+
+                <!-- Financial Summary Box -->
+                <div class="p-3 bg-light rounded-3 border mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-secondary">Tiền hàng tạm tính:</span>
+                        <strong id="displaySubtotal">0₫</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-secondary">Phí ship:</span>
+                        <strong id="displayShipping">30,000₫</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span class="text-secondary">Chiết khấu / Giảm giá:</span>
+                        <strong id="displayDiscount" class="text-success">-0₫</strong>
+                    </div>
+                    <hr class="my-1 opacity-25" />
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-dark fs-6">Tổng thu khách:</span>
+                        <span class="fw-bold text-danger fs-4" id="displayTotal">30,000₫</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill py-2.5 shadow-sm">
+                    <i class="bi bi-check2-circle me-1"></i>Xác Nhận Tạo Đơn Hàng Ngay
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    const availableProducts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(products));
+    let currentItemIndex = 1;
+
+    function toggleDeliveryMode(isStore) {
+        document.getElementById('storePickupSection').classList.toggle('d-none', !isStore);
+        document.getElementById('homeDeliverySection').classList.toggle('d-none', isStore);
+        if (isStore) {
+            document.getElementById('shippingFeeInput').value = 0;
+            calculateOrderTotal();
+        }
+    }
+
+    function toggleVatFields(isChecked) {
+        document.getElementById('vatFieldsSection').classList.toggle('d-none', !isChecked);
+    }
+
+    function onProductSelect(selectElem, index) {
+        const selectedId = selectElem.value;
+        const row = selectElem.closest('.item-row');
+        const prod = availableProducts.find(p => p.Id === selectedId);
+        if (prod) {
+            row.querySelector('.item-price').value = prod.Price;
+            row.querySelector('.item-sku').value = prod.Sku;
+            row.querySelector('.item-thumb').value = prod.ThumbnailUrl;
+        } else {
+            row.querySelector('.item-price').value = 0;
+        }
+        calculateOrderTotal();
+    }
+
+    function addProductRow() {
+        const container = document.getElementById('orderItemsContainer');
+        const idx = currentItemIndex++;
+        let optionsHtml = '<option value="">-- Chọn sản phẩm trong kho --</option>';
+        availableProducts.forEach(p => {
+            optionsHtml += `<option value="${p.Id}" data-price="${p.Price}">${p.Name} (${p.Price.toLocaleString()}₫)</option>`;
+        });
+
+        const rowHtml = `
+            <div class="item-row p-3 rounded-3 bg-light border position-relative" data-index="${idx}">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-2" onclick="removeProductRow(this)" title="Xóa dòng"></button>
+                <div class="mb-2 pe-4">
+                    <label class="form-label small fw-semibold text-secondary">Chọn thiết bị ${idx + 1}:</label>
+                    <select name="Items[${idx}].ProductId" class="form-select form-select-sm product-selector" onchange="onProductSelect(this, ${idx})" required>
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-7">
+                        <label class="form-label small text-muted">Đơn giá bán (₫):</label>
+                        <input type="number" name="Items[${idx}].UnitPrice" class="form-control form-control-sm item-price" value="0" oninput="calculateOrderTotal()" />
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label small text-muted">Số lượng:</label>
+                        <input type="number" name="Items[${idx}].Quantity" class="form-control form-control-sm item-qty" value="1" min="1" oninput="calculateOrderTotal()" />
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-7">
+                        <input type="text" name="Items[${idx}].VariantName" class="form-control form-control-sm" placeholder="Biến thể (vd: 256GB Titan)" />
+                    </div>
+                    <div class="col-5">
+                        <input type="number" name="Items[${idx}].WarrantyMonths" class="form-control form-control-sm" value="12" placeholder="Bảo hành (tháng)" />
+                    </div>
+                </div>
+                <input type="hidden" name="Items[${idx}].VariantSku" class="item-sku" />
+                <input type="hidden" name="Items[${idx}].ThumbnailUrl" class="item-thumb" />
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', rowHtml);
+    }
+
+    function removeProductRow(btn) {
+        btn.closest('.item-row').remove();
+        calculateOrderTotal();
+    }
+
+    function calculateOrderTotal() {
+        let subtotal = 0;
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach(r => {
+            const price = parseFloat(r.querySelector('.item-price').value) || 0;
+            const qty = parseInt(r.querySelector('.item-qty').value) || 0;
+            subtotal += price * qty;
+        });
+
+        const shipping = parseFloat(document.getElementById('shippingFeeInput').value) || 0;
+        const discount = parseFloat(document.getElementById('discountInput').value) || 0;
+        const total = Math.max(0, subtotal - discount) + shipping;
+
+        document.getElementById('displaySubtotal').innerText = subtotal.toLocaleString() + '₫';
+        document.getElementById('displayShipping').innerText = shipping.toLocaleString() + '₫';
+        document.getElementById('displayDiscount').innerText = '-' + discount.toLocaleString() + '₫';
+        document.getElementById('displayTotal').innerText = total.toLocaleString() + '₫';
+    }
+
+    document.addEventListener('DOMContentLoaded', calculateOrderTotal);
+</script>

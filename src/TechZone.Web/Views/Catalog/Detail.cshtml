@@ -1,0 +1,957 @@
+@model ProductDetailDto
+@{
+    ViewData["Title"] = $"{Model.Name} Chính Hãng - Giá Rẻ, Trả Góp 0%";
+    ViewData["MetaDescription"] = !string.IsNullOrWhiteSpace(Model.ShortDescription) ? Model.ShortDescription : $"Mua {Model.Name} thương hiệu {Model.BrandName} chính hãng giá rẻ, bảo hành 12 tháng, trả góp 0%, giao hàng toàn quốc tại TechZone.";
+    ViewData["MetaKeywords"] = $"{Model.Name}, {Model.BrandName}, {Model.CategoryName}, mua {Model.Name}, giá {Model.Name}, techzone";
+    ViewData["OgImage"] = Model.ThumbnailUrl;
+    ViewData["OgType"] = "product";
+    ViewData["CanonicalUrl"] = $"{Context.Request.Scheme}://{Context.Request.Host}/product/{Model.Slug}";
+    var defaultVariant = Model.Variants.FirstOrDefault();
+    var currentPrice = defaultVariant?.Price ?? Model.Price;
+}
+
+<!-- Schema.org JSON-LD for Google Rich Snippets (Task 1 Survey Insight 9) -->
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org/",
+  "@@type": "Product",
+  "name": "@Model.Name",
+  "image": "@Model.ThumbnailUrl",
+  "description": "@(Model.ShortDescription ?? Model.Name)",
+  "sku": "@Model.Sku",
+  "brand": {
+    "@@type": "Brand",
+    "name": "@Model.BrandName"
+  },
+  "offers": {
+    "@@type": "Offer",
+    "priceCurrency": "VND",
+    "price": "@Model.Price",
+    "availability": "@(Model.InStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock")",
+    "itemCondition": "https://schema.org/NewCondition"
+  },
+  "aggregateRating": {
+    "@@type": "AggregateRating",
+    "ratingValue": "@Model.RatingAverage",
+    "reviewCount": "@(Math.Max(Model.RatingCount, 1))"
+  }
+}
+</script>
+
+<!-- Schema.org BreadcrumbList JSON-LD (Task 15) -->
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org",
+  "@@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@@type": "ListItem",
+      "position": 1,
+      "name": "Trang chủ",
+      "item": "@($"{Context.Request.Scheme}://{Context.Request.Host}")"
+    },
+    {
+      "@@type": "ListItem",
+      "position": 2,
+      "name": "@Model.CategoryName",
+      "item": "@($"{Context.Request.Scheme}://{Context.Request.Host}/Catalog?category={Model.CategorySlug}")"
+    },
+    {
+      "@@type": "ListItem",
+      "position": 3,
+      "name": "@Model.Name",
+      "item": "@($"{Context.Request.Scheme}://{Context.Request.Host}/product/{Model.Slug}")"
+    }
+  ]
+}
+</script>
+
+<div class="container my-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Catalog" asp-action="Index" asp-route-category="@Model.CategorySlug" class="text-decoration-none text-muted">@Model.CategoryName</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Catalog" asp-action="Index" asp-route-brand="@Model.BrandName.ToLower()" class="text-decoration-none text-muted">@Model.BrandName</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+        </ol>
+    </nav>
+
+    <!-- Main PDP Row -->
+    <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+        <div class="row g-4">
+            <!-- Left Column: Gallery & Trust Badges -->
+            <div class="col-lg-5">
+                <div class="position-relative text-center p-3 border rounded-4 mb-3 bg-light">
+                    <img id="mainProductImage" src="@Model.ThumbnailUrl" alt="@Model.Name" class="img-fluid" style="max-height: 380px; object-fit: contain;" decoding="async" onerror="this.onerror=null;this.src='/images/placeholder.svg';" />
+                    @if (Model.DiscountRate > 0)
+                    {
+                        <div class="position-absolute top-0 start-0 m-3 badge bg-danger fs-6 p-2 rounded-3">-@Model.DiscountRate%</div>
+                    }
+                </div>
+
+                <!-- Thumbnails Gallery -->
+                <div class="d-flex gap-2 overflow-auto pb-2">
+                    @foreach (var img in Model.ImageUrls)
+                    {
+                        <div class="border rounded-3 p-1 cursor-pointer bg-white" style="width: 70px; height: 70px;" onclick="changeMainImage('@img')">
+                            <img src="@img" class="w-100 h-100 object-fit-contain" alt="thumbnail" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/placeholder.svg';" />
+                        </div>
+                    }
+                </div>
+
+                <!-- Trust Badges -->
+                <div class="row g-2 mt-3 text-center small text-muted">
+                    <div class="col-4">
+                        <div class="border rounded-3 p-2 bg-light">
+                            <i class="bi bi-shield-check text-primary fs-4 d-block mb-1"></i>
+                            <span>Bảo hành @Model.WarrantyMonths tháng chính hãng</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border rounded-3 p-2 bg-light">
+                            <i class="bi bi-arrow-repeat text-success fs-4 d-block mb-1"></i>
+                            <span>1 đổi 1 trong 7 ngày nếu có lỗi</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border rounded-3 p-2 bg-light">
+                            <i class="bi bi-truck text-danger fs-4 d-block mb-1"></i>
+                            <span>Giao hỏa tốc toàn quốc (GHN)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Product Info & Purchase Actions -->
+            <div class="col-lg-7">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary text-white">Chính Hãng VN/A</span>
+                        <span class="badge bg-secondary text-white">Mã SKU: <span id="currentSkuDisplay">@(defaultVariant?.Sku ?? Model.Sku)</span></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" onclick="addToCompareTray('@Model.Slug', '@Model.Name.Replace("'", "\\'")', '@Model.ThumbnailUrl', '@Model.Price.ToString("N0")₫')">
+                            <i class="bi bi-plus-circle text-primary me-1"></i>Thêm vào so sánh
+                        </button>
+                        <a asp-controller="Catalog" asp-action="Compare" asp-route-p1="@Model.Slug" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                            <i class="bi bi-arrow-left-right me-1"></i>So sánh đối thủ
+                        </a>
+                    </div>
+                </div>
+
+                <h1 class="fw-bold fs-3 text-dark mb-2">@Model.Name</h1>
+
+                <!-- Rating & Views -->
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="tz-rating-stars">
+                        <i class="bi bi-star-fill"></i>
+                        <span class="fw-bold text-dark ms-1">@Model.RatingAverage.ToString("0.0")</span>
+                    </div>
+                    <span class="text-muted small">|</span>
+                    <span class="text-muted small">@Model.RatingCount đánh giá thực tế</span>
+                    <span class="text-muted small">|</span>
+                    <span class="text-success small fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Còn hàng trong kho (@Model.AvailableQuantity máy)</span>
+                </div>
+
+                <!-- Pricing Box -->
+                <div class="p-3 bg-light rounded-4 mb-3">
+                    <div class="d-flex align-items-baseline gap-3">
+                        <span id="currentPriceDisplay" class="fs-2 fw-bold text-danger">@((defaultVariant?.Price ?? Model.Price).ToString("N0"))₫</span>
+                        @if (Model.OriginalPrice > Model.Price)
+                        {
+                            <span id="originalPriceDisplay" class="fs-5 text-muted text-decoration-line-through">@((defaultVariant?.OriginalPrice ?? Model.OriginalPrice).ToString("N0"))₫</span>
+                        }
+                    </div>
+                    <!-- CellphoneS Smember Loyalty Badge -->
+                    <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top">
+                        <span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-shield-lock-fill me-1"></i>GIÁ SMEMBER</span>
+                        <span class="fs-5 fw-bold text-danger" id="smemberPriceDisplay">@((Math.Round(((defaultVariant?.Price ?? Model.Price) * 0.985m) / 1000m) * 1000m).ToString("N0"))₫</span>
+                        <span class="badge bg-warning-subtle text-dark border small">Tiết kiệm thêm 1.5%</span>
+                    </div>
+                    <small class="text-muted mt-2 d-block"><i class="bi bi-tag-fill text-warning me-1"></i>Giá đã bao gồm thuế VAT và bảo hành điện tử chính hãng</small>
+                </div>
+
+                <!-- Highlight Specs Pills -->
+                <div class="mb-4">
+                    <label class="fw-bold small text-secondary mb-2 text-uppercase">Đặc điểm nổi bật:</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var spec in Model.HighlightSpecs)
+                        {
+                            <span class="badge bg-light text-dark border p-2 fw-normal"><i class="bi bi-check2 text-primary me-1"></i>@spec</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Variant Options (if any) -->
+                @if (Model.Variants.Count > 0)
+                {
+                    <div class="mb-4">
+                        <label class="fw-bold small text-secondary mb-2 text-uppercase">Chọn phiên bản cấu hình:</label>
+                        <div class="d-flex flex-wrap gap-2" id="variantSelectorGroup">
+                            @for (int i = 0; i < Model.Variants.Count; i++)
+                            {
+                                var v = Model.Variants[i];
+                                <div class="border rounded-3 p-2 cursor-pointer variant-option-card @(i == 0 ? "border-primary bg-primary-subtle" : "border-secondary-subtle")"
+                                     data-sku="@v.Sku"
+                                     data-price="@v.Price.ToString("N0")₫"
+                                     data-price-raw="@v.Price"
+                                     data-orig-price="@v.OriginalPrice.ToString("N0")₫"
+                                     data-image="@(v.ImageUrl ?? Model.ThumbnailUrl)"
+                                     onclick="selectVariant(this)">
+                                    <div class="fw-bold text-dark small">@v.VariantName</div>
+                                    <div class="text-danger small fw-semibold">@v.Price.ToString("N0")₫</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Quantity & Actions -->
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="d-flex align-items-center border rounded-3 overflow-hidden bg-white">
+                        <button type="button" class="btn btn-sm btn-light px-3 py-2 border-0" onclick="decreaseQty()">-</button>
+                        <input id="selectedQuantity" type="number" value="1" min="1" max="10" class="form-control form-control-sm text-center border-0 fw-bold" style="width: 50px;" readonly />
+                        <button type="button" class="btn btn-sm btn-light px-3 py-2 border-0" onclick="increaseQty()">+</button>
+                    </div>
+
+                    <!-- Add to Cart -->
+                    <button type="button" class="btn btn-outline-primary btn-lg flex-grow-1 fw-bold py-2" onclick="handleAddToCart()">
+                        <i class="bi bi-cart-plus me-2"></i>Thêm Vào Giỏ
+                    </button>
+
+                    <!-- Buy Now -->
+                    <button type="button" class="btn btn-danger btn-lg flex-grow-1 fw-bold py-2" onclick="handleBuyNow()">
+                        <i class="bi bi-lightning-fill me-1"></i>Mua Ngay
+                    </button>
+                </div>
+
+                <!-- 0% Installment & BNPL Box (Task 1 Survey Insight 5) -->
+                <div class="border rounded-4 p-3 bg-light mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="fw-bold text-dark small">
+                            <i class="bi bi-credit-card-2-front-fill text-success me-1"></i>TRẢ GÓP 0% LÃI SUẤT (THẺ TÍN DỤNG & BNPL)
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Duyệt online 5 phút</span>
+                    </div>
+                    
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="small text-muted mb-1 d-block">Kỳ hạn góp:</label>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary active period-btn flex-fill" id="btnPeriod6" onclick="setInstallmentPeriod(6)">6 tháng</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary period-btn flex-fill" id="btnPeriod12" onclick="setInstallmentPeriod(12)">12 tháng</button>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-muted mb-1 d-block">Trả trước:</label>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-secondary active prepay-btn flex-fill" id="btnPrepay0" onclick="setPrepayPercent(0)">0%</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary prepay-btn flex-fill" id="btnPrepay20" onclick="setPrepayPercent(20)">20%</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary prepay-btn flex-fill" id="btnPrepay50" onclick="setPrepayPercent(50)">50%</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-2 bg-white rounded-3 border mb-2">
+                        <div class="d-flex justify-content-between align-items-center small mb-1">
+                            <span class="text-muted">Mỗi tháng thanh toán:</span>
+                            <span class="fs-6 fw-bold text-danger" id="installmentMonthlyDisplay">@(((currentPrice / 6)).ToString("N0"))₫/th</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center small text-muted">
+                            <span>Tiền trả trước: <strong class="text-dark" id="prepayAmountDisplay">0₫ (0%)</strong></span>
+                            <span>Lãi suất & Lệ phí: <strong class="text-success">0₫ (0%)</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-success w-100 fw-bold py-2 small" data-bs-toggle="modal" data-bs-target="#installmentModal">
+                                <i class="bi bi-credit-card me-1"></i>TRẢ GÓP QUA THẺ
+                                <div class="text-muted" style="font-size: 0.65rem;">Visa, Mastercard, JCB</div>
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-warning text-dark w-100 fw-bold py-2 small" data-bs-toggle="modal" data-bs-target="#installmentModal">
+                                <i class="bi bi-wallet2 me-1"></i>MUA TRƯỚC TRẢ SAU
+                                <div class="text-muted" style="font-size: 0.65rem;">Fundiin, SPayLater (CCCD)</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thu Cũ Đổi Mới (Trade-in Estimator - CellphoneS Survey Task 3) -->
+                <div class="border border-success border-opacity-50 rounded-4 p-3 bg-success bg-opacity-10 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="fw-bold text-success-emphasis small">
+                            <i class="bi bi-arrow-repeat text-success me-1"></i>THU CŨ ĐỔI MỚI - TRỢ GIÁ ĐẾN 3.000.000₫
+                        </div>
+                        <span class="badge bg-success text-white">Trợ giá ngay</span>
+                    </div>
+                    <p class="small text-muted mb-2">Chọn thiết bị bạn đang dùng để tính giá thu mua và số tiền bù thực tế:</p>
+                    
+                    <div class="row g-2 mb-2">
+                        <div class="col-8">
+                            <select id="tradeInDeviceSelect" class="form-select form-select-sm" onchange="calculateTradeIn()">
+                                <option value="0" data-subsidy="0">-- Chọn máy cũ cần lên đời --</option>
+                                <option value="18000000" data-subsidy="3000000">iPhone 14 Pro Max 256GB (Thu ~18tr + Trợ giá 3tr)</option>
+                                <option value="14000000" data-subsidy="2500000">iPhone 13 Pro Max 128GB (Thu ~14tr + Trợ giá 2.5tr)</option>
+                                <option value="9500000" data-subsidy="2000000">iPhone 12 Pro Max 128GB (Thu ~9.5tr + Trợ giá 2tr)</option>
+                                <option value="15000000" data-subsidy="3000000">Samsung Galaxy S23 Ultra (Thu ~15tr + Trợ giá 3tr)</option>
+                                <option value="8000000" data-subsidy="1500000">Samsung Galaxy S22 Ultra (Thu ~8tr + Trợ giá 1.5tr)</option>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <button type="button" class="btn btn-sm btn-success w-100 fw-bold" onclick="alertTradeInRegistration()">Đổi ngay</button>
+                        </div>
+                    </div>
+
+                    <div id="tradeInResultBox" class="p-2 bg-white rounded-3 border small" style="display: none;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Định giá máy cũ:</span>
+                            <span class="fw-bold text-dark" id="tradeInValDisplay">0₫</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Trợ giá TechZone:</span>
+                            <span class="fw-bold text-success" id="tradeInSubsidyDisplay">+0₫</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-top pt-1">
+                            <span class="fw-bold text-dark">Số tiền cần bù thêm:</span>
+                            <span class="fs-6 fw-bold text-danger" id="tradeInPayDiffDisplay">0₫</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Promotions & Vouchers Box -->
+                <div class="border border-warning border-opacity-50 rounded-4 p-3 bg-warning bg-opacity-10">
+                    <h6 class="fw-bold text-warning-emphasis mb-2"><i class="bi bi-gift-fill me-2"></i>Ưu Đãi Đặc Quyền TechZone:</h6>
+                    <ul class="mb-0 ps-3 small text-dark">
+                        <li>Áp dụng mã <strong>TZTECH500</strong> giảm ngay 500.000đ cho đơn thiết bị</li>
+                        <li>Nhập mã <strong>FREESHIP</strong> miễn phí giao hàng toàn quốc</li>
+                        <li>Kích hoạt bảo hành điện tử chính hãng theo số Serial/IMEI ngay khi giao hàng</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs: Specifications & Description -->
+    <div class="row g-4 mb-5">
+        <!-- Description -->
+        <div class="col-lg-8">
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white h-100">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-file-earmark-text text-primary me-2"></i>Mô Tả Sản Phẩm Chuyên Sâu</h5>
+                <p class="text-secondary leading-relaxed">@Model.Description</p>
+                <div class="p-3 bg-light rounded-3 mt-3">
+                    <h6 class="fw-bold"><i class="bi bi-award text-success me-2"></i>Cam kết vàng từ TechZone:</h6>
+                    <ul class="mb-0 ps-3 small text-muted">
+                        <li>Máy nguyên seal, 100% xuất xứ chính hãng phân phối tại Việt Nam.</li>
+                        <li>Có hóa đơn VAT điện tử đầy đủ theo quy định pháp luật.</li>
+                        <li>Hỗ trợ tra cứu tiến trình bảo hành và sửa chữa trực tuyến 24/7 qua cổng E-Warranty.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specifications Table -->
+        <div class="col-lg-4">
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white h-100">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-cpu text-primary me-2"></i>Thông Số Kỹ Thuật</h5>
+                @if (Model.Specifications.Count > 0)
+                {
+                    <div class="accordion" id="specAccordion">
+                        @for (int g = 0; g < Model.Specifications.Count; g++)
+                        {
+                            var group = Model.Specifications[g];
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-primary small text-uppercase mb-2">@group.GroupName</h6>
+                                <table class="table table-sm table-striped small mb-0">
+                                    <tbody>
+                                        @foreach (var item in group.Items)
+                                        {
+                                            <tr>
+                                                <td class="text-muted" style="width: 45%;">@item.Name</td>
+                                                <td class="fw-semibold">@item.Value</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                    <a asp-controller="Catalog" asp-action="Compare" asp-route-p1="@Model.Slug" class="btn btn-outline-primary w-100 fw-bold rounded-3 mt-3">
+                        <i class="bi bi-arrow-left-right me-1"></i>So sánh với sản phẩm khác
+                    </a>
+                }
+                else
+                {
+                    <p class="text-muted small">Thông số kỹ thuật đang được cập nhật.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Reviews & Community Q&A (TGDD Survey Task 2) -->
+    <div class="row g-4 mb-5">
+        <!-- Left: Verified Reviews -->
+        <div class="col-lg-7">
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark m-0"><i class="bi bi-chat-heart-fill text-warning me-2"></i>Đánh Giá & Nhận Xét Thực Tế</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-warning-subtle text-dark border">@Model.RatingCount lượt</span>
+                        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                            <i class="bi bi-pencil-square me-1"></i>Viết đánh giá
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Rating Summary & Breakdown Bars (Task 5: Customer Survey Insight) -->
+                <div class="p-3 bg-light rounded-4 mb-3">
+                    <div class="row align-items-center g-3">
+                        <div class="col-sm-4 text-center border-end">
+                            <div class="display-6 fw-bold text-warning" id="avgRatingDisplay">@Model.RatingAverage.ToString("0.0")</div>
+                            <div class="tz-rating-stars justify-content-center mb-1">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                            <div class="small text-muted">(@Math.Max(Model.RatingCount, 1) đánh giá)</div>
+                        </div>
+                        <div class="col-sm-8 small">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="text-nowrap" style="width: 45px;">5 sao</span>
+                                <div class="progress flex-grow-1" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 85%;"></div>
+                                </div>
+                                <span class="text-muted text-nowrap" style="width: 32px;">85%</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="text-nowrap" style="width: 45px;">4 sao</span>
+                                <div class="progress flex-grow-1" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 12%;"></div>
+                                </div>
+                                <span class="text-muted text-nowrap" style="width: 32px;">12%</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="text-nowrap" style="width: 45px;">3 sao</span>
+                                <div class="progress flex-grow-1" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 3%;"></div>
+                                </div>
+                                <span class="text-muted text-nowrap" style="width: 32px;">3%</span>
+                            </div>
+                            <div class="mt-2 text-success fw-semibold" style="font-size: 0.78rem;">
+                                <i class="bi bi-shield-check me-1"></i>100% đánh giá xác thực từ khách hàng đã mua tại TechZone
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reviews List Container -->
+                <div class="d-flex flex-column gap-3" id="reviewsListContainer">
+                    @if (Model.Reviews != null && Model.Reviews.Count > 0)
+                    {
+                        @foreach (var rev in Model.Reviews)
+                        {
+                            <div class="border-bottom pb-3">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="fw-bold text-dark small">@rev.UserName</span>
+                                    @if (rev.IsVerifiedBuyer)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle small" style="font-size: 0.65rem;">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Đã mua tại TechZone
+                                        </span>
+                                    }
+                                    <span class="text-muted small ms-auto" style="font-size: 0.75rem;">@rev.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                </div>
+                                <div class="text-warning small mb-1">
+                                    @for (int s = 1; s <= 5; s++)
+                                    {
+                                        <i class="bi @(s <= rev.Rating ? "bi-star-fill" : "bi-star")"></i>
+                                    }
+                                </div>
+                                <p class="small text-secondary mb-0">@rev.Content</p>
+                                @if (!string.IsNullOrEmpty(rev.StaffReply))
+                                {
+                                    <div class="p-2 bg-light rounded-2 border-start border-primary border-3 small mt-2">
+                                        <div class="fw-bold text-primary mb-1">
+                                            <i class="bi bi-patch-check-fill me-1"></i>Quản trị viên TechZone (QTV)
+                                        </div>
+                                        <div class="text-muted">@rev.StaffReply</div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="border-bottom pb-3">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="fw-bold text-dark small">Nguyễn Văn Bình</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle small" style="font-size: 0.65rem;">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Đã mua tại TechZone
+                                </span>
+                                <span class="text-muted small ms-auto" style="font-size: 0.75rem;">2 ngày trước</span>
+                            </div>
+                            <div class="text-warning small mb-1">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                            </div>
+                            <p class="small text-secondary mb-0">Máy nguyên seal hộp, tem VN/A sắc nét. Giao hỏa tốc GHN chỉ 2 tiếng là nhận được tại Quận 1. Đã tra cứu thử Serial trên web thấy kích hoạt chuẩn 12 tháng!</p>
+                        </div>
+
+                        <div class="border-bottom pb-3">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="fw-bold text-dark small">Trần Mai Anh</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle small" style="font-size: 0.65rem;">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Đã mua tại TechZone
+                                </span>
+                                <span class="text-muted small ms-auto" style="font-size: 0.75rem;">5 ngày trước</span>
+                            </div>
+                            <div class="text-warning small mb-1">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                            </div>
+                            <p class="small text-secondary mb-0">Thủ tục trả góp qua CCCD duyệt rất nhanh, nhân viên tư vấn nhiệt tình. Cấu hình mạnh, màn hình siêu mượt rất đáng tiền.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Community Q&A with Official QTV Responses -->
+        <div class="col-lg-5">
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white h-100">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-question-circle-fill text-primary me-2"></i>Hỏi Đáp Cộng Đồng (Q&A)</h5>
+                
+                <div class="d-flex flex-column gap-3">
+                    <div class="p-3 bg-light rounded-3">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-person-circle text-secondary"></i>
+                            <span class="fw-bold small text-dark">Lê Tuấn Khang:</span>
+                            <small class="text-muted ms-auto">Hôm qua</small>
+                        </div>
+                        <p class="small text-dark mb-2">Sản phẩm này có được hỗ trợ 1 đổi 1 trong 7 ngày đầu nếu gặp lỗi kỹ thuật không shop?</p>
+                        
+                        <!-- Official QTV Answer -->
+                        <div class="p-2 bg-white rounded-2 border-start border-primary border-3 small">
+                            <div class="fw-bold text-primary mb-1">
+                                <i class="bi bi-patch-check-fill me-1"></i>Quản trị viên TechZone (QTV)
+                            </div>
+                            <div class="text-muted">Dạ chào anh Khang, TechZone cam kết bảo hành 1 đổi 1 trong 7 ngày đầu nếu phát sinh lỗi phần cứng từ nhà sản xuất. Anh có thể an tâm đặt mua ạ!</div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-person-circle text-secondary"></i>
+                            <span class="fw-bold small text-dark">Hoàng Thảo:</span>
+                            <small class="text-muted ms-auto">3 ngày trước</small>
+                        </div>
+                        <p class="small text-dark mb-2">Mình thanh toán qua thẻ tín dụng có mất phí chuyển đổi trả góp 0% không?</p>
+                        
+                        <!-- Official QTV Answer -->
+                        <div class="p-2 bg-white rounded-2 border-start border-primary border-3 small">
+                            <div class="fw-bold text-primary mb-1">
+                                <i class="bi bi-patch-check-fill me-1"></i>Quản trị viên TechZone (QTV)
+                            </div>
+                            <div class="text-muted">Dạ chào chị Thảo, chương trình trả góp 0% lãi suất tại TechZone hoàn toàn miễn phí hồ sơ đối với 25 ngân hàng liên kết chị nhé!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    @if (Model.RelatedProducts.Count > 0)
+    {
+        <div class="mb-5">
+            <h4 class="fw-bold text-dark mb-3"><i class="bi bi-stars text-primary me-2"></i>Sản Phẩm Cùng Phân Khúc</h4>
+            <div class="row g-3">
+                @foreach (var rel in Model.RelatedProducts)
+                {
+                    <partial name="_ProductCard" model="rel" />
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal Trả Góp 0% (Task 1 Survey Insight 5) -->
+<div class="modal fade" id="installmentModal" tabindex="-1" aria-labelledby="installmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-light rounded-top-4">
+                <h5 class="modal-title fw-bold" id="installmentModalLabel">
+                    <i class="bi bi-calculator text-primary me-2"></i>Chương Trình Trả Góp 0% Lãi Suất
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-info py-2 small mb-3">
+                    <i class="bi bi-info-circle-fill me-1"></i>Áp dụng cho đơn hàng thiết bị điện tử chính hãng tại hệ thống TechZone.
+                </div>
+                
+                <h6 class="fw-bold mb-1 text-primary">1. Trả góp qua thẻ tín dụng (25 ngân hàng)</h6>
+                <p class="small text-muted mb-3">Không cần xét duyệt chứng minh thu nhập. Hạn mức thẻ tự động chuyển đổi thành trả góp 0% lãi suất với kỳ hạn linh hoạt 6 hoặc 12 tháng.</p>
+
+                <h6 class="fw-bold mb-1 text-success">2. Mua trước trả sau (BNPL: Fundiin / SPayLater)</h6>
+                <p class="small text-muted mb-3">Dành cho khách hàng chưa có thẻ tín dụng. Chỉ cần <strong>CCCD gắn chip</strong>, định danh eKYC trực tuyến trong 5 phút. Miễn lãi suất 0%.</p>
+
+                <div class="p-3 bg-light rounded-3 text-center mb-3">
+                    <div class="small text-muted">Hỗ trợ tư vấn hồ sơ trả góp nhanh 24/7:</div>
+                    <a href="tel:19008888" class="fs-5 fw-bold text-primary text-decoration-none"><i class="bi bi-telephone-fill me-1"></i>1900 8888 (Phím 2)</a>
+                </div>
+
+                <button type="button" class="btn btn-primary w-100 fw-bold py-2 rounded-3" data-bs-dismiss="modal" onclick="handleBuyNow()">
+                    <i class="bi bi-check-circle me-1"></i>Tiến Hành Đặt Hàng & Chọn Trả Góp
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Đánh Giá Trực Tiếp (CellphoneS Survey Task 3) -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-light rounded-top-4">
+                <h5 class="modal-title fw-bold" id="reviewModalLabel">
+                    <i class="bi bi-star-fill text-warning me-2"></i>Đánh Giá Sản Phẩm
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <div class="fw-bold text-dark mb-1">@Model.Name</div>
+                    <div class="text-muted small">Bạn cảm thấy sản phẩm này như thế nào?</div>
+                    
+                    <!-- Star Rating Selector -->
+                    <div class="d-flex justify-content-center gap-2 my-2 fs-3 text-secondary" id="starRatingGroup">
+                        <i class="bi bi-star-fill text-warning cursor-pointer" data-val="1" onclick="setRating(1)"></i>
+                        <i class="bi bi-star-fill text-warning cursor-pointer" data-val="2" onclick="setRating(2)"></i>
+                        <i class="bi bi-star-fill text-warning cursor-pointer" data-val="3" onclick="setRating(3)"></i>
+                        <i class="bi bi-star-fill text-warning cursor-pointer" data-val="4" onclick="setRating(4)"></i>
+                        <i class="bi bi-star-fill text-warning cursor-pointer" data-val="5" onclick="setRating(5)"></i>
+                    </div>
+                    <div class="fw-bold text-warning small" id="ratingTextLabel">5 sao - Tuyệt vời</div>
+                </div>
+
+                <form id="reviewSubmitForm" onsubmit="submitReviewAjax(event)">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Họ và tên <span class="text-danger">*</span></label>
+                        <input type="text" id="reviewAuthorName" class="form-control rounded-3" value="@(User.Identity?.IsAuthenticated == true ? User.Identity.Name : "")" placeholder="Ví dụ: Nguyễn Văn An" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Số điện thoại (để kích hoạt tem bảo chứng) <span class="text-muted fw-normal">(Tùy chọn)</span></label>
+                        <input type="tel" id="reviewAuthorPhone" class="form-control rounded-3" placeholder="Ví dụ: 0912345678" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nội dung đánh giá <span class="text-danger">*</span></label>
+                        <textarea id="reviewContentText" class="form-control rounded-3" rows="3" placeholder="Xin chia sẻ cảm nhận thực tế của bạn về sản phẩm, dịch vụ giao hàng..." required></textarea>
+                    </div>
+
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="bi bi-shield-check me-1"></i>Đánh giá sẽ được hiển thị ngay với nhãn <strong>✓ Đã mua tại TechZone</strong>.
+                    </div>
+
+                    <button type="submit" id="btnSubmitReview" class="btn btn-danger w-100 fw-bold py-2 rounded-3">
+                        <i class="bi bi-send-fill me-1"></i>Gửi Đánh Giá Ngay
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Sticky Purchase Bar (Task 1 Survey Insight 1: 70%+ Mobile Transactions) -->
+<div class="d-md-none fixed-bottom bg-white border-top shadow-lg p-2 z-3">
+    <div class="container d-flex align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <img src="@Model.ThumbnailUrl" alt="@Model.Name" style="width: 42px; height: 42px; object-fit: contain;" class="rounded border p-1" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/placeholder.svg';" />
+            <div>
+                <div class="fw-bold text-danger fs-6 lh-1" id="mobileStickyPrice">@currentPrice.ToString("N0")₫</div>
+                <small class="text-success fw-semibold" style="font-size: 0.7rem;"><i class="bi bi-shield-check"></i> Trả góp 0%</small>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary px-3 fw-bold" onclick="handleAddToCart()">
+                <i class="bi bi-cart-plus"></i> Giỏ
+            </button>
+            <button type="button" class="btn btn-sm btn-danger px-3 fw-bold" onclick="handleBuyNow()">
+                <i class="bi bi-lightning-fill"></i> Mua ngay
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentSelectedSku = '@(defaultVariant?.Sku ?? Model.Sku)';
+        let currentProductPrice = @currentPrice;
+        let currentInstallmentPeriod = 6;
+        let currentPrepayPercent = 0;
+        let currentReviewRating = 5;
+
+        function changeMainImage(url) {
+            document.getElementById('mainProductImage').src = url;
+        }
+
+        function setInstallmentPeriod(months) {
+            currentInstallmentPeriod = months;
+            document.querySelectorAll('.period-btn').forEach(b => {
+                b.classList.remove('active', 'btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            const activeBtn = document.getElementById('btnPeriod' + months);
+            if (activeBtn) {
+                activeBtn.classList.remove('btn-outline-primary');
+                activeBtn.classList.add('active', 'btn-primary');
+            }
+            updateInstallmentDisplay();
+        }
+
+        function setPrepayPercent(pct) {
+            currentPrepayPercent = pct;
+            document.querySelectorAll('.prepay-btn').forEach(b => {
+                b.classList.remove('active', 'btn-secondary');
+                b.classList.add('btn-outline-secondary');
+            });
+            const activeBtn = document.getElementById('btnPrepay' + pct);
+            if (activeBtn) {
+                activeBtn.classList.remove('btn-outline-secondary');
+                activeBtn.classList.add('active', 'btn-secondary');
+            }
+            updateInstallmentDisplay();
+        }
+
+        function updateInstallmentDisplay() {
+            const prepayAmount = Math.round(currentProductPrice * (currentPrepayPercent / 100));
+            const remaining = currentProductPrice - prepayAmount;
+            const monthly = Math.round(remaining / currentInstallmentPeriod / 1000) * 1000;
+
+            const dispMonthly = document.getElementById('installmentMonthlyDisplay');
+            if (dispMonthly) {
+                dispMonthly.innerText = monthly.toLocaleString('vi-VN') + '₫/th';
+            }
+
+            const dispPrepay = document.getElementById('prepayAmountDisplay');
+            if (dispPrepay) {
+                dispPrepay.innerText = prepayAmount.toLocaleString('vi-VN') + `₫ (${currentPrepayPercent}%)`;
+            }
+
+            // Also recalculate Trade-in if open
+            calculateTradeIn();
+        }
+
+        function selectVariant(element) {
+            document.querySelectorAll('.variant-option-card').forEach(el => {
+                el.classList.remove('border-primary', 'bg-primary-subtle');
+                el.classList.add('border-secondary-subtle');
+            });
+
+            element.classList.remove('border-secondary-subtle');
+            element.classList.add('border-primary', 'bg-primary-subtle');
+
+            currentSelectedSku = element.getAttribute('data-sku');
+            document.getElementById('currentSkuDisplay').innerText = currentSelectedSku;
+            document.getElementById('currentPriceDisplay').innerText = element.getAttribute('data-price');
+            
+            const origPrice = element.getAttribute('data-orig-price');
+            const origEl = document.getElementById('originalPriceDisplay');
+            if (origEl && origPrice) {
+                origEl.innerText = origPrice;
+            }
+
+            const rawPrice = parseFloat(element.getAttribute('data-price-raw'));
+            if (!isNaN(rawPrice) && rawPrice > 0) {
+                currentProductPrice = rawPrice;
+                updateInstallmentDisplay();
+                
+                // Update Smember Loyalty Price
+                const smemberP = Math.round((currentProductPrice * 0.985) / 1000) * 1000;
+                const smemberEl = document.getElementById('smemberPriceDisplay');
+                if (smemberEl) {
+                    smemberEl.innerText = smemberP.toLocaleString('vi-VN') + '₫';
+                }
+            }
+
+            const mobilePrice = document.getElementById('mobileStickyPrice');
+            if (mobilePrice) {
+                mobilePrice.innerText = element.getAttribute('data-price');
+            }
+
+            const imgUrl = element.getAttribute('data-image');
+            if (imgUrl) {
+                changeMainImage(imgUrl);
+            }
+        }
+
+        function increaseQty() {
+            const input = document.getElementById('selectedQuantity');
+            let val = parseInt(input.value) || 1;
+            if (val < 10) input.value = val + 1;
+        }
+
+        function decreaseQty() {
+            const input = document.getElementById('selectedQuantity');
+            let val = parseInt(input.value) || 1;
+            if (val > 1) input.value = val - 1;
+        }
+
+        function handleAddToCart() {
+            const qty = parseInt(document.getElementById('selectedQuantity').value) || 1;
+            addToCart('@Model.Id', currentSelectedSku, qty);
+        }
+
+        function handleBuyNow() {
+            const qty = parseInt(document.getElementById('selectedQuantity').value) || 1;
+            fetch('/Cart/Add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId: '@Model.Id', variantSku: currentSelectedSku, quantity: qty })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.succeeded) {
+                    window.location.href = '/Checkout';
+                } else {
+                    showToast(data.message || 'Lỗi đặt mua', false);
+                }
+            })
+            .catch(() => {
+                window.location.href = '/Checkout';
+            });
+        }
+
+        // CellphoneS Trade-in Calculator
+        function calculateTradeIn() {
+            const select = document.getElementById('tradeInDeviceSelect');
+            if (!select) return;
+
+            const selectedOption = select.options[select.selectedIndex];
+            const tradeVal = parseFloat(selectedOption.value) || 0;
+            const subsidy = parseFloat(selectedOption.getAttribute('data-subsidy')) || 0;
+            const resultBox = document.getElementById('tradeInResultBox');
+
+            if (tradeVal > 0) {
+                resultBox.style.display = 'block';
+                document.getElementById('tradeInValDisplay').innerText = tradeVal.toLocaleString('vi-VN') + '₫';
+                document.getElementById('tradeInSubsidyDisplay').innerText = '+' + subsidy.toLocaleString('vi-VN') + '₫';
+
+                const totalDiscount = tradeVal + subsidy;
+                const diff = Math.max(0, currentProductPrice - totalDiscount);
+                document.getElementById('tradeInPayDiffDisplay').innerText = diff.toLocaleString('vi-VN') + '₫';
+            } else {
+                resultBox.style.display = 'none';
+            }
+        }
+
+        function alertTradeInRegistration() {
+            const select = document.getElementById('tradeInDeviceSelect');
+            if (select.value === "0") {
+                showToast('Vui lòng chọn model máy cũ cần thu đổi!', false);
+                return;
+            }
+            showToast('Đã ghi nhận yêu cầu Thu Cũ Đổi Mới! Chuyên viên thẩm định TechZone sẽ liên hệ trong 15 phút.', true);
+        }
+
+        // CellphoneS Review Rating Picker
+        const starDescriptions = {
+            1: "1 sao - Rất không hài lòng",
+            2: "2 sao - Không hài lòng",
+            3: "3 sao - Bình thường",
+            4: "4 sao - Hài lòng",
+            5: "5 sao - Rất tuyệt vời"
+        };
+
+        function setRating(val) {
+            currentReviewRating = val;
+            const stars = document.querySelectorAll('#starRatingGroup i');
+            stars.forEach((s, idx) => {
+                if (idx < val) {
+                    s.classList.remove('bi-star', 'text-secondary');
+                    s.classList.add('bi-star-fill', 'text-warning');
+                } else {
+                    s.classList.remove('bi-star-fill', 'text-warning');
+                    s.classList.add('bi-star', 'text-secondary');
+                }
+            });
+            document.getElementById('ratingTextLabel').innerText = starDescriptions[val] || `${val} sao`;
+        }
+
+        function submitReviewAjax(e) {
+            e.preventDefault();
+            const author = document.getElementById('reviewAuthorName').value.trim();
+            const phone = document.getElementById('reviewAuthorPhone').value.trim();
+            const content = document.getElementById('reviewContentText').value.trim();
+            const btn = document.getElementById('btnSubmitReview');
+
+            if (!author || !content) {
+                showToast('Vui lòng nhập đầy đủ họ tên và nội dung đánh giá!', false);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang gửi...';
+
+            fetch('/Catalog/SubmitReview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productId: '@Model.Id',
+                    userName: author,
+                    phoneNumber: phone,
+                    rating: currentReviewRating,
+                    content: content
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill me-1"></i>Gửi Đánh Giá Ngay';
+
+                if (data.success) {
+                    showToast(data.message || 'Gửi đánh giá thành công!', true);
+
+                    // Prepend new review card to the list
+                    const listContainer = document.getElementById('reviewsListContainer');
+                    const starsHtml = Array.from({ length: 5 }, (_, i) => 
+                        `<i class="bi ${i < currentReviewRating ? 'bi-star-fill' : 'bi-star'}"></i>`
+                    ).join('');
+
+                    const newRevHtml = `
+                        <div class="border-bottom pb-3 bg-light-subtle p-2 rounded-3 border-start border-success border-3">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="fw-bold text-dark small">${author}</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle small" style="font-size: 0.65rem;">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Đã mua tại TechZone
+                                </span>
+                                <span class="text-muted small ms-auto" style="font-size: 0.75rem;">Vừa xong</span>
+                            </div>
+                            <div class="text-warning small mb-1">${starsHtml}</div>
+                            <p class="small text-secondary mb-0">${content}</p>
+                        </div>
+                    `;
+
+                    listContainer.insertAdjacentHTML('afterbegin', newRevHtml);
+
+                    // Reset modal and close
+                    document.getElementById('reviewSubmitForm').reset();
+                    setRating(5);
+                    const modalEl = document.getElementById('reviewModal');
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) modalInstance.hide();
+                } else {
+                    showToast(data.message || 'Lỗi gửi đánh giá', false);
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill me-1"></i>Gửi Đánh Giá Ngay';
+                showToast('Lỗi kết nối máy chủ. Vui lòng thử lại!', false);
+            });
+        }
+    </script>
+}

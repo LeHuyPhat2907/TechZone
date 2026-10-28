@@ -1,0 +1,1356 @@
+@model TechZone.Web.Models.MemberPortalViewModel
+@using TechZone.Domain.Enums
+@{
+    ViewData["Title"] = "Trung tâm Thành viên - TechZone";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var currentTier = Model.MembershipTier;
+    var tierBadgeClass = currentTier switch
+    {
+        "Diamond" => "bg-info text-dark",
+        "Gold" => "bg-warning text-dark",
+        "Silver" => "bg-secondary text-white",
+        _ => "bg-dark text-white"
+    };
+
+    var tierIcon = currentTier switch
+    {
+        "Diamond" => "bi-gem",
+        "Gold" => "bi-trophy-fill",
+        "Silver" => "bi-award-fill",
+        _ => "bi-shield-shaded"
+    };
+
+    // Calculate progress to next tier
+    int nextTierTarget = currentTier switch
+    {
+        "Bronze" => 500,
+        "Silver" => 2000,
+        "Gold" => 5000,
+        _ => 5000
+    };
+    int currentProgress = Math.Min(100, (int)((decimal)Model.RewardPoints / nextTierTarget * 100));
+}
+
+<style>
+    .member-hero {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a3875 100%);
+        color: #fff;
+        border-radius: 1.25rem;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .member-hero::after {
+        content: '';
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 250px;
+        height: 250px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .avatar-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid rgba(255,255,255,0.4);
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: bold;
+        color: #0d6efd;
+    }
+    .member-stat-card {
+        border-radius: 1rem;
+        border: 1px solid rgba(0,0,0,0.06);
+        background: #fff;
+        padding: 1.25rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .member-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+    }
+    .nav-pills-member .nav-link {
+        color: #495057;
+        font-weight: 500;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.2s;
+    }
+    .nav-pills-member .nav-link.active {
+        background-color: #0d6efd;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(13,110,253,0.3);
+    }
+    .nav-pills-member .nav-link:hover:not(.active) {
+        background-color: #f1f5f9;
+        color: #0d6efd;
+    }
+    .badge-tier {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.85rem;
+        border-radius: 2rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .order-status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .voucher-card {
+        border: 2px dashed #dee2e6;
+        border-radius: 1rem;
+        background: #fafbfe;
+        position: relative;
+    }
+    .device-imei-badge {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        background: #e9ecef;
+        color: #212529;
+        padding: 0.25rem 0.6rem;
+        border-radius: 0.4rem;
+        font-size: 0.85rem;
+    }
+    .timeline-steps {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin: 2rem 0;
+    }
+    .timeline-steps::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 20px;
+        right: 20px;
+        height: 3px;
+        background: #e9ecef;
+        z-index: 1;
+    }
+    .timeline-step {
+        text-align: center;
+        position: relative;
+        z-index: 2;
+        flex: 1;
+    }
+    .timeline-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #dee2e6;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+    .timeline-step.completed .timeline-icon {
+        background: #198754;
+    }
+    .timeline-step.current .timeline-icon {
+        background: #0d6efd;
+        box-shadow: 0 0 0 4px rgba(13,110,253,0.25);
+    }
+</style>
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Trung tâm Khách hàng Thành viên</li>
+        </ol>
+    </nav>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm border-0 d-flex align-items-center mb-4" role="alert">
+            <i class="bi bi-check-circle-fill fs-4 me-3 text-success"></i>
+            <div>@TempData["SuccessMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm border-0 d-flex align-items-center mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-danger"></i>
+            <div>@TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show rounded-4 shadow-sm border-0 d-flex align-items-center mb-4" role="alert">
+            <i class="bi bi-info-circle-fill fs-4 me-3 text-warning"></i>
+            <div>@TempData["WarningMessage"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- 1. VIP Member Hero Card -->
+    <div class="member-hero mb-4 shadow-sm">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7 d-flex align-items-center gap-3">
+                @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                {
+                    <img src="@Model.AvatarUrl" alt="@Model.FullName" class="avatar-circle shadow" />
+                }
+                else
+                {
+                    <div class="avatar-circle shadow">
+                        @(string.IsNullOrEmpty(Model.FullName) ? "U" : Model.FullName.Substring(0, 1).ToUpper())
+                    </div>
+                }
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                        <h4 class="mb-0 fw-bold">@Model.FullName</h4>
+                        <span class="badge @tierBadgeClass badge-tier shadow-sm">
+                            <i class="bi @tierIcon me-1"></i> @Model.MembershipTierName
+                        </span>
+                        @if (Model.TwoFactorEnabled)
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success px-2 py-1 small rounded-pill">
+                                <i class="bi bi-shield-check me-1"></i> 2FA Bảo vệ
+                            </span>
+                        }
+                    </div>
+                    <div class="small opacity-75 d-flex gap-3 flex-wrap">
+                        <span><i class="bi bi-envelope me-1"></i> @Model.Email</span>
+                        @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                        {
+                            <span><i class="bi bi-telephone me-1"></i> @Model.PhoneNumber</span>
+                        }
+                        <span><i class="bi bi-shield-lock me-1"></i> Self-Service & Anti-IDOR</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Point Balance & VIP Tier Progress -->
+            <div class="col-lg-5">
+                <div class="bg-white bg-opacity-10 p-3 rounded-4 backdrop-blur border border-white border-opacity-25">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small fw-semibold text-white-50"><i class="bi bi-coin text-warning me-1"></i> Xu TechZone tích lũy:</span>
+                        <div class="fs-4 fw-bold text-warning">@Model.RewardPoints.ToString("N0") <span class="fs-6 text-white fw-normal">Xu (~@((Model.RewardPoints * 1000).ToString("N0")) đ)</span></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center small text-white-50 mb-1">
+                        <span>Hạng hiện tại: <strong>@Model.MembershipTier</strong></span>
+                        @if (currentTier != "Diamond")
+                        {
+                            <span>Mục tiêu tiếp theo: @Model.RewardPoints / @nextTierTarget Xu</span>
+                        }
+                        else
+                        {
+                            <span>Hạng cao cấp nhất VIP</span>
+                        }
+                    </div>
+                    <div class="progress" style="height: 6px; background-color: rgba(255,255,255,0.2);">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: @currentProgress%;" aria-valuenow="@currentProgress" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. KPI Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="member-stat-card d-flex align-items-center gap-3">
+                <div class="p-3 bg-primary-subtle text-primary rounded-4 fs-3">
+                    <i class="bi bi-bag-check"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-dark">@Model.TotalOrdersCount</div>
+                    <div class="small text-muted">Tổng đơn mua</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="member-stat-card d-flex align-items-center gap-3">
+                <div class="p-3 bg-warning-subtle text-warning rounded-4 fs-3">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-dark">@Model.ShippingOrdersCount</div>
+                    <div class="small text-muted">Đang vận chuyển</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="member-stat-card d-flex align-items-center gap-3">
+                <div class="p-3 bg-success-subtle text-success rounded-4 fs-3">
+                    <i class="bi bi-patch-check"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-dark">@Model.ActiveWarrantiesCount</div>
+                    <div class="small text-muted">Thiết bị bảo hành</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="member-stat-card d-flex align-items-center gap-3">
+                <div class="p-3 bg-danger-subtle text-danger rounded-4 fs-3">
+                    <i class="bi bi-ticket-perforated"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-dark">@Model.SavedCouponsCount</div>
+                    <div class="small text-muted">Voucher trong Ví</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Main Multi-Tab Portal Layout -->
+    <div class="row g-4">
+        <!-- Sidebar Navigation Pills -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 sticky-top" style="top: 100px; z-index: 10;">
+                <div class="nav flex-column nav-pills nav-pills-member" id="memberTab" role="tablist">
+                    <button class="nav-link @(Model.ActiveTab == "dashboard" ? "active" : "")" id="tab-dashboard-btn" data-bs-toggle="pill" data-bs-target="#tab-dashboard" type="button" role="tab">
+                        <i class="bi bi-grid-fill"></i> Tổng quan cá nhân
+                    </button>
+                    <button class="nav-link @(Model.ActiveTab == "profile" ? "active" : "")" id="tab-profile-btn" data-bs-toggle="pill" data-bs-target="#tab-profile" type="button" role="tab">
+                        <i class="bi bi-person-circle"></i> Hồ sơ & Sổ địa chỉ
+                    </button>
+                    <button class="nav-link @(Model.ActiveTab == "orders" ? "active" : "")" id="tab-orders-btn" data-bs-toggle="pill" data-bs-target="#tab-orders" type="button" role="tab">
+                        <i class="bi bi-box-seam-fill"></i> Đơn mua & Theo dõi (@Model.TotalOrdersCount)
+                    </button>
+                    <button class="nav-link @(Model.ActiveTab == "warranty" ? "active" : "")" id="tab-warranty-btn" data-bs-toggle="pill" data-bs-target="#tab-warranty" type="button" role="tab">
+                        <i class="bi bi-patch-check-fill"></i> Thiết bị & Bảo hành (@Model.ActiveWarrantiesCount)
+                    </button>
+                    <button class="nav-link @(Model.ActiveTab == "wishlist" ? "active" : "")" id="tab-wishlist-btn" data-bs-toggle="pill" data-bs-target="#tab-wishlist" type="button" role="tab">
+                        <i class="bi bi-heart-fill"></i> Yêu thích (@Model.SavedWishlistCount)
+                    </button>
+                    <button class="nav-link @(Model.ActiveTab == "wallet" ? "active" : "")" id="tab-wallet-btn" data-bs-toggle="pill" data-bs-target="#tab-wallet" type="button" role="tab">
+                        <i class="bi bi-wallet2"></i> Ví Voucher & Xu (@Model.SavedCouponsCount)
+                    </button>
+                    <button class="nav-link @(Model.ActiveTab == "security" ? "active" : "")" id="tab-security-btn" data-bs-toggle="pill" data-bs-target="#tab-security" type="button" role="tab">
+                        <i class="bi bi-shield-lock-fill"></i> Bảo mật tài khoản
+                    </button>
+                </div>
+
+                <hr class="my-3 text-muted opacity-25">
+
+                <!-- Quick Fast-Checkout & Cart Button -->
+                <a asp-controller="Cart" asp-action="Index" class="btn btn-outline-primary rounded-3 w-100 mb-2 text-start">
+                    <i class="bi bi-cart3 me-2"></i> Mở Giỏ hàng đa thiết bị
+                </a>
+                <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-danger rounded-3 w-100 text-start">
+                        <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất an toàn
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="col-lg-9">
+            <div class="tab-content" id="memberTabContent">
+                
+                <!-- ========================================== -->
+                <!-- TAB 1: DASHBOARD (TỔNG QUAN)               -->
+                <!-- ========================================== -->
+                <div class="tab-pane fade @(Model.ActiveTab == "dashboard" ? "show active" : "")" id="tab-dashboard" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-stars text-primary me-2"></i>Quyền lợi Hạng Thành Viên: @Model.MembershipTierName</h5>
+                        <p class="text-muted small">Cảm ơn bạn đã đồng hành cùng TechZone. Mỗi 100.000 VNĐ chi tiêu tích lũy ngay +1 Xu TechZone (tương đương 1.000 VNĐ tiền mặt cấn trừ trực tiếp vào đơn hàng sau).</p>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded-3 bg-light">
+                                    <div class="fw-bold text-dark mb-1"><i class="bi bi-gem text-info me-1"></i> Kim Cương (5.000+ Xu)</div>
+                                    <div class="small text-muted">Miễn phí ship toàn quốc, quà sinh nhật đặc quyền, phòng chờ VIP & đổi máy mới 1-1 trong 35 ngày.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded-3 bg-light">
+                                    <div class="fw-bold text-dark mb-1"><i class="bi bi-trophy text-warning me-1"></i> Vàng (2.000+ Xu)</div>
+                                    <div class="small text-muted">Voucher 10% dịp sinh nhật, chiết khấu phụ kiện 15%, ưu tiên bảo hành lấy liền 60 phút.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded-3 bg-light">
+                                    <div class="fw-bold text-dark mb-1"><i class="bi bi-award text-secondary me-1"></i> Bạc (500+ Xu)</div>
+                                    <div class="small text-muted">Voucher 5% mừng sinh nhật, giảm 10% sửa chữa ngoài bảo hành, vệ sinh máy miễn phí trọn đời.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Orders preview -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-clock-history text-primary me-2"></i>Đơn hàng gần đây</h5>
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none" onclick="document.getElementById('tab-orders-btn').click();">Xem toàn bộ (@Model.TotalOrdersCount)</button>
+                        </div>
+                        @if (Model.OrdersList.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table align-middle table-hover mb-0">
+                                    <thead class="table-light small text-muted">
+                                        <tr>
+                                            <th>Mã đơn</th>
+                                            <th>Ngày đặt</th>
+                                            <th>Sản phẩm</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Trạng thái</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var ord in Model.OrdersList.Take(3))
+                                        {
+                                            var badgeClass = ord.OrderStatus switch
+                                            {
+                                                OrderStatus.Pending => "bg-warning text-dark",
+                                                OrderStatus.Preparing => "bg-info text-dark",
+                                                OrderStatus.Shipping => "bg-primary text-white",
+                                                OrderStatus.Delivered => "bg-success text-white",
+                                                OrderStatus.Cancelled => "bg-danger text-white",
+                                                _ => "bg-secondary text-white"
+                                            };
+                                            <tr>
+                                                <td class="fw-bold text-primary">#@ord.OrderCode</td>
+                                                <td class="small text-muted">@ord.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td class="small">@(ord.Items.FirstOrDefault()?.ProductName ?? "Thiết bị điện tử") @(ord.Items.Count > 1 ? $"(+{ord.Items.Count - 1} món)" : "")</td>
+                                                <td class="fw-bold text-danger">@ord.TotalAmount.ToString("N0") đ</td>
+                                                <td><span class="badge @badgeClass order-status-badge">@ord.OrderStatus</span></td>
+                                                <td>
+                                                    <a href="/Member?tab=orders&orderCode=@ord.OrderCode" class="btn btn-sm btn-outline-primary rounded-pill px-3">Chi tiết</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                Bạn chưa có đơn đặt hàng nào. Hãy khám phá và mua sắm ngay!
+                                <div class="mt-3">
+                                    <a asp-controller="Catalog" asp-action="Index" class="btn btn-primary rounded-pill px-4">Khám phá sản phẩm</a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- TAB 2: PROFILE & ADDRESSES (HỒ SƠ & ĐỊA CHỈ)-->
+                <!-- ========================================== -->
+                <div class="tab-pane fade @(Model.ActiveTab == "profile" ? "show active" : "")" id="tab-profile" role="tabpanel">
+                    <!-- Profile Edit Form -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-lines-fill text-primary me-2"></i>Thông tin tài khoản (Self-Service)</h5>
+                        <form asp-controller="Member" asp-action="UpdateProfile" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Họ và tên *</label>
+                                    <input type="text" name="fullName" class="form-control" value="@Model.FullName" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Email đăng nhập (Chỉ đọc)</label>
+                                    <input type="email" class="form-control bg-light" value="@Model.Email" readonly />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Số điện thoại liên hệ</label>
+                                    <input type="text" name="phoneNumber" class="form-control" value="@Model.PhoneNumber" placeholder="VD: 0912345678" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Ngày sinh (Nhận quà sinh nhật VIP)</label>
+                                    <input type="date" name="dateOfBirth" class="form-control" value="@(Model.DateOfBirth?.ToString("yyyy-MM-dd"))" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-bold">Link Ảnh đại diện (Avatar URL)</label>
+                                    <input type="url" name="avatarUrl" class="form-control" value="@Model.AvatarUrl" placeholder="https://..." />
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                        <i class="bi bi-check2-circle me-1"></i> Lưu cập nhật hồ sơ
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Address Book -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Sổ địa chỉ nhận hàng cá nhân</h5>
+                            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                                <i class="bi bi-plus-circle me-1"></i> Thêm địa chỉ mới
+                            </button>
+                        </div>
+                        <p class="small text-muted">Quản lý danh sách các điểm nhận máy của bạn để rút ngắn thời gian thanh toán một chạm (1-Click Checkout).</p>
+
+                        @if (Model.Addresses.Any())
+                        {
+                            <div class="row g-3">
+                                @foreach (var addr in Model.Addresses)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="border rounded-3 p-3 position-relative h-100 @(addr.IsDefault ? "border-primary bg-primary-subtle bg-opacity-10" : "bg-white")">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <div class="fw-bold text-dark">
+                                                    @addr.ReceiverName 
+                                                    <span class="badge bg-secondary-subtle text-secondary small ms-1">@addr.AddressType</span>
+                                                    @if (addr.IsDefault)
+                                                    {
+                                                        <span class="badge bg-primary ms-1"><i class="bi bi-check-circle me-1"></i>Mặc định</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="small text-muted mb-2"><i class="bi bi-telephone me-1"></i>@addr.PhoneNumber</div>
+                                            <div class="small text-secondary mb-3"><i class="bi bi-geo-alt me-1"></i>@addr.FullAddress</div>
+                                            
+                                            <div class="d-flex gap-2">
+                                                @if (!addr.IsDefault)
+                                                {
+                                                    <form asp-controller="Member" asp-action="SetDefaultAddress" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="addressId" value="@addr.Id" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary py-1 px-2 rounded-2 small">Đặt mặc định</button>
+                                                    </form>
+                                                }
+                                                <form asp-controller="Member" asp-action="DeleteAddress" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa địa chỉ này?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="addressId" value="@addr.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2 rounded-2 small">Xóa</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-geo-alt fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                Bạn chưa lưu địa chỉ nhận hàng nào vào sổ địa chỉ cá nhân.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- TAB 3: ORDERS & TRACKING (ĐƠN MUA & VẬN CHUYỂN) -->
+                <!-- ========================================== -->
+                <div class="tab-pane fade @(Model.ActiveTab == "orders" ? "show active" : "")" id="tab-orders" role="tabpanel">
+                    
+                    <!-- Selected Order Detail Inspection (If query contains orderCode) -->
+                    @if (Model.SelectedOrder != null)
+                    {
+                        var sel = Model.SelectedOrder;
+                        <div class="card border-primary border-2 shadow-sm rounded-4 p-4 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <span class="badge bg-primary me-2">Đang xem chi tiết</span>
+                                    <h5 class="fw-bold d-inline mb-0">Đơn hàng #@sel.OrderCode</h5>
+                                </div>
+                                <a href="/Member?tab=orders" class="btn btn-sm btn-outline-secondary rounded-pill">Đóng xem chi tiết</a>
+                            </div>
+
+                            <!-- Live Carrier Tracking Bar -->
+                            <div class="bg-light p-3 rounded-4 mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="small fw-bold text-dark"><i class="bi bi-truck text-primary me-1"></i> Đơn vị vận chuyển: @sel.CarrierName</div>
+                                    <div class="small text-muted">Mã vận đơn: <strong>@(string.IsNullOrEmpty(sel.TrackingNumber) ? "Đang chuẩn bị bưu kiện" : sel.TrackingNumber)</strong></div>
+                                </div>
+                                <div class="timeline-steps">
+                                    <div class="timeline-step completed">
+                                        <div class="timeline-icon"><i class="bi bi-check-lg"></i></div>
+                                        <div class="small fw-semibold">Đặt hàng</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">@sel.CreatedAt.ToString("dd/MM HH:mm")</div>
+                                    </div>
+                                    <div class="timeline-step @(sel.OrderStatus >= OrderStatus.Preparing ? "completed" : "")">
+                                        <div class="timeline-icon"><i class="bi bi-box-seam"></i></div>
+                                        <div class="small fw-semibold">Đóng gói & Gán IMEI</div>
+                                    </div>
+                                    <div class="timeline-step @(sel.OrderStatus == OrderStatus.Shipping ? "current" : (sel.OrderStatus >= OrderStatus.Delivered ? "completed" : ""))">
+                                        <div class="timeline-icon"><i class="bi bi-truck"></i></div>
+                                        <div class="small fw-semibold">Đang giao hàng</div>
+                                    </div>
+                                    <div class="timeline-step @(sel.OrderStatus == OrderStatus.Delivered ? "completed" : "")">
+                                        <div class="timeline-icon"><i class="bi bi-house-check"></i></div>
+                                        <div class="small fw-semibold">Đã giao máy</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Items in Order with IMEI/Serial -->
+                            <h6 class="fw-bold mb-2">Danh sách thiết bị & linh phụ kiện trong kiện hàng:</h6>
+                            <div class="table-responsive mb-3">
+                                <table class="table table-bordered align-middle mb-0">
+                                    <thead class="table-light small">
+                                        <tr>
+                                            <th>Sản phẩm</th>
+                                            <th>SKU</th>
+                                            <th>Đơn giá</th>
+                                            <th>Số lượng</th>
+                                            <th>Định danh Serial / IMEI thực nhận</th>
+                                            <th>Thành tiền</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var it in sel.Items)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="fw-bold text-dark">@it.ProductName</div>
+                                                    <div class="small text-muted">@it.VariantName</div>
+                                                </td>
+                                                <td class="small">@it.VariantSku</td>
+                                                <td>@it.UnitPrice.ToString("N0") đ</td>
+                                                <td class="fw-bold text-center">@it.Quantity</td>
+                                                <td>
+                                                    @if (it.AssignedSerialNumbers.Any())
+                                                    {
+                                                        @foreach (var sn in it.AssignedSerialNumbers)
+                                                        {
+                                                            <span class="device-imei-badge d-inline-block me-1 mb-1"><i class="bi bi-upc-scan me-1"></i>@sn</span>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="small text-muted fst-italic">Đang chờ thủ kho quét mã lúc xuất kiện</span>
+                                                    }
+                                                </td>
+                                                <td class="fw-bold text-danger">@it.TotalPrice.ToString("N0") đ</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="5" class="text-end fw-bold">Tổng thanh toán:</td>
+                                            <td class="fw-bold text-danger fs-5">@sel.TotalAmount.ToString("N0") đ</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <!-- Actions for this selected order -->
+                            <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                @if (sel.OrderStatus == OrderStatus.Pending)
+                                {
+                                    <!-- Use Reward Points -->
+                                    <form asp-controller="Member" asp-action="ApplyPointsToOrder" method="post" class="d-flex gap-2 align-items-center">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="orderId" value="@sel.Id" />
+                                        <input type="number" name="pointsToUse" class="form-control form-control-sm" style="width: 130px;" min="1" max="@Model.RewardPoints" placeholder="Số Xu dùng" />
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">Cấn trừ Xu</button>
+                                    </form>
+
+                                    <!-- Cancel Order -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelOrderModal" data-order-id="@sel.Id" data-order-code="@sel.OrderCode">
+                                        <i class="bi bi-x-circle me-1"></i> Hủy đơn hàng này
+                                    </button>
+                                }
+                                @if (sel.OrderStatus == OrderStatus.Shipping)
+                                {
+                                    <form asp-controller="Member" asp-action="ConfirmReceived" method="post" class="d-inline" onsubmit="return confirm('Bạn xác nhận đã nhận máy nguyên vẹn seal từ bưu tá? Hệ thống sẽ kích hoạt tích điểm và bảo hành điện tử.');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="orderId" value="@sel.Id" />
+                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                                            <i class="bi bi-check2-all me-1"></i> Đã nhận máy (Kích hoạt bảo hành)
+                                        </button>
+                                    </form>
+                                }
+                                @if (sel.OrderStatus == OrderStatus.Delivered)
+                                {
+                                    <!-- Request Return RMA -->
+                                    <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#returnRequestModal" data-order-id="@sel.Id" data-order-code="@sel.OrderCode">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i> Yêu cầu đổi trả / Hoàn tiền
+                                    </button>
+                                    <!-- Review Verified Buyer -->
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#reviewModal" data-order-id="@sel.Id" data-product-id="@(sel.Items.FirstOrDefault()?.ProductId ?? "")" data-product-name="@(sel.Items.FirstOrDefault()?.ProductName ?? "")">
+                                        <i class="bi bi-star me-1"></i> Đánh giá sản phẩm đã mua
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Orders List Table -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-receipt-cutoff text-primary me-2"></i>Lịch sử đơn mua cá nhân (Owner-Only)</h5>
+                            <span class="badge bg-light text-dark border">Chống IDOR: Chỉ hiển thị dữ liệu của bạn</span>
+                        </div>
+
+                        @if (Model.OrdersList.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light small">
+                                        <tr>
+                                            <th>Mã đơn</th>
+                                            <th>Ngày đặt</th>
+                                            <th>Thiết bị & Số lượng</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Thanh toán</th>
+                                            <th>Trạng thái</th>
+                                            <th class="text-end">Chi tiết</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var order in Model.OrdersList)
+                                        {
+                                            var badgeClass = order.OrderStatus switch
+                                            {
+                                                OrderStatus.Pending => "bg-warning text-dark",
+                                                OrderStatus.Preparing => "bg-info text-dark",
+                                                OrderStatus.Shipping => "bg-primary text-white",
+                                                OrderStatus.Delivered => "bg-success text-white",
+                                                OrderStatus.Cancelled => "bg-danger text-white",
+                                                _ => "bg-secondary text-white"
+                                            };
+                                            <tr>
+                                                <td>
+                                                    <span class="fw-bold text-primary">#@order.OrderCode</span>
+                                                    @if (order.RequireVatInvoice)
+                                                    {
+                                                        <span class="badge bg-info-subtle text-info d-block mt-1" style="font-size: 0.65rem;">VAT @order.TaxId</span>
+                                                    }
+                                                </td>
+                                                <td class="small text-muted">@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td class="small">
+                                                    @foreach (var it in order.Items.Take(2))
+                                                    {
+                                                        <div>• @it.ProductName (@it.Quantity cái)</div>
+                                                    }
+                                                    @if (order.Items.Count > 2)
+                                                    {
+                                                        <span class="text-muted fst-italic">+@(order.Items.Count - 2) sản phẩm khác...</span>
+                                                    }
+                                                </td>
+                                                <td class="fw-bold text-danger">@order.TotalAmount.ToString("N0") đ</td>
+                                                <td class="small">
+                                                    <span class="badge bg-light text-dark border">@order.PaymentMethod</span>
+                                                    <div class="text-muted" style="font-size: 0.75rem;">@order.PaymentStatus</div>
+                                                </td>
+                                                <td><span class="badge @badgeClass order-status-badge">@order.OrderStatus</span></td>
+                                                <td class="text-end">
+                                                    <a href="/Member?tab=orders&orderCode=@order.OrderCode" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                        <i class="bi bi-eye me-1"></i> Xem
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-basket3 fs-1 d-block mb-3 text-secondary opacity-50"></i>
+                                Bạn chưa có đơn đặt hàng nào trong tài khoản này.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- TAB 4: WARRANTY & SERVICE RMA (BẢO HÀNH)   -->
+                <!-- ========================================== -->
+                <div class="tab-pane fade @(Model.ActiveTab == "warranty" ? "show active" : "")" id="tab-warranty" role="tabpanel">
+                    <!-- Devices with Electronic Warranty -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-shield-check text-success me-2"></i>Thiết bị & Bảo hành điện tử theo IMEI</h5>
+                            <span class="badge bg-success-subtle text-success">@Model.MyWarranties.Count thiết bị đã kích hoạt</span>
+                        </div>
+                        <p class="small text-muted">Hệ thống bảo hành điện tử chính hãng TechZone tự động kích hoạt ngay khi bưu tá giao máy thành công đến tay bạn.</p>
+
+                        @if (Model.MyWarranties.Any())
+                        {
+                            <div class="row g-3">
+                                @foreach (var war in Model.MyWarranties)
+                                {
+                                    var daysRemaining = (war.EndDate - DateTime.UtcNow).Days;
+                                    var isExpired = daysRemaining < 0;
+                                    <div class="col-md-6">
+                                        <div class="border rounded-3 p-3 bg-white h-100 shadow-sm">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="fw-bold text-dark fs-6">@war.ProductName</div>
+                                                @if (!isExpired)
+                                                {
+                                                    <span class="badge bg-success-subtle text-success border border-success rounded-pill px-2 py-1 small">
+                                                        Còn @daysRemaining ngày
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary rounded-pill px-2 py-1 small">Hết hạn bảo hành</span>
+                                                }
+                                            </div>
+                                            <div class="small text-muted mb-1">Mã đơn mua: <strong>#@war.OrderCode</strong></div>
+                                            <div class="small mb-2">
+                                                Số IMEI / Serial: <span class="device-imei-badge fw-bold"><i class="bi bi-upc-scan me-1"></i>@war.SerialNumber</span>
+                                            </div>
+                                            <div class="small text-muted d-flex justify-content-between">
+                                                <span>Kích hoạt: @war.StartDate.ToString("dd/MM/yyyy")</span>
+                                                <span>Hết hạn: @war.EndDate.ToString("dd/MM/yyyy")</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-patch-question fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                Bạn chưa có thiết bị nào đang kích hoạt bảo hành điện tử.
+                            </div>
+                        }
+                    </div>
+
+                    <!-- RMA Service Tickets Tracking -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-tools text-warning me-2"></i>Tiến độ Xử lý Bảo hành & Sửa chữa (RMA Tickets)</h5>
+                            <span class="badge bg-light text-dark border">Cập nhật thời gian thực</span>
+                        </div>
+
+                        @if (Model.MyRmaRequests.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table align-middle table-hover mb-0">
+                                    <thead class="table-light small">
+                                        <tr>
+                                            <th>Mã phiếu RMA</th>
+                                            <th>Ngày tạo</th>
+                                            <th>Thiết bị & Serial</th>
+                                            <th>Lỗi mô tả</th>
+                                            <th>Trạng thái xử lý</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var rma in Model.MyRmaRequests)
+                                        {
+                                            var rmaStatusBadge = rma.Status switch
+                                            {
+                                                RmaStatus.Submitted => "bg-warning text-dark",
+                                                RmaStatus.UnderReview => "bg-info text-dark",
+                                                RmaStatus.Inspecting => "bg-info text-dark",
+                                                RmaStatus.Repairing => "bg-primary text-white",
+                                                RmaStatus.Completed => "bg-success text-white",
+                                                RmaStatus.Rejected => "bg-danger text-white",
+                                                _ => "bg-secondary text-white"
+                                            };
+                                            <tr>
+                                                <td class="fw-bold text-primary">#@rma.RmaCode</td>
+                                                <td class="small text-muted">@rma.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td>
+                                                    <div class="fw-semibold small">@rma.ProductName</div>
+                                                    <span class="device-imei-badge" style="font-size: 0.75rem;">@rma.SerialNumber</span>
+                                                </td>
+                                                <td class="small text-muted">@rma.CustomerDescription</td>
+                                                <td><span class="badge @rmaStatusBadge order-status-badge">@rma.Status</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-wrench-adjustable fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                Bạn không có yêu cầu đổi trả hoặc sửa chữa RMA nào đang xử lý.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- TAB 5: WISHLIST (SẢN PHẨM YÊU THÍCH)       -->
+                <!-- ========================================== -->
+                <div class="tab-pane fade @(Model.ActiveTab == "wishlist" ? "show active" : "")" id="tab-wishlist" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-heart-fill text-danger me-2"></i>Danh sách Sản phẩm Yêu thích</h5>
+                            <span class="badge bg-danger-subtle text-danger">@Model.WishlistProducts.Count sản phẩm</span>
+                        </div>
+                        <p class="small text-muted">Lưu các sản phẩm bạn đang quan tâm để nhận thông báo tự động khi có chương trình Flash Sale hoặc khi có hàng trở lại.</p>
+
+                        @if (Model.WishlistProducts.Any())
+                        {
+                            <div class="row g-3">
+                                @foreach (var prod in Model.WishlistProducts)
+                                {
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border rounded-3 p-3 text-center position-relative shadow-sm">
+                                            <img src="@(string.IsNullOrEmpty(prod.ThumbnailUrl) ? "/images/placeholder.png" : prod.ThumbnailUrl)" class="img-fluid rounded mb-3 mx-auto" style="max-height: 140px; object-fit: contain;" alt="@prod.Name" />
+                                            <h6 class="fw-bold text-dark text-truncate mb-1" title="@prod.Name">@prod.Name</h6>
+                                            <div class="text-danger fw-bold fs-6 mb-3">@prod.Price.ToString("N0") đ</div>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <a href="/Product/Detail/@prod.Id" class="btn btn-sm btn-primary rounded-pill px-3">Xem ngay</a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2" onclick="toggleWishlistInline('@prod.Id')">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-heart fs-1 d-block mb-3 text-secondary opacity-50"></i>
+                                Danh sách yêu thích của bạn đang trống.
+                                <div class="mt-2">
+                                    <a asp-controller="Catalog" asp-action="Index" class="btn btn-outline-primary rounded-pill px-4">Lướt xem sản phẩm hot</a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- TAB 6: WALLET & COUPONS (VÍ VOUCHER & XU)   -->
+                <!-- ========================================== -->
+                <div class="tab-pane fade @(Model.ActiveTab == "wallet" ? "show active" : "")" id="tab-wallet" role="tabpanel">
+                    <!-- Points Balance Box -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-light">
+                        <div class="row align-items-center">
+                            <div class="col-md-7">
+                                <h5 class="fw-bold text-dark mb-1"><i class="bi bi-coin text-warning me-2"></i>Số dư Xu TechZone của bạn</h5>
+                                <p class="small text-muted mb-0">1 Xu = 1.000 VNĐ. Xu tích lũy có thể dùng cấn trừ trực tiếp khi thanh toán đơn hàng mới.</p>
+                            </div>
+                            <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                                <div class="fs-2 fw-bold text-warning">@Model.RewardPoints.ToString("N0") <span class="fs-5 text-dark fw-semibold">Xu</span></div>
+                                <div class="small text-muted">Quy đổi: @((Model.RewardPoints * 1000).ToString("N0")) VNĐ</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Save Coupon Form -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-plus-circle text-primary me-2"></i>Thêm mã giảm giá vào Ví voucher</h6>
+                        <form asp-controller="Member" asp-action="SaveCoupon" method="post" class="row g-2">
+                            @Html.AntiForgeryToken()
+                            <div class="col-md-8">
+                                <input type="text" name="couponCode" class="form-control text-uppercase" placeholder="Nhập mã voucher (VD: TECHZONE500, VIPMEMBER)..." required />
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary rounded-3 w-100">
+                                    <i class="bi bi-bookmark-plus me-1"></i> Lưu vào Ví
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Available TechZone Coupons -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-ticket-perforated text-danger me-2"></i>Voucher đang có hiệu lực tại TechZone</h5>
+                        @if (Model.AvailableCoupons.Any())
+                        {
+                            <div class="row g-3">
+                                @foreach (var c in Model.AvailableCoupons)
+                                {
+                                    var isSaved = Model.SavedCouponCodes.Contains(c.Code.ToUpper());
+                                    <div class="col-md-6">
+                                        <div class="voucher-card p-3 h-100">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="fw-bold fs-6 text-primary">@c.Code</div>
+                                                @if (isSaved)
+                                                {
+                                                    <span class="badge bg-success-subtle text-success small"><i class="bi bi-check-circle me-1"></i>Đã lưu trong Ví</span>
+                                                }
+                                            </div>
+                                            <div class="small text-dark fw-semibold mb-1">@c.Title</div>
+                                            <div class="small text-muted mb-2">Hết hạn: @c.EndDate.ToString("dd/MM/yyyy HH:mm")</div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-danger">Giảm @(c.DiscountType == DiscountType.Percentage ? $"{c.DiscountValue}%" : $"{c.DiscountValue:N0} đ")</span>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="navigator.clipboard.writeText('@c.Code'); alert('Đã copy mã @c.Code');">
+                                                    <i class="bi bi-clipboard me-1"></i> Copy
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-ticket fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                Hiện chưa có mã giảm giá chung nào. Hãy quay lại sau!
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- TAB 7: SECURITY & 2FA (BẢO MẬT & ĐỔI MK)    -->
+                <!-- ========================================== -->
+                <div class="tab-pane fade @(Model.ActiveTab == "security" ? "show active" : "")" id="tab-security" role="tabpanel">
+                    <!-- Change Password -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-key-fill text-primary me-2"></i>Đổi mật khẩu tài khoản</h5>
+                        <form asp-controller="Member" asp-action="ChangePassword" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Mật khẩu hiện tại *</label>
+                                    <input type="password" name="currentPassword" class="form-control" required />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Mật khẩu mới (Tối thiểu 6 ký tự) *</label>
+                                    <input type="password" name="newPassword" class="form-control" minlength="6" required />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Xác nhận mật khẩu mới *</label>
+                                    <input type="password" name="confirmPassword" class="form-control" minlength="6" required />
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                        <i class="bi bi-shield-lock me-1"></i> Cập nhật mật khẩu mới
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Two-Factor Authentication (2FA) -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-shield-check text-success me-2"></i>Xác thực 2 bước (2FA)</h5>
+                            @if (Model.TwoFactorEnabled)
+                            {
+                                <span class="badge bg-success">Đang bật bảo vệ qua @Model.TwoFactorMethod</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Chưa kích hoạt</span>
+                            }
+                        </div>
+                        <p class="small text-muted">Tăng cường an toàn khi đăng nhập hoặc thanh toán đơn hàng có giá trị cao bằng mã OTP gửi về Email/SMS.</p>
+
+                        <form asp-controller="Member" asp-action="Toggle2FA" method="post" class="d-flex align-items-center gap-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="enable" value="@(!Model.TwoFactorEnabled ? "true" : "false")" />
+                            <select name="method" class="form-select form-select-sm" style="width: 140px;">
+                                <option value="Email" selected="@(Model.TwoFactorMethod == "Email")">Qua Email</option>
+                                <option value="SMS" selected="@(Model.TwoFactorMethod == "SMS")">Qua SMS</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm @(Model.TwoFactorEnabled ? "btn-outline-danger" : "btn-success") rounded-pill px-3">
+                                @(Model.TwoFactorEnabled ? "Tắt xác thực 2 bước" : "Kích hoạt 2FA ngay")
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Delete Account Request -->
+                    <div class="card border-0 shadow-sm rounded-4 p-4 border-danger border-opacity-25 bg-danger-subtle bg-opacity-10">
+                        <h5 class="fw-bold text-danger mb-2"><i class="bi bi-exclamation-octagon text-danger me-2"></i>Khu vực Nguy hiểm: Yêu cầu xóa tài khoản</h5>
+                        <p class="small text-muted mb-3">Khi gửi yêu cầu xóa tài khoản, hệ thống sẽ tiến hành rà soát các đơn hàng chưa hoàn tất hoặc công nợ còn lại trong 7 ngày làm việc trước khi xóa vĩnh viễn.</p>
+                        
+                        @if (Model.DeleteRequestedAt.HasValue)
+                        {
+                            <div class="alert alert-warning small mb-0">
+                                <i class="bi bi-clock-history me-1"></i> Bạn đã gửi yêu cầu xóa tài khoản vào ngày: <strong>@Model.DeleteRequestedAt.Value.ToString("dd/MM/yyyy HH:mm")</strong>. Ban Quản Trị đang xử lý.
+                            </div>
+                        }
+                        else
+                        {
+                            <form asp-controller="Member" asp-action="RequestDeleteAccount" method="post" onsubmit="return confirm('CẢNH BÁO: Bạn có chắc chắn muốn gửi yêu cầu xóa vĩnh viễn tài khoản cá nhân này?');">
+                                @Html.AntiForgeryToken()
+                                <div class="row g-2">
+                                    <div class="col-md-9">
+                                        <input type="text" name="reason" class="form-control form-control-sm" placeholder="Nhập lý do muốn xóa tài khoản..." required />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-3 w-100">
+                                            <i class="bi bi-trash3 me-1"></i> Gửi yêu cầu xóa
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODALS SECTION                                                            -->
+<!-- ========================================================================= -->
+
+<!-- 1. Modal Thêm địa chỉ mới -->
+<div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="addAddressModalLabel"><i class="bi bi-geo-alt text-primary me-2"></i>Thêm địa chỉ nhận hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-controller="Member" asp-action="AddAddress" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Họ tên người nhận *</label>
+                        <input type="text" name="receiverName" class="form-control" value="@Model.FullName" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Số điện thoại người nhận *</label>
+                        <input type="text" name="phoneNumber" class="form-control" value="@Model.PhoneNumber" required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label small fw-bold">Tỉnh / TP *</label>
+                            <input type="text" name="province" class="form-control form-control-sm" placeholder="VD: Hồ Chí Minh" required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small fw-bold">Quận / Huyện *</label>
+                            <input type="text" name="district" class="form-control form-control-sm" placeholder="VD: Quận 1" required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small fw-bold">Phường / Xã *</label>
+                            <input type="text" name="ward" class="form-control form-control-sm" placeholder="VD: Bến Nghé" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Địa chỉ chi tiết (Số nhà, đường) *</label>
+                        <input type="text" name="detailAddress" class="form-control" placeholder="Số 123 đường Lê Lợi..." required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Loại địa chỉ</label>
+                            <select name="addressType" class="form-select form-select-sm">
+                                <option value="Home">Nhà riêng</option>
+                                <option value="Office">Văn phòng / Cơ quan</option>
+                            </select>
+                        </div>
+                        <div class="col-6 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="isDefault" value="true" id="isDefaultCheck">
+                                <label class="form-check-label small" for="isDefaultCheck">Đặt làm mặc định</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Lưu địa chỉ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Modal Hủy Đơn Hàng (Pending Only) -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger" id="cancelOrderModalLabel"><i class="bi bi-x-circle me-2"></i>Xác nhận Hủy Đơn Hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-controller="Member" asp-action="CancelOrder" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <input type="hidden" name="orderId" id="cancelModalOrderId" />
+                    <p class="small text-muted mb-3">Bạn đang chuẩn bị hủy đơn hàng <strong id="cancelModalOrderCode"></strong>. Thao tác này sẽ hoàn lại tiền (nếu đã thanh toán) và số lượng tồn kho tự động.</p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Lý do hủy đơn *</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="Đổi ý không muốn mua nữa">Đổi ý không muốn mua nữa</option>
+                            <option value="Tìm thấy giá rẻ hơn ở nơi khác">Tìm thấy giá rẻ hơn ở nơi khác</option>
+                            <option value="Muốn thay đổi địa chỉ hoặc số điện thoại nhận máy">Muốn thay đổi địa chỉ hoặc số điện thoại nhận máy</option>
+                            <option value="Đặt nhầm màu sắc/dung lượng/phiên bản">Đặt nhầm màu sắc/dung lượng/phiên bản</option>
+                            <option value="Thời gian giao hàng lâu hơn dự kiến">Thời gian giao hàng lâu hơn dự kiến</option>
+                            <option value="Lý do cá nhân khác">Lý do cá nhân khác</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Không, giữ đơn</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">Xác nhận hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Modal Đổi Trả / Hoàn Tiền (Return RMA Request) -->
+<div class="modal fade" id="returnRequestModal" tabindex="-1" aria-labelledby="returnRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-warning" id="returnRequestModalLabel"><i class="bi bi-arrow-counterclockwise me-2"></i>Yêu cầu Đổi trả / Hoàn tiền & Bảo hành</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-controller="Member" asp-action="RequestReturn" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <input type="hidden" name="orderId" id="returnModalOrderId" />
+                    <div class="alert alert-info small mb-3">
+                        <i class="bi bi-info-circle me-1"></i> Chính sách TechZone: <strong>1 đổi 1 trong 30 ngày</strong> với lỗi phần cứng từ nhà sản xuất. Vui lòng tải lên video khui kiện/bóc seal để được phê duyệt nhanh trong 24h.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Mã SKU linh kiện/máy cần đổi *</label>
+                            <input type="text" name="sku" class="form-control" placeholder="VD: IP15PM-256-TI" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Số IMEI / Serial trên máy</label>
+                            <input type="text" name="serialNumber" class="form-control" placeholder="15 ký tự IMEI hoặc Serial..." />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Lý do đổi trả / bảo hành *</label>
+                            <select name="reason" class="form-select" required>
+                                <option value="Lỗi phần cứng do nhà sản xuất (Màn hình sọc, Liệt cảm ứng, Mất nguồn)">Lỗi phần cứng do nhà sản xuất (Màn hình sọc, Liệt cảm ứng, Mất nguồn)</option>
+                                <option value="Bể vỡ, móp méo do quá trình vận chuyển">Bể vỡ, móp méo do quá trình vận chuyển</option>
+                                <option value="Giao sai phiên bản màu sắc/dung lượng so với đơn đặt">Giao sai phiên bản màu sắc/dung lượng so với đơn đặt</option>
+                                <option value="Thiếu phụ kiện theo máy (Cáp, Sạc, Cây chọc sim)">Thiếu phụ kiện theo máy (Cáp, Sạc, Cây chọc sim)</option>
+                                <option value="Khác">Lỗi khác...</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Link Video bằng chứng bóc hộp / chứng minh lỗi *</label>
+                            <input type="url" name="evidenceVideoUrl" class="form-control" placeholder="https://drive.google.com/... hoặc https://youtube.com/..." required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Mô tả chi tiết triệu chứng máy gặp phải</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Mô tả cụ thể thời điểm phát sinh lỗi, cách kích hoạt lỗi..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 text-dark fw-bold">Gửi yêu cầu đổi trả</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Modal Đánh Giá Sản Phẩm (Verified Buyer Only) -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-primary" id="reviewModalLabel"><i class="bi bi-star-fill text-warning me-2"></i>Đánh giá Sản phẩm Đã mua</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-controller="Member" asp-action="SubmitVerifiedReview" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <input type="hidden" name="orderId" id="reviewModalOrderId" />
+                    <input type="hidden" name="productId" id="reviewModalProductId" />
+                    
+                    <div class="text-center mb-3">
+                        <div class="fw-bold fs-6 text-dark" id="reviewModalProductName">Sản phẩm</div>
+                        <span class="badge bg-success-subtle text-success small"><i class="bi bi-patch-check-fill me-1"></i>Verified Purchase (Đã xác thực đã mua hàng)</span>
+                    </div>
+
+                    <div class="mb-3 text-center">
+                        <label class="form-label small fw-bold d-block">Chất lượng trải nghiệm</label>
+                        <select name="rating" class="form-select text-center fw-bold text-warning mx-auto" style="max-width: 200px;">
+                            <option value="5" selected>⭐⭐⭐⭐⭐ Tuyệt vời (5 sao)</option>
+                            <option value="4">⭐⭐⭐⭐ Hài lòng (4 sao)</option>
+                            <option value="3">⭐⭐⭐ Bình thường (3 sao)</option>
+                            <option value="2">⭐⭐ Chưa hài lòng (2 sao)</option>
+                            <option value="1">⭐ Rất tệ (1 sao)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Cảm nhận thực tế của bạn *</label>
+                        <textarea name="content" class="form-control" rows="3" placeholder="Chia sẻ về độ mượt, camera, pin hoặc dịch vụ giao hàng..." required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Link Ảnh chụp thực tế sản phẩm (Không bắt buộc)</label>
+                        <input type="url" name="imageUrl" class="form-control" placeholder="https://..." />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Gửi đánh giá</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Modal Handlers
+        const cancelModal = document.getElementById('cancelOrderModal');
+        if (cancelModal) {
+            cancelModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const orderId = button.getAttribute('data-order-id');
+                const orderCode = button.getAttribute('data-order-code');
+                document.getElementById('cancelModalOrderId').value = orderId;
+                document.getElementById('cancelModalOrderCode').textContent = '#' + orderCode;
+            });
+        }
+
+        const returnModal = document.getElementById('returnRequestModal');
+        if (returnModal) {
+            returnModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const orderId = button.getAttribute('data-order-id');
+                document.getElementById('returnModalOrderId').value = orderId;
+            });
+        }
+
+        const reviewModal = document.getElementById('reviewModal');
+        if (reviewModal) {
+            reviewModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const orderId = button.getAttribute('data-order-id');
+                const productId = button.getAttribute('data-product-id');
+                const productName = button.getAttribute('data-product-name');
+                document.getElementById('reviewModalOrderId').value = orderId;
+                document.getElementById('reviewModalProductId').value = productId;
+                document.getElementById('reviewModalProductName').textContent = productName;
+            });
+        }
+
+        // Inline Wishlist Toggle
+        async function toggleWishlistInline(productId) {
+            try {
+                const response = await fetch('/Member/ToggleWishlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(productId)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message || 'Không thể cập nhật danh sách yêu thích');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+}

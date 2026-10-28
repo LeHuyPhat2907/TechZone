@@ -1,0 +1,71 @@
+@model UserProfileDto
+@{
+    ViewData["Title"] = "Hồ Sơ Tài Khoản - TechZone";
+}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 rounded-4 shadow-sm p-4 p-md-5 bg-white mb-4">
+                <div class="d-flex align-items-center gap-4 pb-4 border-bottom mb-4">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2.5rem;">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1">@Model.FullName</h4>
+                        <span class="badge bg-primary text-white me-2">Vai trò: @Model.Role</span>
+                        <span class="badge bg-warning text-dark"><i class="bi bi-coin me-1"></i>@Model.RewardPoints Xu TechZone</span>
+                    </div>
+                </div>
+
+                <div class="row g-3 small mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <span class="text-muted d-block">Địa chỉ Email:</span>
+                            <strong class="text-dark">@Model.Email</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <span class="text-muted d-block">Số điện thoại:</span>
+                            <strong class="text-dark">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cập nhật" : Model.PhoneNumber)</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt text-primary me-2"></i>Sổ Địa Chỉ Giao Hàng</h5>
+                @if (Model.Addresses.Count > 0)
+                {
+                    <div class="d-flex flex-column gap-2 mb-4">
+                        @foreach (var addr in Model.Addresses)
+                        {
+                            <div class="border rounded-3 p-3 bg-light">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong class="text-dark">@addr.ReceiverName - @addr.PhoneNumber</strong>
+                                    @if (addr.IsDefault)
+                                    {
+                                        <span class="badge bg-success small">Mặc định</span>
+                                    }
+                                </div>
+                                <div class="text-muted small">@addr.DetailAddress, @addr.Ward, @addr.District, @addr.Province</div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted small">Bạn chưa lưu địa chỉ giao hàng nào.</p>
+                }
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <a asp-controller="Order" asp-action="MyOrders" class="btn btn-primary rounded-pill px-4">
+                        <i class="bi bi-bag-check me-2"></i>Xem đơn hàng đã mua
+                    </a>
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="bi bi-house me-2"></i>Quay lại trang chủ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

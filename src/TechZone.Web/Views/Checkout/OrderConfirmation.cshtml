@@ -1,0 +1,330 @@
+@model OrderDto
+@{
+    ViewData["Title"] = $"Đặt Hàng Thành Công - Mã Đơn: {Model.OrderCode}";
+}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 rounded-4 shadow-sm p-4 p-md-5 bg-white text-center mb-4">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle-fill text-success display-2"></i>
+                </div>
+                <h3 class="fw-bold text-dark">Đặt Hàng Thành Công!</h3>
+                <p class="text-muted">Cảm ơn bạn đã lựa chọn mua sắm thiết bị công nghệ chính hãng tại <strong>TechZone</strong>.</p>
+
+                <div class="p-3 bg-light rounded-4 d-inline-block mx-auto mb-4 border">
+                    <span class="text-secondary small d-block">Mã đơn hàng của bạn:</span>
+                    <span class="fs-4 fw-bold text-primary">@Model.OrderCode</span>
+                </div>
+
+                <div class="p-3 bg-light rounded-4 d-inline-block mx-auto mb-4 border">
+                    <span class="text-secondary small d-block">Mã đơn hàng của bạn:</span>
+                    <span class="fs-4 fw-bold text-primary">@Model.OrderCode</span>
+                </div>
+
+                @if (TempData["PaymentNotification"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show text-start rounded-3 mb-4 shadow-sm" role="alert">
+                        <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i>
+                        <strong>@TempData["PaymentNotification"]</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @if (Model.PaymentStatus == PaymentStatus.Completed)
+                {
+                    <!-- Trạng thái đã thanh toán trực tuyến thành công -->
+                    <div class="card border-success border-opacity-50 rounded-4 p-4 mb-4 text-start bg-success bg-opacity-10 shadow-sm">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-success text-white rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                                <i class="bi bi-shield-fill-check fs-3"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-success m-0">Đã Thanh Toán Trực Tuyến Thành Công!</h5>
+                                <div class="text-secondary small mt-1">
+                                    Đơn hàng đã được đối soát tự động qua cổng <strong>@Model.PaymentMethod</strong>. Kho vận TechZone sẽ tiến hành xuất kho niêm phong và bàn giao đơn vị vận chuyển ngay lập tức.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (Model.PaymentMethod == PaymentMethod.VnPay)
+                {
+                    <!-- Cổng VNPAY-QR (Ưu tiên số 1 theo khảo sát thị trường VN) -->
+                    <div class="card border-danger border-opacity-50 rounded-4 p-4 mb-4 text-start bg-danger bg-opacity-10 shadow-sm">
+                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-danger border-opacity-25 pb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-danger fs-6 px-2 py-1"><i class="bi bi-qr-code-scan me-1"></i>VNPAY-QR</span>
+                                <h5 class="fw-bold text-danger m-0">Thanh Toán Qua Cổng VNPAY</h5>
+                            </div>
+                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Đang chờ thanh toán</span>
+                        </div>
+                        <p class="small text-secondary mb-3">Mở ứng dụng Ngân hàng (Vietcombank, BIDV, Agribank, VietinBank, Techcombank, VPBank, MB...) hoặc Ví điện tử VNPAY để quét mã VNPAY-QR:</p>
+
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-5 text-center">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=@($"https://techzone.vn/vnpay?order={Model.OrderCode}&amount={Model.TotalAmount}")" alt="VNPAY QR" class="border border-danger border-opacity-25 rounded-3 p-2 bg-white shadow-sm" />
+                                <div class="text-danger small fw-bold mt-1"><i class="bi bi-check2-circle me-1"></i>VNPAY-QR Sandbox Demo</div>
+                            </div>
+                            <div class="col-md-7 small">
+                                <div class="mb-2"><strong>Cổng thanh toán:</strong> <span class="badge bg-danger">VNPAY National Payment Gateway</span></div>
+                                <div class="mb-2"><strong>Mã đơn hàng:</strong> <code class="fs-6 text-danger fw-bold">@Model.OrderCode</code></div>
+                                <div class="mb-2"><strong>Số tiền thanh toán:</strong> <span class="fw-bold text-danger fs-5">@Model.TotalAmount.ToString("N0")₫</span></div>
+                                <div class="mb-3 text-muted"><strong>Hỗ trợ:</strong> 40+ Ngân hàng thương mại Việt Nam & Thẻ quốc tế Visa/Master</div>
+
+                                <!-- Mô phỏng kiểm thử thanh toán Sandbox cho hội đồng/giáo viên -->
+                                <form asp-action="SimulatePaymentSuccess" asp-controller="Checkout" method="post">
+                                    <input type="hidden" name="orderCode" value="@Model.OrderCode" />
+                                    <input type="hidden" name="gateway" value="@PaymentMethod.VnPay" />
+                                    <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3 shadow-sm fw-bold">
+                                        <i class="bi bi-lightning-fill me-1"></i>Mô phỏng Thanh toán Thành công (VNPAY Sandbox)
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (Model.PaymentMethod == PaymentMethod.PayOS)
+                {
+                    <!-- Cổng PayOS (VietQR Napas247) -->
+                    <div class="card border-primary border-opacity-50 rounded-4 p-4 mb-4 text-start bg-primary bg-opacity-10 shadow-sm">
+                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-primary border-opacity-25 pb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary fs-6 px-2 py-1"><i class="bi bi-lightning-charge-fill me-1"></i>PayOS</span>
+                                <h5 class="fw-bold text-primary m-0">Quét Mã VietQR (Napas247)</h5>
+                            </div>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"><i class="bi bi-check-circle me-1"></i>0% Phí Chuyển Khoản</span>
+                        </div>
+                        <p class="small text-secondary mb-3">Mở ứng dụng bất kỳ Ngân hàng nào để quét mã QR chuyển tiền tự động nhận diện nội dung:</p>
+
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-5 text-center">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=@($"https://techzone.vn/pay?order={Model.OrderCode}&amount={Model.TotalAmount}")" alt="VietQR PayOS" class="border rounded-3 p-2 bg-white shadow-sm" />
+                                <div class="text-primary small fw-bold mt-1"><i class="bi bi-qr-code me-1"></i>VietQR Tự Động</div>
+                            </div>
+                            <div class="col-md-7 small">
+                                <div class="mb-2"><strong>Ngân hàng thụ hưởng:</strong> MB Bank (Ngân hàng Quân Đội)</div>
+                                <div class="mb-2"><strong>Số tài khoản:</strong> <code class="fs-6 text-primary fw-bold">0901234567</code></div>
+                                <div class="mb-2"><strong>Chủ tài khoản:</strong> CÔNG TY CỔ PHẦN CÔNG NGHỆ TECHZONE</div>
+                                <div class="mb-2"><strong>Số tiền:</strong> <span class="fw-bold text-danger fs-5">@Model.TotalAmount.ToString("N0")₫</span></div>
+                                <div class="mb-3"><strong>Nội dung chuyển khoản:</strong> <span class="badge bg-dark fs-6">@Model.OrderCode</span></div>
+
+                                <form asp-action="SimulatePaymentSuccess" asp-controller="Checkout" method="post">
+                                    <input type="hidden" name="orderCode" value="@Model.OrderCode" />
+                                    <input type="hidden" name="gateway" value="@PaymentMethod.PayOS" />
+                                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm fw-bold">
+                                        <i class="bi bi-check-lg me-1"></i>Mô phỏng Hoàn tất Chuyển khoản VietQR
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (Model.PaymentMethod == PaymentMethod.MoMo)
+                {
+                    <!-- Ví điện tử MoMo -->
+                    <div class="card rounded-4 p-4 mb-4 text-start shadow-sm" style="background-color: #fcf0f5; border: 1px solid #ae2070;">
+                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge text-white fs-6 px-2 py-1" style="background-color: #ae2070;"><i class="bi bi-wallet-fill me-1"></i>MoMo</span>
+                                <h5 class="fw-bold m-0" style="color: #ae2070;">Thanh Toán Bằng Ví MoMo</h5>
+                            </div>
+                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Chờ thanh toán</span>
+                        </div>
+                        <p class="small text-secondary mb-3">Mở ứng dụng Ví MoMo trên điện thoại để quét mã QR thanh toán nhanh:</p>
+
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-5 text-center">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=@($"2|99|0901234567|TechZone|ketoan@techzone.vn|0|0|{Model.TotalAmount}|{Model.OrderCode}")" alt="MoMo QR" class="border rounded-3 p-2 bg-white shadow-sm" />
+                                <div class="small fw-bold mt-1" style="color: #ae2070;"><i class="bi bi-phone me-1"></i>MoMo QR Code</div>
+                            </div>
+                            <div class="col-md-7 small">
+                                <div class="mb-2"><strong>Đơn vị nhận:</strong> TECHZONE ELECTRONICS VIETNAM</div>
+                                <div class="mb-2"><strong>Số ví MoMo:</strong> <code class="fs-6 fw-bold" style="color: #ae2070;">0901234567</code></div>
+                                <div class="mb-2"><strong>Số tiền:</strong> <span class="fw-bold text-danger fs-5">@Model.TotalAmount.ToString("N0")₫</span></div>
+                                <div class="mb-3"><strong>Lời nhắn:</strong> <span class="badge bg-dark fs-6">@Model.OrderCode</span></div>
+
+                                <form asp-action="SimulatePaymentSuccess" asp-controller="Checkout" method="post">
+                                    <input type="hidden" name="orderCode" value="@Model.OrderCode" />
+                                    <input type="hidden" name="gateway" value="@PaymentMethod.MoMo" />
+                                    <button type="submit" class="btn text-white btn-sm rounded-pill px-3 shadow-sm fw-bold" style="background-color: #ae2070;">
+                                        <i class="bi bi-check2-circle me-1"></i>Mô phỏng Thanh toán qua Ví MoMo
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (Model.PaymentMethod == PaymentMethod.ZaloPay)
+                {
+                    <!-- Ví điện tử ZaloPay -->
+                    <div class="card rounded-4 p-4 mb-4 text-start shadow-sm" style="background-color: #eaf3ff; border: 1px solid #0068ff;">
+                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge text-white fs-6 px-2 py-1" style="background-color: #0068ff;"><i class="bi bi-chat-dots-fill me-1"></i>ZaloPay</span>
+                                <h5 class="fw-bold m-0" style="color: #0068ff;">Thanh Toán Bằng Ví ZaloPay</h5>
+                            </div>
+                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Chờ thanh toán</span>
+                        </div>
+                        <p class="small text-secondary mb-3">Mở ứng dụng Zalo hoặc Ví ZaloPay để quét mã QR thanh toán nhanh:</p>
+
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-5 text-center">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=@($"https://zalopay.vn/pay?order={Model.OrderCode}&amount={Model.TotalAmount}")" alt="ZaloPay QR" class="border rounded-3 p-2 bg-white shadow-sm" />
+                                <div class="small fw-bold mt-1" style="color: #0068ff;"><i class="bi bi-qr-code me-1"></i>ZaloPay QR Code</div>
+                            </div>
+                            <div class="col-md-7 small">
+                                <div class="mb-2"><strong>Đơn vị nhận:</strong> TECHZONE COMMERCE</div>
+                                <div class="mb-2"><strong>Số tiền:</strong> <span class="fw-bold text-danger fs-5">@Model.TotalAmount.ToString("N0")₫</span></div>
+                                <div class="mb-3"><strong>Mã đơn hàng:</strong> <code class="fs-6 fw-bold" style="color: #0068ff;">@Model.OrderCode</code></div>
+
+                                <form asp-action="SimulatePaymentSuccess" asp-controller="Checkout" method="post">
+                                    <input type="hidden" name="orderCode" value="@Model.OrderCode" />
+                                    <input type="hidden" name="gateway" value="@PaymentMethod.ZaloPay" />
+                                    <button type="submit" class="btn text-white btn-sm rounded-pill px-3 shadow-sm fw-bold" style="background-color: #0068ff;">
+                                        <i class="bi bi-check2-circle me-1"></i>Mô phỏng Thanh toán qua Ví ZaloPay
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- COD -->
+                    <div class="card border-0 rounded-4 p-4 mb-4 text-start bg-light shadow-sm">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-secondary text-white rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                <i class="bi bi-cash-stack fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark m-0">Thanh toán khi nhận hàng (COD)</h6>
+                                <div class="text-secondary small mt-1">Quý khách vui lòng chuẩn bị số tiền <strong>@Model.TotalAmount.ToString("N0")₫</strong> khi nhân viên giao hàng liên hệ. Quý khách được quyền kiểm tra hàng hóa, phụ kiện trước khi thanh toán.</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Delivery & Items details -->
+                <div class="text-start border-top pt-4 mb-4">
+                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt text-primary me-2"></i>Thông Tin Nhận Hàng</h6>
+                    <div class="row g-2 small text-secondary">
+                        <div class="col-md-6"><strong>Người nhận:</strong> @Model.CustomerName (@Model.CustomerPhone)</div>
+                        <div class="col-md-6"><strong>Email nhận thông báo:</strong> @Model.CustomerEmail</div>
+                        @if (Model.DeliveryType == "StorePickup")
+                        {
+                            <div class="col-12 p-3 bg-success bg-opacity-10 rounded-3 border border-success border-opacity-25 mt-2">
+                                <span class="badge bg-success mb-1"><i class="bi bi-shop me-1"></i> Nhận Hàng Tại Siêu Thị TechZone</span>
+                                <div class="text-dark fw-bold fs-6">@Model.PickupStoreAddress</div>
+                                <div class="text-muted small mt-1"><i class="bi bi-clock me-1"></i> Hàng sẵn sàng sau 30 phút. Quý khách vui lòng lưu mã đơn và đến cửa hàng nhận máy.</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-12 p-3 bg-primary bg-opacity-10 rounded-3 border border-primary border-opacity-25 mt-2">
+                                <span class="badge bg-primary mb-1"><i class="bi bi-truck me-1"></i> Giao Hàng Tận Nơi Toàn Quốc</span>
+                                <div class="text-dark fw-bold">@Model.FullAddress</div>
+                                <div class="text-muted small mt-1"><i class="bi bi-shield-check me-1"></i> Vận chuyển qua Giao Hàng Nhanh (GHN) - Đóng gói niêm phong TechZone an toàn.</div>
+                            </div>
+                        }
+                        <div class="col-md-6 mt-3"><strong>Phương thức thanh toán:</strong> @Model.PaymentMethod</div>
+                        <div class="col-md-6 mt-3">
+                            <strong>Trạng thái thanh toán:</strong> 
+                            @if (Model.PaymentStatus == PaymentStatus.Completed)
+                            {
+                                <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Đã thanh toán</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Chờ thanh toán</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.RequireVatInvoice)
+                {
+                    <!-- FPT Shop-style B2B Electronic VAT Invoice Card -->
+                    <div class="text-start border-top pt-4 mb-4">
+                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-receipt text-danger me-2"></i>Thông Tin Hóa Đơn Điện Tử (VAT) Doanh Nghiệp</h6>
+                        <div class="p-3 bg-light rounded-4 border small">
+                            <div class="row g-2">
+                                <div class="col-md-8"><strong>Tên doanh nghiệp / Đơn vị:</strong> <span class="text-dark fw-semibold">@Model.CompanyName</span></div>
+                                <div class="col-md-4"><strong>Mã số thuế (MST):</strong> <code class="fw-bold text-primary fs-6">@Model.TaxId</code></div>
+                                <div class="col-12"><strong>Địa chỉ công ty:</strong> @Model.CompanyAddress</div>
+                                <div class="col-12"><strong>Email nhận hóa đơn điện tử:</strong> <span class="text-primary">@Model.InvoiceEmail</span></div>
+                            </div>
+                            <div class="mt-2 text-muted fst-italic">
+                                <i class="bi bi-info-circle me-1 text-primary"></i> Hóa đơn VAT điện tử hợp lệ (chuẩn FRT/TCT) sẽ được tự động gửi qua email đăng ký trong vòng 24 - 48 giờ sau khi đơn hàng giao thành công.
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Items list -->
+                <div class="text-start border-top pt-4 mb-4">
+                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-box-seam text-primary me-2"></i>Sản Phẩm Đã Mua</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle small">
+                            <tbody>
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <img src="@item.ThumbnailUrl" alt="@item.ProductName" style="width: 40px; height: 40px; object-fit: contain;" class="rounded border p-1" />
+                                                <div>
+                                                    <span class="fw-semibold text-dark">@item.ProductName</span>
+                                                    <span class="text-muted d-block small">@item.VariantName x @item.Quantity</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end fw-bold text-danger">@item.TotalPrice.ToString("N0")₫</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="border-top">
+                                <tr>
+                                    <td>Tạm tính:</td>
+                                    <td class="text-end">@Model.Subtotal.ToString("N0")₫</td>
+                                </tr>
+                                @if (Model.OrderDiscountAmount > 0)
+                                {
+                                    <tr class="text-success">
+                                        <td>Giảm giá voucher / Ưu đãi HSSV:</td>
+                                        <td class="text-end">-@Model.OrderDiscountAmount.ToString("N0")₫</td>
+                                    </tr>
+                                }
+                                <tr>
+                                    <td>Phí giao hàng GHN:</td>
+                                    <td class="text-end">@(Model.ShippingFee == 0 ? "Miễn phí" : Model.ShippingFee.ToString("N0") + "₫")</td>
+                                </tr>
+                                <tr class="fw-bold fs-6">
+                                    <td>Tổng thanh toán:</td>
+                                    <td class="text-end text-danger">@Model.TotalAmount.ToString("N0")₫</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tracking Guidance (FPT Shop Style Dual Lookup) -->
+                <div class="alert alert-info border-0 rounded-4 p-3 mb-4 small text-start">
+                    <i class="bi bi-info-circle-fill me-2 text-primary"></i>
+                    <strong>Tra cứu tiện lợi không cần đăng nhập:</strong> Quý khách có thể tra cứu hành trình đơn hàng bất kỳ lúc nào bằng <strong>Mã đơn hàng (@Model.OrderCode)</strong> hoặc chính <strong>Số điện thoại đặt hàng (@Model.CustomerPhone)</strong> trên trang Tra Cứu Đơn Hàng.
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a asp-controller="Order" asp-action="Track" asp-route-orderCode="@Model.OrderCode" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="bi bi-truck me-2"></i>Theo Dõi Vận Đơn Ngay
+                    </a>
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 py-2">
+                        <i class="bi bi-house me-2"></i>Về Trang Chủ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

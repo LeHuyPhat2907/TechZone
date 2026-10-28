@@ -1,0 +1,836 @@
+@model TechZone.Web.Areas.Admin.Models.CustomerManagementViewModel
+@{
+    ViewData["Title"] = "Quản lý Khách hàng & CRM (Mục 1.5)";
+    var isSuperAdmin = User.IsInRole("SuperAdmin");
+}
+
+<div class="container-fluid px-0">
+    <!-- Header Page -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge tz-badge-soft-primary px-2.5 py-1 rounded-pill">
+                    <i class="bi bi-people-fill me-1"></i>Mục 1.5 - Quản Trị Khách Hàng (CRM)
+                </span>
+                <span class="badge bg-dark text-light rounded-pill px-2.5 py-1">customer.view | update | ban | address_manage</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-1">Hồ Sơ Khách Hàng, Điểm Thưởng & Sổ Địa Chỉ</h2>
+            <p class="text-secondary small mb-0">Tra cứu vòng đời khách hàng, cập nhật điểm tích lũy, phân hạng thành viên, xử lý địa chỉ giao hàng và khóa tài khoản vi phạm.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="@Url.Action("Index", "Marketing", new { tab = "coupons" })" class="btn btn-outline-primary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-2xs">
+                <i class="bi bi-tag-fill"></i>
+                <span>Xem Mã Giảm Giá</span>
+            </a>
+            <a href="@Url.Action("Index", "Order")" class="btn btn-light border rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5">
+                <i class="bi bi-cart-check"></i>
+                <span>Đơn Hàng Gần Đây</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Tổng khách hàng</span>
+                    <div class="tz-admin-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; width: 34px; height: 34px;">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-dark">@Model.TotalCustomers.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Tài khoản đăng ký sàn</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Đang hoạt động</span>
+                    <div class="tz-admin-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 34px; height: 34px;">
+                        <i class="bi bi-person-check-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-success">@Model.ActiveCustomers.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Tài khoản hợp lệ</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Tài khoản bị khóa</span>
+                    <div class="tz-admin-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; width: 34px; height: 34px;">
+                        <i class="bi bi-person-x-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-danger">@Model.BannedCustomers.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Vi phạm / Đã ban</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">VIP Kim Cương</span>
+                    <div class="tz-admin-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899; width: 34px; height: 34px;">
+                        <i class="bi bi-gem"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-purple" style="color: #a855f7;">@Model.DiamondCustomers.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">&ge; 5,000 điểm thưởng</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">VIP Vàng (Gold)</span>
+                    <div class="tz-admin-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; width: 34px; height: 34px;">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-warning">@Model.GoldCustomers.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">2,000 - 4,999 điểm</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Tổng điểm CRM</span>
+                    <div class="tz-admin-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; width: 34px; height: 34px;">
+                        <i class="bi bi-coin"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-primary">@Model.TotalRewardPoints.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Điểm tích lũy toàn sàn</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-12 col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0 text-muted ps-3">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control bg-light border-start-0" 
+                           placeholder="Tìm theo họ tên, email, số điện thoại, mã khách hàng..."
+                           value="@Model.SearchQuery" />
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-2">
+                <select name="tier" class="form-select form-select-sm bg-light">
+                    <option value="All" selected="@(Model.TierFilter == "All" ? "selected" : null)">-- Hạng thành viên --</option>
+                    <option value="Diamond" selected="@(Model.TierFilter == "Diamond" ? "selected" : null)">💎 Kim cương (Diamond)</option>
+                    <option value="Gold" selected="@(Model.TierFilter == "Gold" ? "selected" : null)">⭐ Vàng VIP (Gold)</option>
+                    <option value="Silver" selected="@(Model.TierFilter == "Silver" ? "selected" : null)">🥈 Bạc (Silver)</option>
+                    <option value="Bronze" selected="@(Model.TierFilter == "Bronze" ? "selected" : null)">🥉 Đồng (Bronze)</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-2">
+                <select name="status" class="form-select form-select-sm bg-light">
+                    <option value="All" selected="@(Model.StatusFilter == "All" ? "selected" : null)">-- Trạng thái --</option>
+                    <option value="Active" selected="@(Model.StatusFilter == "Active" ? "selected" : null)">Đang hoạt động</option>
+                    <option value="Banned" selected="@(Model.StatusFilter == "Banned" ? "selected" : null)">Bị khóa (Banned)</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold flex-fill">
+                    <i class="bi bi-funnel-fill me-1"></i>Lọc Danh Sách
+                </button>
+                <a href="@Url.Action("Index", "Customer")" class="btn btn-sm btn-light border rounded-pill px-3">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Customer Table -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.04em;">
+                        <th class="ps-3 py-3">Hồ Sơ Khách Hàng</th>
+                        <th>Liên Hệ & Email</th>
+                        <th>Hạng Hội Viên & Điểm</th>
+                        <th>Chi Tiêu & Đơn Hàng</th>
+                        <th>Địa Chỉ Mặc Định</th>
+                        <th>Trạng Thái</th>
+                        <th class="text-end pe-3">Thao Tác Quản Trị</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Customers.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-people fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                Không tìm thấy khách hàng nào thỏa mãn điều kiện lọc.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var c in Model.Customers)
+                        {
+                            var u = c.User;
+                            var defaultAddr = u.Addresses.FirstOrDefault(a => a.IsDefault) ?? u.Addresses.FirstOrDefault();
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center gap-2.5">
+                                        <div class="rounded-circle text-white fw-bold d-flex align-items-center justify-content-center shadow-2xs flex-shrink-0"
+                                             style="width: 40px; height: 40px; background: linear-gradient(135deg, #0284c7, #2563eb); font-size: 0.95rem;">
+                                            @(string.IsNullOrEmpty(u.FullName) ? "U" : u.FullName.Substring(0, 1).ToUpper())
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-1.5">
+                                                <span>@u.FullName</span>
+                                                @if (!string.IsNullOrEmpty(u.AdminNotes))
+                                                {
+                                                    <span class="badge bg-light text-secondary border rounded-pill" title="Ghi chú CSKH: @u.AdminNotes" style="font-size: 0.68rem;">
+                                                        <i class="bi bi-sticky-fill text-warning"></i> Note
+                                                    </span>
+                                                }
+                                            </div>
+                                            <div class="text-muted font-monospace" style="font-size: 0.72rem;">ID: @u.Id</div>
+                                            <div class="text-muted" style="font-size: 0.7rem;">Ngày tham gia: @u.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small text-dark fw-medium"><i class="bi bi-envelope me-1.5 text-secondary"></i>@u.Email</div>
+                                    <div class="small text-muted"><i class="bi bi-telephone me-1.5 text-secondary"></i>@(u.PhoneNumber ?? "Chưa có SĐT")</div>
+                                </td>
+                                <td>
+                                    <div class="mb-1">
+                                        @if (u.RewardPoints >= 5000)
+                                        {
+                                            <span class="badge rounded-pill px-2.5 py-1 text-white shadow-2xs" style="background: linear-gradient(135deg, #a855f7, #6366f1);">
+                                                <i class="bi bi-gem me-1"></i>Kim Cương (Diamond)
+                                            </span>
+                                        }
+                                        else if (u.RewardPoints >= 2000)
+                                        {
+                                            <span class="badge bg-warning text-dark rounded-pill px-2.5 py-1 shadow-2xs">
+                                                <i class="bi bi-star-fill me-1"></i>Vàng VIP (Gold)
+                                            </span>
+                                        }
+                                        else if (u.RewardPoints >= 500)
+                                        {
+                                            <span class="badge tz-badge-soft-primary rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-award me-1"></i>Bạc (Silver)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-shield me-1"></i>Đồng (Bronze)
+                                            </span>
+                                        }
+                                    </div>
+                                    <div class="fw-bold text-primary font-monospace fs-6">
+                                        @u.RewardPoints.ToString("N0") <span class="fw-normal text-muted small" style="font-size: 0.75rem;">điểm</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small fw-bold text-dark">@c.TotalSpent.ToString("N0")₫</div>
+                                    <div class="small text-muted" style="font-size: 0.75rem;">
+                                        <span>@c.TotalOrders đơn hàng</span>
+                                        @if (c.LastOrderDate.HasValue)
+                                        {
+                                            <span> &bull; Gần nhất: @c.LastOrderDate.Value.ToLocalTime().ToString("dd/MM/yy")</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (defaultAddr != null)
+                                    {
+                                        <div class="small text-dark text-truncate" style="max-width: 230px;" title="@defaultAddr.FullAddress">
+                                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>@defaultAddr.FullAddress
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">Người nhận: @defaultAddr.ReceiverName (@defaultAddr.PhoneNumber)</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small fst-italic">Chưa thiết lập địa chỉ</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (u.IsActive)
+                                    {
+                                        <span class="badge tz-badge-soft-success rounded-pill px-2.5 py-1">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Hoạt động
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge tz-badge-soft-danger rounded-pill px-2.5 py-1" role="button" 
+                                              data-bs-toggle="modal" data-bs-target="#viewBanReasonModal"
+                                              data-cust-name="@u.FullName"
+                                              data-ban-reason="@u.BannedReason"
+                                              data-ban-date="@(u.BannedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "N/A")"
+                                              data-ban-by="@(u.BannedBy ?? "Admin")">
+                                            <i class="bi bi-slash-circle-fill me-1"></i>Bị khóa (Banned)
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-end pe-3">
+                                    <div class="d-inline-flex gap-1.5 align-items-center">
+                                        <!-- customer.address_manage -->
+                                        <button type="button" class="btn btn-xs btn-outline-info rounded-pill px-2.5 py-1 d-flex align-items-center gap-1"
+                                                data-bs-toggle="modal" data-bs-target="#customerAddressModal"
+                                                data-cust-id="@u.Id"
+                                                data-cust-name="@u.FullName">
+                                            <i class="bi bi-geo-alt"></i>
+                                            <span>Sổ Đ/C (@u.Addresses.Count)</span>
+                                        </button>
+
+                                        <!-- customer.update -->
+                                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1"
+                                                data-bs-toggle="modal" data-bs-target="#updateCustomerModal"
+                                                data-cust-id="@u.Id"
+                                                data-cust-name="@u.FullName"
+                                                data-cust-phone="@(u.PhoneNumber ?? "")"
+                                                data-cust-notes="@(u.AdminNotes ?? "")"
+                                                title="Sửa hồ sơ khách">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+
+                                        <!-- Điểm thưởng -->
+                                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1"
+                                                data-bs-toggle="modal" data-bs-target="#adjustPointsModal"
+                                                data-cust-id="@u.Id"
+                                                data-cust-name="@u.FullName"
+                                                data-points="@u.RewardPoints"
+                                                title="Điều chỉnh điểm thưởng">
+                                            <i class="bi bi-plus-slash-minus"></i>
+                                        </button>
+
+                                        <!-- customer.ban -->
+                                        @if (u.IsActive)
+                                        {
+                                            <button type="button" class="btn btn-xs btn-outline-danger rounded-pill px-2 py-1"
+                                                    data-bs-toggle="modal" data-bs-target="#banCustomerModal"
+                                                    data-cust-id="@u.Id"
+                                                    data-cust-name="@u.FullName"
+                                                    title="Khóa tài khoản vi phạm">
+                                                <i class="bi bi-lock-fill"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="UnbanCustomer" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="customerId" value="@u.Id" />
+                                                <button type="submit" class="btn btn-xs btn-outline-success rounded-pill px-2 py-1" title="Mở khóa tài khoản">
+                                                    <i class="bi bi-unlock-fill"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="d-flex justify-content-center mb-4">
+            <ul class="pagination pagination-sm gap-1 mb-0">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-3" href="@Url.Action("Index", "Customer", new { page = Model.Page - 1, search = Model.SearchQuery, tier = Model.TierFilter, status = Model.StatusFilter })">
+                        &laquo; Trước
+                    </a>
+                </li>
+                @for (int p = 1; p <= Model.TotalPages; p++)
+                {
+                    <li class="page-item @(p == Model.Page ? "active" : "")">
+                        <a class="page-link rounded-pill px-3" href="@Url.Action("Index", "Customer", new { page = p, search = Model.SearchQuery, tier = Model.TierFilter, status = Model.StatusFilter })">
+                            @p
+                        </a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-3" href="@Url.Action("Index", "Customer", new { page = Model.Page + 1, search = Model.SearchQuery, tier = Model.TierFilter, status = Model.StatusFilter })">
+                        Sau &raquo;
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: CUSTOMER ADDRESS MANAGEMENT (customer.address_manage) -->
+<!-- ============================================================== -->
+<div class="modal fade" id="customerAddressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-light border-bottom py-3 px-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark mb-0">
+                        <i class="bi bi-geo-alt-fill text-danger me-1.5"></i>Sổ Địa Chỉ Nhận Hàng Khách Hàng
+                    </h5>
+                    <span class="text-muted small" id="addrModalCustomerName">Đang tải thông tin...</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="fw-semibold text-secondary small text-uppercase">Danh sách địa chỉ giao nhận đã lưu</div>
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 d-flex align-items-center gap-1" id="btnToggleNewAddressForm">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Thêm Địa Chỉ Mới</span>
+                    </button>
+                </div>
+
+                <!-- FORM: Add or Edit Address -->
+                <div class="card border rounded-3 p-3 bg-light mb-3 d-none" id="addressFormCard">
+                    <form asp-action="SaveAddress" method="post" id="customerAddressForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="CustomerId" id="formAddrCustomerId" />
+                        <input type="hidden" name="AddressId" id="formAddrAddressId" />
+
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <span class="fw-bold small text-dark" id="addressFormTitle">Thêm địa chỉ giao hàng</span>
+                            <button type="button" class="btn btn-link btn-sm text-secondary p-0" id="btnCancelAddressForm">Đóng lại</button>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">Tên người nhận <span class="text-danger">*</span></label>
+                                <input type="text" name="ReceiverName" id="formAddrReceiver" class="form-control form-control-sm rounded-3" placeholder="VD: Nguyễn Văn A" required />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">Số điện thoại liên hệ <span class="text-danger">*</span></label>
+                                <input type="text" name="PhoneNumber" id="formAddrPhone" class="form-control form-control-sm rounded-3" placeholder="VD: 0901234567" required />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label small fw-semibold text-dark mb-1">Tỉnh / Thành Phố</label>
+                                <input type="text" name="Province" id="formAddrProvince" class="form-control form-control-sm rounded-3" placeholder="VD: TP. Hồ Chí Minh" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label small fw-semibold text-dark mb-1">Quận / Huyện</label>
+                                <input type="text" name="District" id="formAddrDistrict" class="form-control form-control-sm rounded-3" placeholder="VD: Quận 1" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label small fw-semibold text-dark mb-1">Phường / Xã</label>
+                                <input type="text" name="Ward" id="formAddrWard" class="form-control form-control-sm rounded-3" placeholder="VD: Phường Bến Nghé" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1">Địa chỉ chi tiết (Số nhà, tên đường, tòa nhà) <span class="text-danger">*</span></label>
+                                <input type="text" name="DetailAddress" id="formAddrDetail" class="form-control form-control-sm rounded-3" placeholder="VD: Tòa nhà Bitexco, 2 Hải Triều" required />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">Loại địa chỉ</label>
+                                <select name="AddressType" id="formAddrType" class="form-select form-select-sm rounded-3">
+                                    <option value="Home">Nhà riêng / Căn hộ</option>
+                                    <option value="Office">Văn phòng / Cơ quan</option>
+                                    <option value="Other">Địa chỉ khác</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6 d-flex align-items-center mt-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="IsDefault" value="true" class="form-check-input" id="formAddrIsDefault" />
+                                    <label class="form-check-label small fw-semibold text-dark" for="formAddrIsDefault">
+                                        Đặt làm địa chỉ nhận hàng mặc định
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" id="btnCancelAddressForm2">Hủy</button>
+                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 fw-semibold">
+                                <i class="bi bi-save me-1"></i>Lưu Địa Chỉ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ADDRESS LIST CONTAINER -->
+                <div id="addressListContainer">
+                    <div class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
+                        <p class="small mb-0">Đang tải danh bạ địa chỉ của khách hàng...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top py-2.5 px-4 bg-light">
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng Sổ Địa Chỉ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: UPDATE CUSTOMER PROFILE (customer.update) -->
+<!-- ============================================================== -->
+<div class="modal fade" id="updateCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="UpdateCustomer" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="CustomerId" id="modalUpdateCustId" />
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Cập Nhật Hồ Sơ Khách Hàng</h5>
+                        <span class="text-muted small">Can thiệp chỉnh sửa thông tin liên hệ và ghi chú CSKH</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Họ và tên khách hàng <span class="text-danger">*</span></label>
+                        <input type="text" name="FullName" id="modalUpdateCustName" class="form-control rounded-3" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Số điện thoại liên hệ</label>
+                        <input type="text" name="PhoneNumber" id="modalUpdateCustPhone" class="form-control rounded-3" placeholder="VD: 0901234567" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Ghi chú nghiệp vụ CSKH (Nội bộ)</label>
+                        <textarea name="AdminNotes" id="modalUpdateCustNotes" class="form-control rounded-3" rows="3" placeholder="VD: Khách hàng thân thiết VIP hoặc cần hỗ trợ giao ngoài giờ hành chính..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-save me-1"></i>Lưu Thay Đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: ADJUST REWARD POINTS -->
+<!-- ============================================================== -->
+<div class="modal fade" id="adjustPointsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="AdjustPoints" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="CustomerId" id="modalPointsCustId" />
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Điều Chỉnh Điểm Thưởng CRM</h5>
+                        <span class="text-muted small" id="modalPointsHeader"></span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Số điểm cộng / trừ (+ hoặc -) <span class="text-danger">*</span></label>
+                        <input type="number" name="PointsDelta" class="form-control rounded-3" placeholder="VD: +200 hoặc -50" required />
+                        <span class="text-muted small">Quy tắc phân hạng: Bạc (&ge;500đ) | Vàng (&ge;2000đ) | Kim Cương (&ge;5000đ)</span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Lý do điều chỉnh</label>
+                        <input type="text" name="Reason" class="form-control rounded-3" placeholder="VD: Bù điểm sự cố vận chuyển hoặc ưu đãi sinh nhật" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-coin me-1"></i>Cập Nhật Điểm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: BAN CUSTOMER (customer.ban) -->
+<!-- ============================================================== -->
+<div class="modal fade" id="banCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="BanCustomer" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="CustomerId" id="modalBanCustId" />
+                <div class="modal-header bg-danger text-white py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0">
+                            <i class="bi bi-shield-slash-fill me-1.5"></i>Khóa Tài Khoản Vi Phạm (Ban)
+                        </h5>
+                        <span class="text-white-50 small" id="modalBanHeader"></span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning border-0 small rounded-3 mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        Khi khóa tài khoản, khách hàng sẽ không thể đăng nhập, sử dụng voucher, đặt đơn hàng hoặc tích điểm trên TechZone.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Lý do khóa tài khoản <span class="text-danger">*</span></label>
+                        <textarea name="Reason" class="form-control rounded-3" rows="3" placeholder="VD: Gian lận tạo tài khoản ảo gom mã voucher, bom hàng liên tục, vi phạm quy định sàn..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-lock-fill me-1"></i>Xác Nhận Khóa Tài Khoản
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: VIEW BAN REASON DETAILS -->
+<!-- ============================================================== -->
+<div class="modal fade" id="viewBanReasonModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-light border-bottom py-3 px-4">
+                <h5 class="modal-title fw-bold text-dark mb-0">
+                    <i class="bi bi-info-circle-fill text-danger me-1.5"></i>Chi Tiết Vi Phạm Khóa Tài Khoản
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <span class="text-secondary small fw-semibold d-block">Khách hàng:</span>
+                    <div class="fw-bold fs-6 text-dark" id="viewBanCustName"></div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-secondary small fw-semibold d-block">Lý do khóa:</span>
+                    <div class="p-3 bg-light rounded-3 text-danger fw-medium" id="viewBanReasonText"></div>
+                </div>
+                <div class="row g-2 text-muted small">
+                    <div class="col-6">
+                        <span>Thời điểm khóa:</span>
+                        <div class="fw-semibold text-dark" id="viewBanDate"></div>
+                    </div>
+                    <div class="col-6">
+                        <span>Nhân viên thực hiện:</span>
+                        <div class="fw-semibold text-dark" id="viewBanBy"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top py-2.5 px-4">
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Adjust points modal
+        const adjustPointsModal = document.getElementById('adjustPointsModal');
+        if (adjustPointsModal) {
+            adjustPointsModal.addEventListener('show.bs.modal', function (event) {
+                const btn = event.relatedTarget;
+                document.getElementById('modalPointsCustId').value = btn.getAttribute('data-cust-id');
+                document.getElementById('modalPointsHeader').innerText = `Khách: ${btn.getAttribute('data-cust-name')} (Hiện có: ${btn.getAttribute('data-points')} điểm)`;
+            });
+        }
+
+        // Update customer profile modal
+        const updateCustomerModal = document.getElementById('updateCustomerModal');
+        if (updateCustomerModal) {
+            updateCustomerModal.addEventListener('show.bs.modal', function (event) {
+                const btn = event.relatedTarget;
+                document.getElementById('modalUpdateCustId').value = btn.getAttribute('data-cust-id');
+                document.getElementById('modalUpdateCustName').value = btn.getAttribute('data-cust-name');
+                document.getElementById('modalUpdateCustPhone').value = btn.getAttribute('data-cust-phone');
+                document.getElementById('modalUpdateCustNotes').value = btn.getAttribute('data-cust-notes');
+            });
+        }
+
+        // Ban customer modal
+        const banCustomerModal = document.getElementById('banCustomerModal');
+        if (banCustomerModal) {
+            banCustomerModal.addEventListener('show.bs.modal', function (event) {
+                const btn = event.relatedTarget;
+                document.getElementById('modalBanCustId').value = btn.getAttribute('data-cust-id');
+                document.getElementById('modalBanHeader').innerText = `Tài khoản: ${btn.getAttribute('data-cust-name')}`;
+            });
+        }
+
+        // View ban reason modal
+        const viewBanReasonModal = document.getElementById('viewBanReasonModal');
+        if (viewBanReasonModal) {
+            viewBanReasonModal.addEventListener('show.bs.modal', function (event) {
+                const btn = event.relatedTarget;
+                document.getElementById('viewBanCustName').innerText = btn.getAttribute('data-cust-name');
+                document.getElementById('viewBanReasonText').innerText = btn.getAttribute('data-ban-reason') || 'Không có ghi chú lý do chi tiết.';
+                document.getElementById('viewBanDate').innerText = btn.getAttribute('data-ban-date') || 'N/A';
+                document.getElementById('viewBanBy').innerText = btn.getAttribute('data-ban-by') || 'Hệ thống';
+            });
+        }
+
+        // Customer Address Management Modal (customer.address_manage)
+        const customerAddressModal = document.getElementById('customerAddressModal');
+        let currentCustomerId = '';
+        let currentCustomerName = '';
+
+        if (customerAddressModal) {
+            customerAddressModal.addEventListener('show.bs.modal', function (event) {
+                const btn = event.relatedTarget;
+                currentCustomerId = btn.getAttribute('data-cust-id');
+                currentCustomerName = btn.getAttribute('data-cust-name');
+
+                document.getElementById('addrModalCustomerName').innerText = `Khách hàng: ${currentCustomerName} (Mã: ${currentCustomerId})`;
+                document.getElementById('formAddrCustomerId').value = currentCustomerId;
+
+                // Reset form state
+                hideAddressForm();
+                loadCustomerAddresses(currentCustomerId);
+            });
+        }
+
+        // Toggle address form
+        const btnToggleNewAddressForm = document.getElementById('btnToggleNewAddressForm');
+        const addressFormCard = document.getElementById('addressFormCard');
+        const btnCancelAddressForm = document.getElementById('btnCancelAddressForm');
+        const btnCancelAddressForm2 = document.getElementById('btnCancelAddressForm2');
+
+        function showAddressForm(addr = null) {
+            addressFormCard.classList.remove('d-none');
+            document.getElementById('formAddrCustomerId').value = currentCustomerId;
+
+            if (addr) {
+                document.getElementById('addressFormTitle').innerText = 'Chỉnh sửa địa chỉ giao hàng';
+                document.getElementById('formAddrAddressId').value = addr.id || addr.Id;
+                document.getElementById('formAddrReceiver').value = addr.receiverName || addr.ReceiverName || '';
+                document.getElementById('formAddrPhone').value = addr.phoneNumber || addr.PhoneNumber || '';
+                document.getElementById('formAddrProvince').value = addr.province || addr.Province || '';
+                document.getElementById('formAddrDistrict').value = addr.district || addr.District || '';
+                document.getElementById('formAddrWard').value = addr.ward || addr.Ward || '';
+                document.getElementById('formAddrDetail').value = addr.detailAddress || addr.DetailAddress || '';
+                document.getElementById('formAddrType').value = addr.addressType || addr.AddressType || 'Home';
+                document.getElementById('formAddrIsDefault').checked = addr.isDefault || addr.IsDefault || false;
+            } else {
+                document.getElementById('addressFormTitle').innerText = 'Thêm địa chỉ giao nhận mới';
+                document.getElementById('formAddrAddressId').value = '';
+                document.getElementById('formAddrReceiver').value = currentCustomerName;
+                document.getElementById('formAddrPhone').value = '';
+                document.getElementById('formAddrProvince').value = '';
+                document.getElementById('formAddrDistrict').value = '';
+                document.getElementById('formAddrWard').value = '';
+                document.getElementById('formAddrDetail').value = '';
+                document.getElementById('formAddrType').value = 'Home';
+                document.getElementById('formAddrIsDefault').checked = false;
+            }
+        }
+
+        function hideAddressForm() {
+            addressFormCard.classList.add('d-none');
+            document.getElementById('customerAddressForm').reset();
+            document.getElementById('formAddrAddressId').value = '';
+        }
+
+        if (btnToggleNewAddressForm) btnToggleNewAddressForm.addEventListener('click', () => showAddressForm());
+        if (btnCancelAddressForm) btnCancelAddressForm.addEventListener('click', hideAddressForm);
+        if (btnCancelAddressForm2) btnCancelAddressForm2.addEventListener('click', hideAddressForm);
+
+        async function loadCustomerAddresses(custId) {
+            const container = document.getElementById('addressListContainer');
+            container.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
+                    <p class="small mb-0">Đang tải danh bạ địa chỉ...</p>
+                </div>
+            `;
+
+            try {
+                const res = await fetch(`/Admin/Customer/GetAddresses?customerId=${custId}`);
+                const data = await res.json();
+
+                if (!data.success || !data.addresses || data.addresses.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-4 border rounded-3 bg-light text-muted">
+                            <i class="bi bi-geo-alt fs-2 d-block mb-1 text-secondary opacity-50"></i>
+                            <div class="fw-semibold">Khách hàng chưa lưu địa chỉ giao nhận nào.</div>
+                            <span class="small">Bấm nút "Thêm Địa Chỉ Mới" phía trên để thiết lập địa chỉ cho khách.</span>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '<div class="d-flex flex-column gap-2.5">';
+                data.addresses.forEach((a, idx) => {
+                    const isDef = a.isDefault || a.IsDefault;
+                    const addrTypeBadge = (a.addressType || a.AddressType) === 'Office' 
+                        ? '<span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5" style="font-size:0.7rem;"><i class="bi bi-building me-1"></i>Văn phòng</span>'
+                        : '<span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5" style="font-size:0.7rem;"><i class="bi bi-house me-1"></i>Nhà riêng</span>';
+
+                    html += `
+                        <div class="card border rounded-3 p-3 ${isDef ? 'border-primary bg-primary-subtle bg-opacity-10' : 'bg-white'} shadow-2xs">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-2">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="fw-bold text-dark">${a.receiverName || a.ReceiverName}</span>
+                                        <span class="text-muted small">&bull; ${a.phoneNumber || a.PhoneNumber}</span>
+                                        ${addrTypeBadge}
+                                        ${isDef ? '<span class="badge bg-primary rounded-pill px-2 py-0.5" style="font-size:0.68rem;"><i class="bi bi-star-fill me-1"></i>Mặc định</span>' : ''}
+                                    </div>
+                                    <div class="small text-secondary mb-1">
+                                        <i class="bi bi-geo-alt-fill text-danger me-1"></i>${a.fullAddress || a.FullAddress}
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                                    ${!isDef ? `
+                                        <form action="/Admin/Customer/SetDefaultAddress" method="post" class="d-inline">
+                                            <input type="hidden" name="__RequestVerificationToken" value="${document.querySelector('input[name="__RequestVerificationToken"]').value}" />
+                                            <input type="hidden" name="customerId" value="${custId}" />
+                                            <input type="hidden" name="addressId" value="${a.id || a.Id}" />
+                                            <button type="submit" class="btn btn-xs btn-outline-primary rounded-pill px-2.5" title="Đặt làm địa chỉ nhận hàng mặc định">
+                                                Đặt mặc định
+                                            </button>
+                                        </form>
+                                    ` : ''}
+                                    <button type="button" class="btn btn-xs btn-light border rounded-pill px-2 btn-edit-addr" 
+                                            data-addr='${JSON.stringify(a).replace(/'/g, "&apos;")}' title="Sửa địa chỉ">
+                                        <i class="bi bi-pencil"></i> Sửa
+                                    </button>
+                                    <form action="/Admin/Customer/DeleteAddress" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa địa chỉ này?');">
+                                        <input type="hidden" name="__RequestVerificationToken" value="${document.querySelector('input[name="__RequestVerificationToken"]').value}" />
+                                        <input type="hidden" name="customerId" value="${custId}" />
+                                        <input type="hidden" name="addressId" value="${a.id || a.Id}" />
+                                        <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2" title="Xóa địa chỉ">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+
+                // Bind edit button events
+                container.querySelectorAll('.btn-edit-addr').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const addrData = JSON.parse(this.getAttribute('data-addr'));
+                        showAddressForm(addrData);
+                    });
+                });
+
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="alert alert-danger small rounded-3">
+                        <i class="bi bi-exclamation-octagon me-1"></i>Không thể tải danh sách địa chỉ. Vui lòng thử lại.
+                    </div>
+                `;
+            }
+        }
+    </script>
+}

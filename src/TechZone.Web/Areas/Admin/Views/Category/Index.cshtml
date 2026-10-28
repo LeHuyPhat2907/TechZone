@@ -1,0 +1,598 @@
+@model TechZone.Web.Areas.Admin.Models.CategoryManagementViewModel
+@{
+    ViewData["Title"] = "Quản lý Danh mục & Thương hiệu";
+    var isSuperAdmin = User.IsInRole("SuperAdmin");
+}
+
+<div class="container-fluid px-0">
+    <!-- Header Page -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge tz-badge-soft-primary px-2.5 py-1 rounded-pill">
+                    <i class="bi bi-diagram-3-fill me-1"></i>Catalog Management (Mục 1.1)
+                </span>
+                <span class="badge bg-dark text-light rounded-pill px-2.5 py-1">category.view | create | update | delete</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-1">Quản Lý Danh Mục Thiết Bị & Hãng Sản Xuất</h2>
+            <p class="text-secondary small mb-0">Cấu hình cây phân cấp sản phẩm (Điện thoại, Laptop, Phụ kiện, Linh kiện...), gán danh mục cha - con và đối tác thương hiệu.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/Admin/Product" class="btn btn-outline-secondary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-2xs">
+                <i class="bi bi-box-seam"></i>
+                <span>Xem Sản Phẩm</span>
+            </a>
+            @if (isSuperAdmin)
+            {
+                <button type="button" class="btn btn-outline-primary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-2xs" data-bs-toggle="modal" data-bs-target="#createBrandModal">
+                    <i class="bi bi-award-fill"></i>
+                    <span>Thêm Hãng Sản Xuất</span>
+                </button>
+                <button type="button" class="btn btn-primary rounded-pill px-3.5 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-sm" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <span class="fw-semibold">Thêm Danh Mục Mới</span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-2-4" style="flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Tổng danh mục</span>
+                    <div class="tz-admin-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; width: 34px; height: 34px;">
+                        <i class="bi bi-grid-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-dark">@Model.TotalCategories.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Bao gồm cả cấp 1 và cấp 2</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2-4" style="flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Danh mục gốc (Cấp 1)</span>
+                    <div class="tz-admin-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 34px; height: 34px;">
+                        <i class="bi bi-folder-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-success">@Model.RootCategoriesCount.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Điện thoại, Laptop, Tablet...</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2-4" style="flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Danh mục con (Cấp 2)</span>
+                    <div class="tz-admin-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; width: 34px; height: 34px;">
+                        <i class="bi bi-diagram-2"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-warning">@Model.SubCategoriesCount.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Gaming, Văn phòng, Apple...</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2-4" style="flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Hãng sản xuất</span>
+                    <div class="tz-admin-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; width: 34px; height: 34px;">
+                        <i class="bi bi-award-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-primary">@Model.TotalBrands.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Apple, Asus, Dell, Samsung...</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2-4" style="flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Tổng sản phẩm gán</span>
+                    <div class="tz-admin-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899; width: 34px; height: 34px;">
+                        <i class="bi bi-box-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-danger">@Model.TotalProductsAcrossCategories.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Thiết bị trong danh mục</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills gap-2 mb-3 bg-white p-2 rounded-4 shadow-2xs border">
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "categories" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Category", new { tab = "categories" })">
+                <i class="bi bi-folder-fill"></i>
+                <span>Cây Danh Mục Sản Phẩm</span>
+                <span class="badge @(Model.ActiveTab == "categories" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.TotalCategories</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "brands" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Category", new { tab = "brands" })">
+                <i class="bi bi-award-fill"></i>
+                <span>Hãng Sản Xuất & Đối Tác Thương Hiệu</span>
+                <span class="badge @(Model.ActiveTab == "brands" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.TotalBrands</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- Filter Toolbar -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+        <form method="get" class="row g-2 align-items-center">
+            <input type="hidden" name="tab" value="@Model.ActiveTab" />
+            <div class="col-12 col-md-8">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0 text-muted ps-3">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control bg-light border-start-0" 
+                           placeholder="@(Model.ActiveTab == "categories" ? "Tìm theo tên danh mục, đường dẫn slug hoặc mô tả..." : "Tìm theo tên thương hiệu...")"
+                           value="@Model.SearchQuery" />
+                </div>
+            </div>
+            <div class="col-12 col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">
+                    <i class="bi bi-funnel-fill me-1"></i>Lọc Danh Sách
+                </button>
+                <a href="@Url.Action("Index", "Category", new { tab = Model.ActiveTab })" class="btn btn-sm btn-light border rounded-pill px-3">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 1: CATEGORIES LIST (CRUD) -->
+    @if (Model.ActiveTab == "categories")
+    {
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.04em;">
+                            <th class="ps-3 py-3" style="width: 70px;">Icon</th>
+                            <th>Tên Danh Mục & Đường Dẫn (Slug)</th>
+                            <th>Cấp Bậc & Danh Mục Cha</th>
+                            <th>Số Lượng Sản Phẩm</th>
+                            <th>Thứ Tự (Order)</th>
+                            <th>Trạng Thái</th>
+                            <th class="text-end pe-3" style="width: 180px;">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Categories.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-folder-x fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                    Không có danh mục nào thỏa mãn điều kiện lọc.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var cat in Model.Categories)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="tz-admin-icon rounded-3" style="background: rgba(2, 132, 199, 0.08); color: #0284c7; width: 38px; height: 38px; font-size: 1.15rem;">
+                                            <i class="bi @(string.IsNullOrEmpty(cat.IconUrl) ? "bi-folder" : cat.IconUrl)"></i>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-1.5">
+                                            @if (cat.Level > 1)
+                                            {
+                                                <i class="bi bi-arrow-return-right text-muted me-1"></i>
+                                            }
+                                            <span class="fw-bold text-dark fs-6">@cat.Name</span>
+                                        </div>
+                                        <div class="small font-monospace text-secondary">
+                                            /@cat.Slug
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(cat.Description))
+                                        {
+                                            <span class="text-muted small text-truncate d-block" style="max-width: 320px;">@cat.Description</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (string.IsNullOrEmpty(cat.ParentId))
+                                        {
+                                            <span class="badge tz-badge-soft-primary rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-diagram-3-fill me-1"></i>Cấp 1 (Gốc)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <div>
+                                                <span class="badge tz-badge-soft-warning rounded-pill px-2.5 py-1 mb-1">
+                                                    <i class="bi bi-diagram-2 me-1"></i>Cấp @cat.Level (Con)
+                                                </span>
+                                                <div class="small text-muted">Thuộc: <strong>@cat.ParentName</strong></div>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a href="/Admin/Product?categoryId=@cat.Id" class="badge bg-light text-primary border rounded-pill px-2.5 py-1 text-decoration-none">
+                                            <i class="bi bi-box me-1"></i>@cat.ProductCount.ToString("N0") sản phẩm
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border font-monospace">#@cat.DisplayOrder</span>
+                                    </td>
+                                    <td>
+                                        @if (cat.IsActive)
+                                        {
+                                            <span class="badge tz-badge-soft-success rounded-pill px-2.5 py-1">Đang hiển thị</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge tz-badge-soft-secondary rounded-pill px-2.5 py-1">Đã ẩn</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        @if (isSuperAdmin)
+                                        {
+                                            <div class="d-inline-flex gap-1">
+                                                <!-- Edit Button -->
+                                                <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5"
+                                                        data-bs-toggle="modal" data-bs-target="#editCategoryModal"
+                                                        data-id="@cat.Id"
+                                                        data-name="@cat.Name"
+                                                        data-slug="@cat.Slug"
+                                                        data-description="@cat.Description"
+                                                        data-parent="@cat.ParentId"
+                                                        data-icon="@cat.IconUrl"
+                                                        data-image="@cat.ImageUrl"
+                                                        data-order="@cat.DisplayOrder"
+                                                        data-active="@cat.IsActive.ToString().ToLower()">
+                                                    <i class="bi bi-pencil me-1"></i>Sửa
+                                                </button>
+
+                                                <!-- Toggle Active Button -->
+                                                <form asp-action="ToggleActive" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@cat.Id" />
+                                                    <button type="submit" class="btn btn-xs @(cat.IsActive ? "btn-outline-secondary" : "btn-outline-success") rounded-pill px-2" title="@(cat.IsActive ? "Tắt hiển thị" : "Bật hiển thị")">
+                                                        <i class="bi @(cat.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
+                                                    </button>
+                                                </form>
+
+                                                <!-- Delete Button -->
+                                                <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục [@cat.Name]? Thao tác này không thể hoàn tác!');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@cat.Id" />
+                                                    <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2" title="Xóa danh mục">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Chỉ xem</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- TAB 2: BRANDS LIST -->
+    @if (Model.ActiveTab == "brands")
+    {
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.04em;">
+                            <th class="ps-3 py-3">Hãng Sản Xuất (Brand)</th>
+                            <th>Đường Dẫn (Slug)</th>
+                            <th>Quốc Gia Xuất Xứ</th>
+                            <th>Website Chính Thức</th>
+                            <th>Thứ Tự (Order)</th>
+                            <th>Trạng Thái</th>
+                            <th class="text-end pe-3">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Brands.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-award fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                    Không có thương hiệu / đối tác nào.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var b in Model.Brands)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if (!string.IsNullOrEmpty(b.LogoUrl))
+                                            {
+                                                <img src="@b.LogoUrl" alt="@b.Name" class="rounded border p-1 bg-white" style="width: 32px; height: 32px; object-fit: contain;" />
+                                            }
+                                            else
+                                            {
+                                                <div class="tz-admin-icon rounded-3" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; width: 32px; height: 32px;">
+                                                    <i class="bi bi-award-fill"></i>
+                                                </div>
+                                            }
+                                            <div>
+                                                <strong class="text-dark">@b.Name</strong>
+                                                @if (b.IsFeatured)
+                                                {
+                                                    <span class="badge bg-warning text-dark rounded-pill ms-1" style="font-size: 0.65rem;">Top Brand</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="font-monospace text-secondary small">/@b.Slug</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>@(b.CountryOfOrigin ?? "Quốc tế")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(b.WebsiteUrl))
+                                        {
+                                            <a href="@b.WebsiteUrl" target="_blank" class="text-primary small text-decoration-none">
+                                                @b.WebsiteUrl <i class="bi bi-box-arrow-up-right small"></i>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">--</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border font-monospace">#@b.DisplayOrder</span>
+                                    </td>
+                                    <td>
+                                        @if (b.IsActive)
+                                        {
+                                            <span class="badge tz-badge-soft-success rounded-pill px-2.5 py-1">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge tz-badge-soft-secondary rounded-pill px-2.5 py-1">Đã tắt</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        @if (isSuperAdmin)
+                                        {
+                                            <form asp-action="ToggleBrandActive" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@b.Id" />
+                                                <button type="submit" class="btn btn-xs @(b.IsActive ? "btn-outline-secondary" : "btn-outline-success") rounded-pill px-2.5">
+                                                    @(b.IsActive ? "Vô hiệu hóa" : "Kích hoạt")
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- MODAL 1: CREATE CATEGORY -->
+<div class="modal fade" id="createCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Thêm Danh Mục Sản Phẩm Mới</h5>
+                        <span class="text-muted small">Định nghĩa danh mục cấp 1 gốc hoặc danh mục con cấp 2</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Tên danh mục <span class="text-danger">*</span></label>
+                            <input type="text" name="Name" class="form-control rounded-3" placeholder="VD: Linh kiện PC, Smartwatch..." required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Đường dẫn Slug (Tùy chọn)</label>
+                            <input type="text" name="Slug" class="form-control font-monospace rounded-3" placeholder="Tự động tạo nếu để trống (VD: linh-kien-pc)" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Danh mục cha (Cấp trên)</label>
+                            <select name="ParentId" class="form-select rounded-3">
+                                <option value="">-- Là Danh mục Gốc (Cấp 1) --</option>
+                                @foreach (var parent in Model.ParentCategories)
+                                {
+                                    <option value="@parent.Id">@parent.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold small text-dark">Icon Bootstrap</label>
+                            <input type="text" name="IconUrl" class="form-control font-monospace rounded-3" placeholder="bi-phone, bi-laptop..." value="bi-folder" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold small text-dark">Thứ tự hiển thị</label>
+                            <input type="number" name="DisplayOrder" class="form-control rounded-3" value="0" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Mô tả ngắn danh mục</label>
+                            <textarea name="Description" class="form-control rounded-3" rows="2" placeholder="VD: Các dòng thiết bị phục vụ game thủ, học tập và làm việc..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox" name="IsActive" value="true" checked id="createIsActive">
+                                <label class="form-check-label fw-semibold small text-dark" for="createIsActive">Hiển thị công khai trên thanh menu Website</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-check-circle-fill me-1"></i>Tạo Danh Mục
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: EDIT CATEGORY -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="Update" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editCatId" />
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Chỉnh Sửa Danh Mục</h5>
+                        <span class="text-muted small" id="editCatHeader"></span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Tên danh mục <span class="text-danger">*</span></label>
+                            <input type="text" name="Name" id="editCatName" class="form-control rounded-3" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Đường dẫn Slug <span class="text-danger">*</span></label>
+                            <input type="text" name="Slug" id="editCatSlug" class="form-control font-monospace rounded-3" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Danh mục cha (Cấp trên)</label>
+                            <select name="ParentId" id="editCatParent" class="form-select rounded-3">
+                                <option value="">-- Là Danh mục Gốc (Cấp 1) --</option>
+                                @foreach (var parent in Model.ParentCategories)
+                                {
+                                    <option value="@parent.Id">@parent.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold small text-dark">Icon Bootstrap</label>
+                            <input type="text" name="IconUrl" id="editCatIcon" class="form-control font-monospace rounded-3" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold small text-dark">Thứ tự hiển thị</label>
+                            <input type="number" name="DisplayOrder" id="editCatOrder" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Mô tả danh mục</label>
+                            <textarea name="Description" id="editCatDescription" class="form-control rounded-3" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="editCatIsActive">
+                                <label class="form-check-label fw-semibold small text-dark" for="editCatIsActive">Kích hoạt hiển thị trên Website</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-save me-1"></i>Lưu Thay Đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 3: CREATE BRAND -->
+<div class="modal fade" id="createBrandModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="CreateBrand" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Thêm Hãng Sản Xuất Mới</h5>
+                        <span class="text-muted small">Đăng ký thương hiệu đối tác công nghệ</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Tên thương hiệu <span class="text-danger">*</span></label>
+                        <input type="text" name="Name" class="form-control rounded-3" placeholder="VD: Logitech, MSI, Razer..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Quốc gia xuất xứ</label>
+                        <input type="text" name="CountryOfOrigin" class="form-control rounded-3" placeholder="VD: Thụy Sĩ, Đài Loan, Mỹ..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Logo URL</label>
+                        <input type="text" name="LogoUrl" class="form-control rounded-3" placeholder="VD: /images/brands/logitech.png" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Website chính thức</label>
+                        <input type="text" name="WebsiteUrl" class="form-control rounded-3" placeholder="VD: https://www.logitech.com" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Thứ tự hiển thị</label>
+                        <input type="number" name="DisplayOrder" class="form-control rounded-3" value="0" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-check-circle me-1"></i>Lưu Thương Hiệu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const editCategoryModal = document.getElementById('editCategoryModal');
+        if (editCategoryModal) {
+            editCategoryModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-id');
+                const name = button.getAttribute('data-name');
+                const slug = button.getAttribute('data-slug');
+                const desc = button.getAttribute('data-description');
+                const parent = button.getAttribute('data-parent');
+                const icon = button.getAttribute('data-icon');
+                const order = button.getAttribute('data-order');
+                const active = button.getAttribute('data-active') === 'true';
+
+                document.getElementById('editCatId').value = id;
+                document.getElementById('editCatHeader').innerText = `ID: ${id}`;
+                document.getElementById('editCatName').value = name;
+                document.getElementById('editCatSlug').value = slug;
+                document.getElementById('editCatDescription').value = desc || '';
+                document.getElementById('editCatParent').value = parent || '';
+                document.getElementById('editCatIcon').value = icon || '';
+                document.getElementById('editCatOrder').value = order || 0;
+                document.getElementById('editCatIsActive').checked = active;
+            });
+        }
+    </script>
+}

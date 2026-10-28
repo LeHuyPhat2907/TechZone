@@ -1,0 +1,1278 @@
+@using TechZone.Domain.Enums
+@model TechZone.Web.Areas.Admin.Models.MarketingViewModel
+@{
+    ViewData["Title"] = "Quản lý Marketing & Khuyến Mãi (Mục 1.5)";
+    var isSuperAdmin = User.IsInRole("SuperAdmin");
+}
+
+<div class="container-fluid px-0">
+    <!-- Header Page -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge tz-badge-soft-primary px-2.5 py-1 rounded-pill">
+                    <i class="bi bi-megaphone-fill me-1"></i>Marketing & Khuyến Mãi (Mục 1.5)
+                </span>
+                <span class="badge bg-dark text-light rounded-pill px-2.5 py-1">coupon.manage | banner_seo.manage</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-1">Mã Giảm Giá, Flash Sale, Banners & SEO Sự Kiện</h2>
+            <p class="text-secondary small mb-0">Thiết lập voucher khuyến mãi, khung giờ Flash Sale vàng, combo trợ giá, banner slider và cấu hình thẻ meta SEO landing page.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="@Url.Action("Index", "Customer")" class="btn btn-outline-secondary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-2xs">
+                <i class="bi bi-people-fill text-primary"></i>
+                <span>Quản Lý Khách Hàng (CRM)</span>
+            </a>
+            @if (isSuperAdmin)
+            {
+                <button type="button" class="btn btn-outline-primary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-2xs" data-bs-toggle="modal" data-bs-target="#createBannerModal">
+                    <i class="bi bi-image"></i>
+                    <span>Thêm Banner</span>
+                </button>
+                <button type="button" class="btn btn-outline-info rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-2xs" data-bs-toggle="modal" data-bs-target="#saveSeoCampaignModal">
+                    <i class="bi bi-globe"></i>
+                    <span>Tạo Landing Page SEO</span>
+                </button>
+                <button type="button" class="btn btn-primary rounded-pill px-3.5 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-sm" data-bs-toggle="modal" data-bs-target="#createCouponModal">
+                    <i class="bi bi-tag-fill"></i>
+                    <span class="fw-semibold">Tạo Mã Voucher / Flash Sale</span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-2-4" style="flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Tổng mã giảm giá</span>
+                    <div class="tz-admin-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; width: 34px; height: 34px;">
+                        <i class="bi bi-ticket-perforated-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-dark">@Model.TotalCoupons.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Chính sách voucher đã tạo</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2-4" style="flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Đang kích hoạt</span>
+                    <div class="tz-admin-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 34px; height: 34px;">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-success">@Model.ActiveCoupons.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Khách có thể áp dụng ngay</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2-4" style="flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Mã Flash Sale vàng</span>
+                    <div class="tz-admin-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; width: 34px; height: 34px;">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-danger">@Model.TotalFlashSaleCoupons.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Quy tắc giảm sốc theo giờ</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2-4" style="flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Lượt đã áp dụng</span>
+                    <div class="tz-admin-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; width: 34px; height: 34px;">
+                        <i class="bi bi-cart-check-fill"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-warning">@Model.TotalVoucherUses.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Chuyển đổi thành đơn hàng</span>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2-4" style="flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Landing Page SEO</span>
+                    <div class="tz-admin-icon" style="background: rgba(147, 51, 234, 0.1); color: #9333ea; width: 34px; height: 34px;">
+                        <i class="bi bi-globe2"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold" style="color: #9333ea;">@Model.TotalSeoCampaigns.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Chiến dịch sự kiện tiếp thị</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills gap-2 mb-3 bg-white p-2 rounded-4 shadow-2xs border">
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "coupons" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Marketing", new { tab = "coupons" })">
+                <i class="bi bi-tag-fill"></i>
+                <span>Mã Ưu Đãi & Flash Sale</span>
+                <span class="badge @(Model.ActiveTab == "coupons" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.TotalCoupons</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "banners" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Marketing", new { tab = "banners" })">
+                <i class="bi bi-images"></i>
+                <span>Banner Quảng Cáo Trang Chủ</span>
+                <span class="badge @(Model.ActiveTab == "banners" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.TotalBanners</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(Model.ActiveTab == "seo" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Marketing", new { tab = "seo" })">
+                <i class="bi bi-globe"></i>
+                <span>Cấu Hình Meta SEO & Landing Page</span>
+                <span class="badge @(Model.ActiveTab == "seo" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.TotalSeoCampaigns</span>
+            </a>
+        </li>
+        <li class="nav-item ms-auto">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 text-primary bg-primary-subtle border"
+               href="@Url.Action("Index", "Customer")">
+                <i class="bi bi-people-fill"></i>
+                <span>Chuyển Sang CRM Khách Hàng</span>
+                <span class="badge bg-primary text-white rounded-pill">@Model.TotalCustomers</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+        <form method="get" class="row g-2 align-items-center">
+            <input type="hidden" name="tab" value="@Model.ActiveTab" />
+
+            <div class="col-12 col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0 text-muted ps-3">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control bg-light border-start-0" 
+                           placeholder="@(Model.ActiveTab == "coupons" ? "Tìm mã code hoặc tên chương trình..." : (Model.ActiveTab == "seo" ? "Tìm tiêu đề sự kiện hoặc slug SEO..." : "Tìm tiêu đề banner..."))"
+                           value="@Model.SearchQuery" />
+                </div>
+            </div>
+
+            @if (Model.ActiveTab == "coupons")
+            {
+                <div class="col-12 col-sm-6 col-md-2">
+                    <select name="couponType" class="form-select form-select-sm bg-light">
+                        <option value="All" selected="@(Model.CouponTypeFilter == "All" ? "selected" : null)">-- Loại ưu đãi --</option>
+                        <option value="Order" selected="@(Model.CouponTypeFilter == "Order" ? "selected" : null)">Giảm đơn hàng</option>
+                        <option value="Shipping" selected="@(Model.CouponTypeFilter == "Shipping" ? "selected" : null)">Giảm phí ship</option>
+                        <option value="FlashSale" selected="@(Model.CouponTypeFilter == "FlashSale" ? "selected" : null)">⚡ Flash Sale giờ vàng</option>
+                        <option value="Combo" selected="@(Model.CouponTypeFilter == "Combo" ? "selected" : null)">🎁 Combo khuyến mãi</option>
+                    </select>
+                </div>
+            }
+            else if (Model.ActiveTab == "banners")
+            {
+                <div class="col-12 col-sm-6 col-md-2">
+                    <select name="position" class="form-select form-select-sm bg-light">
+                        <option value="">-- Vị trí Banner --</option>
+                        <option value="0" selected="@(Model.BannerPositionFilter == BannerPosition.HomeMainSlider ? "selected" : null)">Slider chính trang chủ</option>
+                        <option value="1" selected="@(Model.BannerPositionFilter == BannerPosition.HomeRightTop ? "selected" : null)">Banner bên phải trên</option>
+                        <option value="2" selected="@(Model.BannerPositionFilter == BannerPosition.HomeRightBottom ? "selected" : null)">Banner bên phải dưới</option>
+                        <option value="3" selected="@(Model.BannerPositionFilter == BannerPosition.HomeMiddleBanner ? "selected" : null)">Banner ngang giữa trang</option>
+                        <option value="4" selected="@(Model.BannerPositionFilter == BannerPosition.CategoryHeader ? "selected" : null)">Banner đầu trang danh mục</option>
+                        <option value="5" selected="@(Model.BannerPositionFilter == BannerPosition.FlashSaleBanner ? "selected" : null)">Banner khu Flash Sale</option>
+                        <option value="6" selected="@(Model.BannerPositionFilter == BannerPosition.PopupModal ? "selected" : null)">Pop-up sự kiện</option>
+                    </select>
+                </div>
+            }
+
+            <div class="col-12 col-sm-6 col-md-2">
+                <select name="isActive" class="form-select form-select-sm bg-light">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="true" selected="@(Model.IsActiveFilter == true ? "selected" : null)">Đang hoạt động</option>
+                    <option value="false" selected="@(Model.IsActiveFilter == false ? "selected" : null)">Tạm vô hiệu hóa</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold flex-fill">
+                    <i class="bi bi-funnel-fill me-1"></i>Lọc
+                </button>
+                <a href="@Url.Action("Index", "Marketing", new { tab = Model.ActiveTab })" class="btn btn-sm btn-light border rounded-pill px-3">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- TAB 1: COUPONS & FLASH SALE LIST -->
+    <!-- ============================================================== -->
+    @if (Model.ActiveTab == "coupons")
+    {
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.04em;">
+                            <th class="ps-3 py-3">Mã Voucher</th>
+                            <th>Tên Chương Trình & Quy Tắc</th>
+                            <th>Phạm Vi & Phân Loại</th>
+                            <th>Mức Giảm Giá</th>
+                            <th>Điều Kiện Áp Dụng</th>
+                            <th>Lượt Dùng / Giới Hạn</th>
+                            <th>Thời Hạn Hiệu Lực</th>
+                            <th>Trạng Thái</th>
+                            <th class="text-end pe-3">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Coupons.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center py-5 text-muted">
+                                    <i class="bi bi-ticket-detailed fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                    Không có mã giảm giá nào thỏa mãn điều kiện lọc.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var c in Model.Coupons)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex flex-column align-items-start gap-1">
+                                            <div class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 font-monospace px-2.5 py-1 rounded-3 fs-6 fw-bold">
+                                                @c.Code
+                                            </div>
+                                            @if (c.IsFlashSale)
+                                            {
+                                                <span class="badge bg-danger text-white rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                                                    <i class="bi bi-lightning-fill"></i> Flash Sale @(c.FlashSaleSlot ?? "")
+                                                </span>
+                                            }
+                                            @if (c.IsComboPromotion)
+                                            {
+                                                <span class="badge bg-purple text-white rounded-pill px-2 py-0.5" style="background: #9333ea; font-size: 0.68rem;">
+                                                    <i class="bi bi-gift-fill"></i> Combo @(c.ApplicableCategory ?? "")
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark text-truncate" style="max-width: 250px;" title="@c.Title">
+                                            @c.Title
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(c.Description))
+                                        {
+                                            <span class="text-muted small text-truncate d-block" style="max-width: 250px;">@c.Description</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge @(c.Scope == CouponScope.Order ? "tz-badge-soft-primary" : "tz-badge-soft-success") mb-1">
+                                            @(c.Scope == CouponScope.Order ? "Đơn hàng" : "Phí vận chuyển")
+                                        </span>
+                                        <div class="text-secondary small">
+                                            @(c.DiscountType == DiscountType.Percentage ? "Giảm theo %" : "Số tiền cố định")
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (c.DiscountType == DiscountType.Percentage)
+                                        {
+                                            <div class="fw-bold text-danger fs-6">-@c.DiscountValue%</div>
+                                            @if (c.MaxDiscountAmount.HasValue)
+                                            {
+                                                <span class="text-muted small" style="font-size: 0.72rem;">Tối đa: @c.MaxDiscountAmount.Value.ToString("N0")₫</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <div class="fw-bold text-danger fs-6">-@c.DiscountValue.ToString("N0")₫</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="small text-dark">Đơn từ: <strong>@c.MinOrderValue.ToString("N0")₫</strong></div>
+                                        <span class="text-muted" style="font-size: 0.72rem;">Tối đa @c.UsageLimitPerUser lần/khách</span>
+                                        @if (c.MinItemQuantity > 1)
+                                        {
+                                            <div class="text-muted" style="font-size: 0.7rem;">Mua từ @c.MinItemQuantity sản phẩm</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold text-dark">@c.UsedCount / @c.UsageLimit</div>
+                                        <div class="progress mt-1" style="height: 5px; width: 80px;">
+                                            @{
+                                                var pct = c.UsageLimit > 0 ? (int)((double)c.UsedCount / c.UsageLimit * 100) : 0;
+                                            }
+                                            <div class="progress-bar @(c.IsFlashSale ? "bg-danger" : "bg-primary")" style="width: @pct%;"></div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="small text-dark">Từ: @c.StartDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        <div class="small text-secondary">Đến: @c.EndDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        @if (c.IsValidNow)
+                                        {
+                                            <span class="badge tz-badge-soft-success rounded-pill px-2.5 py-1">Đang chạy</span>
+                                        }
+                                        else if (!c.IsActive)
+                                        {
+                                            <span class="badge tz-badge-soft-secondary rounded-pill px-2.5 py-1">Đã tắt</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge tz-badge-soft-warning rounded-pill px-2.5 py-1">Hết hạn/Hết lượt</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        @if (isSuperAdmin)
+                                        {
+                                            <div class="d-inline-flex gap-1">
+                                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 btn-edit-coupon"
+                                                        data-coupon='@System.Text.Json.JsonSerializer.Serialize(new {
+                                                            c.Id,
+                                                            c.Code,
+                                                            c.Title,
+                                                            c.Description,
+                                                            Scope = (int)c.Scope,
+                                                            DiscountType = (int)c.DiscountType,
+                                                            c.DiscountValue,
+                                                            c.MaxDiscountAmount,
+                                                            c.MinOrderValue,
+                                                            c.UsageLimit,
+                                                            c.UsageLimitPerUser,
+                                                            StartDate = c.StartDate.ToLocalTime().ToString("yyyy-MM-ddTHH:mm"),
+                                                            EndDate = c.EndDate.ToLocalTime().ToString("yyyy-MM-ddTHH:mm"),
+                                                            c.IsActive,
+                                                            c.IsFlashSale,
+                                                            c.FlashSaleSlot,
+                                                            c.IsComboPromotion,
+                                                            c.ApplicableCategory,
+                                                            c.MinItemQuantity
+                                                        })'
+                                                        title="Chỉnh sửa voucher">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <form asp-action="ToggleCouponStatus" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@c.Id" />
+                                                    <button type="submit" class="btn btn-xs @(c.IsActive ? "btn-outline-warning" : "btn-outline-success") rounded-pill px-2" title="@(c.IsActive ? "Vô hiệu hóa" : "Kích hoạt")">
+                                                        <i class="bi @(c.IsActive ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-action="DeleteCoupon" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã ưu đãi [@c.Code]?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@c.Id" />
+                                                    <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2" title="Xóa mã voucher">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Chỉ xem</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- ============================================================== -->
+    <!-- TAB 2: BANNERS LIST -->
+    <!-- ============================================================== -->
+    @if (Model.ActiveTab == "banners")
+    {
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.04em;">
+                            <th class="ps-3 py-3">Hình Ảnh Banner</th>
+                            <th>Tiêu Đề & Liên Kết</th>
+                            <th>Vị Trí Hiển Thị</th>
+                            <th>Thứ Tự (Order)</th>
+                            <th>Thời Gian Chiến Dịch</th>
+                            <th>Lượt Click</th>
+                            <th>Trạng Thái</th>
+                            <th class="text-end pe-3">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Banners.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-images fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                    Không có banner quảng cáo nào.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var b in Model.Banners)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img src="@b.ImageUrl" alt="@b.Title" class="rounded-3 object-fit-cover shadow-2xs border" style="width: 120px; height: 55px;" />
+                                            @if (!string.IsNullOrEmpty(b.MobileImageUrl))
+                                            {
+                                                <span class="badge bg-light text-secondary border rounded-pill px-1.5 py-0.5" title="Có ảnh riêng cho Mobile">
+                                                    <i class="bi bi-phone"></i>
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@b.Title</div>
+                                        @if (!string.IsNullOrEmpty(b.LinkUrl))
+                                        {
+                                            <a href="@b.LinkUrl" target="_blank" class="text-primary small text-truncate d-inline-block" style="max-width: 250px;">
+                                                <i class="bi bi-link-45deg me-1"></i>@b.LinkUrl
+                                            </a>
+                                        }
+                                    </td>
+                                    <td>
+                                        @{
+                                            var posBadge = b.Position switch
+                                            {
+                                                BannerPosition.HomeMainSlider => "tz-badge-soft-primary",
+                                                BannerPosition.HomeRightTop => "tz-badge-soft-success",
+                                                BannerPosition.HomeRightBottom => "tz-badge-soft-info",
+                                                BannerPosition.HomeMiddleBanner => "tz-badge-soft-warning",
+                                                BannerPosition.CategoryHeader => "tz-badge-soft-secondary",
+                                                BannerPosition.FlashSaleBanner => "tz-badge-soft-danger",
+                                                BannerPosition.PopupModal => "bg-purple text-white",
+                                                _ => "bg-light text-dark"
+                                            };
+                                            var posText = b.Position switch
+                                            {
+                                                BannerPosition.HomeMainSlider => "Slider chính",
+                                                BannerPosition.HomeRightTop => "Bên phải trên",
+                                                BannerPosition.HomeRightBottom => "Bên phải dưới",
+                                                BannerPosition.HomeMiddleBanner => "Ngang giữa trang",
+                                                BannerPosition.CategoryHeader => "Đầu trang danh mục",
+                                                BannerPosition.FlashSaleBanner => "Khu Flash Sale",
+                                                BannerPosition.PopupModal => "Pop-up sự kiện",
+                                                _ => b.Position.ToString()
+                                            };
+                                        }
+                                        <span class="badge @posBadge px-2.5 py-1 rounded-pill" style="@(b.Position == BannerPosition.PopupModal ? "background: #9333ea;" : "")">
+                                            @posText
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border font-monospace">#@b.DisplayOrder</span>
+                                    </td>
+                                    <td>
+                                        @if (b.StartDate.HasValue || b.EndDate.HasValue)
+                                        {
+                                            <div class="small text-dark">Từ: @(b.StartDate?.ToLocalTime().ToString("dd/MM/yy") ?? "Ngay")</div>
+                                            <div class="small text-secondary">Đến: @(b.EndDate?.ToLocalTime().ToString("dd/MM/yy") ?? "Vô thời hạn")</div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Luôn hiển thị</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-secondary">@b.ClickCount.ToString("N0")</div>
+                                    </td>
+                                    <td>
+                                        @if (b.IsActive)
+                                        {
+                                            <span class="badge tz-badge-soft-success rounded-pill px-2.5 py-1">Đang hiển thị</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge tz-badge-soft-secondary rounded-pill px-2.5 py-1">Đã tắt</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        @if (isSuperAdmin)
+                                        {
+                                            <div class="d-inline-flex gap-1">
+                                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 btn-edit-banner"
+                                                        data-banner='@System.Text.Json.JsonSerializer.Serialize(new {
+                                                            b.Id,
+                                                            b.Title,
+                                                            b.ImageUrl,
+                                                            b.MobileImageUrl,
+                                                            b.LinkUrl,
+                                                            Position = (int)b.Position,
+                                                            b.DisplayOrder,
+                                                            StartDate = b.StartDate?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? "",
+                                                            EndDate = b.EndDate?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? "",
+                                                            b.IsActive
+                                                        })'
+                                                        title="Sửa banner">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <form asp-action="ToggleBannerStatus" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="bannerId" value="@b.Id" />
+                                                    <button type="submit" class="btn btn-xs @(b.IsActive ? "btn-outline-warning" : "btn-outline-success") rounded-pill px-2" title="@(b.IsActive ? "Tắt hiển thị" : "Bật hiển thị")">
+                                                        <i class="bi @(b.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-action="DeleteBanner" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa banner [@b.Title]?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="bannerId" value="@b.Id" />
+                                                    <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2" title="Xóa banner">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Chỉ xem</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- ============================================================== -->
+    <!-- TAB 3: SEO CONFIG & EVENT LANDING PAGES (banner_seo.manage) -->
+    <!-- ============================================================== -->
+    @if (Model.ActiveTab == "seo")
+    {
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.04em;">
+                            <th class="ps-3 py-3">Chiến Dịch Sự Kiện</th>
+                            <th>Đường Dẫn SEO (Slug URL)</th>
+                            <th>Thẻ Meta Title & Description</th>
+                            <th>Thẻ OG Image & Canonical</th>
+                            <th>Thời Hạn Sự Kiện</th>
+                            <th>Trạng Thái</th>
+                            <th class="text-end pe-3">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.SeoCampaigns.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-globe fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                    Chưa có landing page sự kiện SEO nào được thiết lập.
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#saveSeoCampaignModal">
+                                            <i class="bi bi-plus-circle me-1"></i>Tạo Chiến Dịch Landing Page Mới
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var s in Model.SeoCampaigns)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center gap-2.5">
+                                            <img src="@s.ImageUrl" alt="@s.Title" class="rounded-3 object-fit-cover shadow-2xs border" style="width: 100px; height: 50px;" />
+                                            <div>
+                                                <div class="fw-bold text-dark">@s.Title</div>
+                                                <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.7rem;">
+                                                    Vị trí: @s.Position
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 font-monospace px-2.5 py-1 rounded-2">
+                                            /khuyen-mai/@s.EventSlug
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(s.LinkUrl))
+                                        {
+                                            <div class="small text-muted text-truncate mt-1" style="max-width: 220px;" title="@s.LinkUrl">
+                                                Liên kết: @s.LinkUrl
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark text-truncate" style="max-width: 260px;" title="@s.MetaTitle">
+                                            @(s.MetaTitle ?? s.Title)
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(s.MetaDescription))
+                                        {
+                                            <div class="text-muted small text-truncate" style="max-width: 260px;" title="@s.MetaDescription">
+                                                @s.MetaDescription
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(s.OgImageUrl))
+                                        {
+                                            <div class="small text-dark text-truncate" style="max-width: 220px;" title="@s.OgImageUrl">
+                                                <i class="bi bi-image text-primary me-1"></i>OG Image OK
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(s.CanonicalUrl))
+                                        {
+                                            <div class="text-muted small text-truncate" style="max-width: 220px;" title="@s.CanonicalUrl">
+                                                Canonical: @s.CanonicalUrl
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (s.StartDate.HasValue || s.EndDate.HasValue)
+                                        {
+                                            <div class="small text-dark">Từ: @(s.StartDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "Bắt đầu ngay")</div>
+                                            <div class="small text-secondary">Đến: @(s.EndDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "Không giới hạn")</div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Dài hạn</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (s.IsActive)
+                                        {
+                                            <span class="badge tz-badge-soft-success rounded-pill px-2.5 py-1">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge tz-badge-soft-secondary rounded-pill px-2.5 py-1">Tạm dừng</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        @if (isSuperAdmin)
+                                        {
+                                            <div class="d-inline-flex gap-1">
+                                                <button type="button" class="btn btn-xs btn-outline-info rounded-pill px-2 btn-edit-seo"
+                                                        data-seo='@System.Text.Json.JsonSerializer.Serialize(new {
+                                                            s.Id,
+                                                            s.Title,
+                                                            s.EventSlug,
+                                                            s.ImageUrl,
+                                                            s.LinkUrl,
+                                                            StartDate = s.StartDate?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? "",
+                                                            EndDate = s.EndDate?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? "",
+                                                            s.MetaTitle,
+                                                            s.MetaDescription,
+                                                            s.MetaKeywords,
+                                                            s.CanonicalUrl,
+                                                            s.OgImageUrl,
+                                                            s.HtmlContent,
+                                                            s.IsActive
+                                                        })'
+                                                        title="Cập nhật cấu hình SEO & Landing Page">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <form asp-action="ToggleSeoCampaignStatus" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@s.Id" />
+                                                    <button type="submit" class="btn btn-xs @(s.IsActive ? "btn-outline-warning" : "btn-outline-success") rounded-pill px-2">
+                                                        <i class="bi @(s.IsActive ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-action="DeleteSeoCampaign" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa chiến dịch SEO [@s.Title]?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@s.Id" />
+                                                    <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Chỉ xem</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="d-flex justify-content-center mb-4">
+            <ul class="pagination pagination-sm gap-1 mb-0">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-3" href="@Url.Action("Index", "Marketing", new { tab = Model.ActiveTab, page = Model.Page - 1, search = Model.SearchQuery, isActive = Model.IsActiveFilter, couponType = Model.CouponTypeFilter, position = Model.BannerPositionFilter })">
+                        &laquo; Trước
+                    </a>
+                </li>
+                @for (int p = 1; p <= Model.TotalPages; p++)
+                {
+                    <li class="page-item @(p == Model.Page ? "active" : "")">
+                        <a class="page-link rounded-pill px-3" href="@Url.Action("Index", "Marketing", new { tab = Model.ActiveTab, page = p, search = Model.SearchQuery, isActive = Model.IsActiveFilter, couponType = Model.CouponTypeFilter, position = Model.BannerPositionFilter })">
+                            @p
+                        </a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-3" href="@Url.Action("Index", "Marketing", new { tab = Model.ActiveTab, page = Model.Page + 1, search = Model.SearchQuery, isActive = Model.IsActiveFilter, couponType = Model.CouponTypeFilter, position = Model.BannerPositionFilter })">
+                        Sau &raquo;
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: CREATE COUPON & FLASH SALE -->
+<!-- ============================================================== -->
+<div class="modal fade" id="createCouponModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="CreateCoupon" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Tạo Mã Ưu Đãi / Flash Sale / Combo Mới</h5>
+                        <span class="text-muted small">Cấu hình quy tắc giảm giá, khung giờ vàng Flash Sale và combo trợ giá</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Mã Voucher (Code) <span class="text-danger">*</span></label>
+                            <input type="text" name="Code" class="form-control font-monospace text-uppercase rounded-3" placeholder="VD: TECHZONE100K hoặc FLASHSALE50" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Tiêu đề chương trình <span class="text-danger">*</span></label>
+                            <input type="text" name="Title" class="form-control rounded-3" placeholder="VD: Giảm 100K cho đơn hàng từ 1 triệu" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Mô tả chi tiết thể lệ</label>
+                            <input type="text" name="Description" class="form-control rounded-3" placeholder="VD: Áp dụng khi mua điện thoại, laptop tại hệ thống TechZone..." />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Phạm vi áp dụng</label>
+                            <select name="Scope" class="form-select rounded-3">
+                                <option value="0">Giảm trên đơn hàng (Order)</option>
+                                <option value="1">Giảm phí ship (Shipping)</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Loại giảm giá</label>
+                            <select name="DiscountType" class="form-select rounded-3">
+                                <option value="1">Số tiền cố định (VNĐ)</option>
+                                <option value="0">Tỷ lệ phần trăm (%)</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Giá trị giảm <span class="text-danger">*</span></label>
+                            <input type="number" name="DiscountValue" class="form-control rounded-3" placeholder="50000 hoặc 10" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Giảm tối đa (cho loại %)</label>
+                            <input type="number" name="MaxDiscountAmount" class="form-control rounded-3" placeholder="VD: 500000" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Giá trị đơn tối thiểu</label>
+                            <input type="number" name="MinOrderValue" class="form-control rounded-3" placeholder="VD: 500000" value="0" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Tổng số lượt dùng tối đa</label>
+                            <input type="number" name="UsageLimit" class="form-control rounded-3" value="100" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Giới hạn lượt dùng/khách</label>
+                            <input type="number" name="UsageLimitPerUser" class="form-control rounded-3" value="1" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Ngày bắt đầu</label>
+                            <input type="datetime-local" name="StartDate" class="form-control rounded-3" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Ngày kết thúc</label>
+                            <input type="datetime-local" name="EndDate" class="form-control rounded-3" value="@DateTime.Now.AddMonths(1).ToString("yyyy-MM-ddTHH:mm")" />
+                        </div>
+
+                        <!-- Special Promotion Rules -->
+                        <div class="col-12"><hr class="my-2" /></div>
+                        <div class="col-12 col-md-6">
+                            <div class="card border p-3 rounded-3 bg-light">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" name="IsFlashSale" value="true" id="createIsFlashSale">
+                                    <label class="form-check-label fw-bold text-danger small" for="createIsFlashSale">
+                                        ⚡ Kích hoạt quy tắc Flash Sale
+                                    </label>
+                                </div>
+                                <label class="form-label small text-muted mb-1">Khung giờ vàng Flash Sale</label>
+                                <select name="FlashSaleSlot" class="form-select form-select-sm rounded-2">
+                                    <option value="09:00 - 12:00">09:00 - 12:00 (Sáng)</option>
+                                    <option value="12:00 - 15:00">12:00 - 15:00 (Trưa)</option>
+                                    <option value="15:00 - 18:00">15:00 - 18:00 (Chiều)</option>
+                                    <option value="18:00 - 21:00">18:00 - 21:00 (Tối)</option>
+                                    <option value="20:00 - 24:00">20:00 - 24:00 (Đêm muộn)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="card border p-3 rounded-3 bg-light">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" name="IsComboPromotion" value="true" id="createIsCombo">
+                                    <label class="form-check-label fw-bold text-primary small" for="createIsCombo">
+                                        🎁 Combo khuyến mãi mua kèm
+                                    </label>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-7">
+                                        <label class="form-label small text-muted mb-1">Danh mục áp dụng</label>
+                                        <select name="ApplicableCategory" class="form-select form-select-sm rounded-2">
+                                            <option value="Tất cả">Tất cả danh mục</option>
+                                            <option value="Điện thoại">Điện thoại</option>
+                                            <option value="Laptop">Laptop</option>
+                                            <option value="Phụ kiện">Phụ kiện</option>
+                                            <option value="Linh kiện">Linh kiện</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-5">
+                                        <label class="form-label small text-muted mb-1">Số lượng min</label>
+                                        <input type="number" name="MinItemQuantity" class="form-control form-control-sm rounded-2" value="2" min="1" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-check-circle me-1"></i>Kích Hoạt Mã Ưu Đãi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: EDIT COUPON -->
+<!-- ============================================================== -->
+<div class="modal fade" id="editCouponModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="EditCoupon" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editCouponId" />
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Chỉnh Sửa Mã Khuyến Mãi</h5>
+                        <span class="text-muted small" id="editCouponCodeHeader"></span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Tiêu đề chương trình <span class="text-danger">*</span></label>
+                            <input type="text" name="Title" id="editCouponTitle" class="form-control rounded-3" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Phạm vi áp dụng</label>
+                            <select name="Scope" id="editCouponScope" class="form-select rounded-3">
+                                <option value="0">Giảm trên đơn hàng (Order)</option>
+                                <option value="1">Giảm phí ship (Shipping)</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Mô tả thể lệ</label>
+                            <input type="text" name="Description" id="editCouponDesc" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Loại giảm</label>
+                            <select name="DiscountType" id="editCouponDiscountType" class="form-select rounded-3">
+                                <option value="1">Số tiền cố định (VNĐ)</option>
+                                <option value="0">Tỷ lệ phần trăm (%)</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Mức giảm</label>
+                            <input type="number" name="DiscountValue" id="editCouponDiscountValue" class="form-control rounded-3" required />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Trần giảm tối đa (%)</label>
+                            <input type="number" name="MaxDiscountAmount" id="editCouponMaxDiscount" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Đơn tối thiểu</label>
+                            <input type="number" name="MinOrderValue" id="editCouponMinOrder" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Giới hạn toàn sàn</label>
+                            <input type="number" name="UsageLimit" id="editCouponUsageLimit" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Lượt dùng / khách</label>
+                            <input type="number" name="UsageLimitPerUser" id="editCouponLimitUser" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Bắt đầu</label>
+                            <input type="datetime-local" name="StartDate" id="editCouponStartDate" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Kết thúc</label>
+                            <input type="datetime-local" name="EndDate" id="editCouponEndDate" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="IsFlashSale" value="true" id="editIsFlashSale">
+                                <label class="form-check-label fw-semibold small" for="editIsFlashSale">Áp dụng Flash Sale giờ vàng</label>
+                            </div>
+                            <input type="text" name="FlashSaleSlot" id="editFlashSaleSlot" class="form-control form-control-sm rounded-2 mt-1" placeholder="Khung giờ: VD 12:00 - 15:00" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="IsComboPromotion" value="true" id="editIsCombo">
+                                <label class="form-check-label fw-semibold small" for="editIsCombo">Combo trợ giá mua kèm</label>
+                            </div>
+                            <div class="row g-1 mt-1">
+                                <div class="col-7">
+                                    <input type="text" name="ApplicableCategory" id="editApplicableCat" class="form-control form-control-sm rounded-2" placeholder="Danh mục" />
+                                </div>
+                                <div class="col-5">
+                                    <input type="number" name="MinItemQuantity" id="editMinQty" class="form-control form-control-sm rounded-2" placeholder="Min sp" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="editCouponIsActive">
+                                <label class="form-check-label fw-semibold small text-success" for="editCouponIsActive">Kích hoạt voucher hoạt động</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-save me-1"></i>Lưu Thay Đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: CREATE BANNER -->
+<!-- ============================================================== -->
+<div class="modal fade" id="createBannerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="CreateBanner" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Thêm Banner Tiếp Thị Mới</h5>
+                        <span class="text-muted small">Cấu hình banner trang chủ theo chuẩn từng vị trí</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Tiêu đề chiến dịch <span class="text-danger">*</span></label>
+                        <input type="text" name="Title" class="form-control rounded-3" placeholder="VD: Lễ Hội iPhone 16 Pro Max Titan" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">URL hình ảnh banner (Desktop) <span class="text-danger">*</span></label>
+                        <input type="text" name="ImageUrl" class="form-control rounded-3" placeholder="VD: https://... hoặc /images/banners/sale.jpg" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">URL hình ảnh cho thiết bị di động (Mobile)</label>
+                        <input type="text" name="MobileImageUrl" class="form-control rounded-3" placeholder="Tùy chọn: ảnh tối ưu tỉ lệ đứng cho điện thoại" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Liên kết điều hướng (Link URL)</label>
+                        <input type="text" name="LinkUrl" class="form-control rounded-3" placeholder="VD: /Product?search=iPhone hoặc link sự kiện" />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label fw-semibold small text-dark">Vị trí hiển thị</label>
+                            <select name="Position" class="form-select rounded-3">
+                                <option value="0">Slider chính trang chủ (HomeMainSlider)</option>
+                                <option value="1">Banner bên phải slider trên (HomeRightTop)</option>
+                                <option value="2">Banner bên phải slider dưới (HomeRightBottom)</option>
+                                <option value="3">Banner ngang giữa trang (HomeMiddleBanner)</option>
+                                <option value="4">Banner đầu trang danh mục (CategoryHeader)</option>
+                                <option value="5">Banner khu vực Flash Sale (FlashSaleBanner)</option>
+                                <option value="6">Pop-up khuyến mãi sự kiện (PopupModal)</option>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold small text-dark">Thứ tự (#)</label>
+                            <input type="number" name="DisplayOrder" class="form-control rounded-3" value="1" />
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small text-dark">Ngày bắt đầu</label>
+                            <input type="datetime-local" name="StartDate" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small text-dark">Ngày kết thúc</label>
+                            <input type="datetime-local" name="EndDate" class="form-control rounded-3" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-upload me-1"></i>Đăng Banner
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: EDIT BANNER -->
+<!-- ============================================================== -->
+<div class="modal fade" id="editBannerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="EditBanner" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editBannerId" />
+                <div class="modal-header border-bottom py-3 px-4">
+                    <h5 class="modal-title fw-bold text-dark mb-0">Chỉnh Sửa Banner Quảng Cáo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Tiêu đề chiến dịch <span class="text-danger">*</span></label>
+                        <input type="text" name="Title" id="editBannerTitle" class="form-control rounded-3" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">URL hình ảnh banner (Desktop) <span class="text-danger">*</span></label>
+                        <input type="text" name="ImageUrl" id="editBannerImageUrl" class="form-control rounded-3" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">URL hình ảnh cho thiết bị di động (Mobile)</label>
+                        <input type="text" name="MobileImageUrl" id="editBannerMobileUrl" class="form-control rounded-3" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Liên kết điều hướng (Link URL)</label>
+                        <input type="text" name="LinkUrl" id="editBannerLinkUrl" class="form-control rounded-3" />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label fw-semibold small text-dark">Vị trí hiển thị</label>
+                            <select name="Position" id="editBannerPosition" class="form-select rounded-3">
+                                <option value="0">Slider chính trang chủ</option>
+                                <option value="1">Banner bên phải slider trên</option>
+                                <option value="2">Banner bên phải slider dưới</option>
+                                <option value="3">Banner ngang giữa trang</option>
+                                <option value="4">Banner đầu trang danh mục</option>
+                                <option value="5">Banner khu Flash Sale</option>
+                                <option value="6">Pop-up sự kiện</option>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold small text-dark">Thứ tự (#)</label>
+                            <input type="number" name="DisplayOrder" id="editBannerDisplayOrder" class="form-control rounded-3" />
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small text-dark">Bắt đầu</label>
+                            <input type="datetime-local" name="StartDate" id="editBannerStartDate" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small text-dark">Kết thúc</label>
+                            <input type="datetime-local" name="EndDate" id="editBannerEndDate" class="form-control rounded-3" />
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="editBannerIsActive">
+                        <label class="form-check-label fw-semibold small text-success" for="editBannerIsActive">Hiển thị banner trên website</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-save me-1"></i>Lưu Banner
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: CREATE / EDIT SEO & LANDING PAGE (banner_seo.manage) -->
+<!-- ============================================================== -->
+<div class="modal fade" id="saveSeoCampaignModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form asp-action="SaveSeoCampaign" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="seoCampaignId" />
+                <div class="modal-header border-bottom py-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="seoModalHeaderTitle">Cấu Hình Meta SEO & Landing Page Sự Kiện</h5>
+                        <span class="text-muted small">Tối ưu thẻ tìm kiếm Google, OpenGraph và trang đích sự kiện khuyến mãi</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-7">
+                            <label class="form-label fw-semibold small text-dark">Tiêu đề chiến dịch <span class="text-danger">*</span></label>
+                            <input type="text" name="Title" id="seoCampaignTitle" class="form-control rounded-3" placeholder="VD: Đại Tiệc Apple Black Friday 2026" required />
+                        </div>
+                        <div class="col-12 col-md-5">
+                            <label class="form-label fw-semibold small text-dark">Đường dẫn thân thiện (Slug) <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light text-muted">/khuyen-mai/</span>
+                                <input type="text" name="EventSlug" id="seoCampaignSlug" class="form-control rounded-end-3" placeholder="dai-tiec-apple-2026" required />
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-7">
+                            <label class="form-label fw-semibold small text-dark">Ảnh đại diện Banner sự kiện (Desktop / OG Image)</label>
+                            <input type="text" name="ImageUrl" id="seoCampaignImageUrl" class="form-control rounded-3" placeholder="https://... hoặc /images/banners/event.jpg" />
+                        </div>
+                        <div class="col-12 col-md-5">
+                            <label class="form-label fw-semibold small text-dark">Canonical URL</label>
+                            <input type="text" name="CanonicalUrl" id="seoCampaignCanonical" class="form-control rounded-3" placeholder="https://techzone.vn/khuyen-mai/..." />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Thẻ Meta Title (Tối ưu Google SERP)</label>
+                            <input type="text" name="MetaTitle" id="seoCampaignMetaTitle" class="form-control rounded-3" placeholder="VD: Đại Tiệc Apple 2026 - Giảm sốc iPhone, iPad, MacBook tại TechZone" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Thẻ Meta Description (Mô tả hiển thị Google)</label>
+                            <textarea name="MetaDescription" id="seoCampaignMetaDesc" class="form-control rounded-3" rows="2" placeholder="VD: Sự kiện siêu ưu đãi hệ sinh thái Apple chính hãng VN/A lớn nhất năm tại TechZone. Giảm trực tiếp tới 4 triệu..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Thẻ Meta Keywords (Từ khóa cách nhau bằng dấu phẩy)</label>
+                            <input type="text" name="MetaKeywords" id="seoCampaignKeywords" class="form-control rounded-3" placeholder="VD: apple, iphone 16, macbook, black friday, khuyen mai, voucher" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Nội dung / Thể lệ Landing Page Sự Kiện (Markdown / HTML)</label>
+                            <textarea name="HtmlContent" id="seoCampaignHtml" class="form-control font-monospace rounded-3" rows="4" placeholder="Nhập thể lệ chương trình, điều kiện áp dụng, danh sách mã voucher quà tặng..."></textarea>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Ngày bắt đầu chiến dịch</label>
+                            <input type="datetime-local" name="StartDate" id="seoCampaignStartDate" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Ngày kết thúc chiến dịch</label>
+                            <input type="datetime-local" name="EndDate" id="seoCampaignEndDate" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="seoCampaignIsActive" checked>
+                                <label class="form-check-label fw-semibold small text-success" for="seoCampaignIsActive">Kích hoạt hiển thị sự kiện trên Google & Landing Page</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-cloud-arrow-up me-1"></i>Lưu Cấu Hình SEO & Landing Page
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Bind Edit Coupon Modal
+        document.querySelectorAll('.btn-edit-coupon').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const c = JSON.parse(this.getAttribute('data-coupon'));
+                document.getElementById('editCouponId').value = c.Id;
+                document.getElementById('editCouponCodeHeader').innerText = `Mã: ${c.Code}`;
+                document.getElementById('editCouponTitle').value = c.Title || '';
+                document.getElementById('editCouponDesc').value = c.Description || '';
+                document.getElementById('editCouponScope').value = c.Scope;
+                document.getElementById('editCouponDiscountType').value = c.DiscountType;
+                document.getElementById('editCouponDiscountValue').value = c.DiscountValue;
+                document.getElementById('editCouponMaxDiscount').value = c.MaxDiscountAmount || '';
+                document.getElementById('editCouponMinOrder').value = c.MinOrderValue || 0;
+                document.getElementById('editCouponUsageLimit').value = c.UsageLimit || 100;
+                document.getElementById('editCouponLimitUser').value = c.UsageLimitPerUser || 1;
+                document.getElementById('editCouponStartDate').value = c.StartDate;
+                document.getElementById('editCouponEndDate').value = c.EndDate;
+                document.getElementById('editIsFlashSale').checked = c.IsFlashSale || false;
+                document.getElementById('editFlashSaleSlot').value = c.FlashSaleSlot || '';
+                document.getElementById('editIsCombo').checked = c.IsComboPromotion || false;
+                document.getElementById('editApplicableCat').value = c.ApplicableCategory || '';
+                document.getElementById('editMinQty').value = c.MinItemQuantity || 1;
+                document.getElementById('editCouponIsActive').checked = c.IsActive;
+
+                const editModal = new bootstrap.Modal(document.getElementById('editCouponModal'));
+                editModal.show();
+            });
+        });
+
+        // Bind Edit Banner Modal
+        document.querySelectorAll('.btn-edit-banner').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const b = JSON.parse(this.getAttribute('data-banner'));
+                document.getElementById('editBannerId').value = b.Id;
+                document.getElementById('editBannerTitle').value = b.Title || '';
+                document.getElementById('editBannerImageUrl').value = b.ImageUrl || '';
+                document.getElementById('editBannerMobileUrl').value = b.MobileImageUrl || '';
+                document.getElementById('editBannerLinkUrl').value = b.LinkUrl || '';
+                document.getElementById('editBannerPosition').value = b.Position;
+                document.getElementById('editBannerDisplayOrder').value = b.DisplayOrder || 1;
+                document.getElementById('editBannerStartDate').value = b.StartDate;
+                document.getElementById('editBannerEndDate').value = b.EndDate;
+                document.getElementById('editBannerIsActive').checked = b.IsActive;
+
+                const editModal = new bootstrap.Modal(document.getElementById('editBannerModal'));
+                editModal.show();
+            });
+        });
+
+        // Bind Edit SEO Campaign Modal
+        document.querySelectorAll('.btn-edit-seo').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const s = JSON.parse(this.getAttribute('data-seo'));
+                document.getElementById('seoCampaignId').value = s.Id;
+                document.getElementById('seoModalHeaderTitle').innerText = `Chỉnh Sửa Chiến Dịch: ${s.Title}`;
+                document.getElementById('seoCampaignTitle').value = s.Title || '';
+                document.getElementById('seoCampaignSlug').value = s.EventSlug || '';
+                document.getElementById('seoCampaignImageUrl').value = s.ImageUrl || '';
+                document.getElementById('seoCampaignCanonical').value = s.CanonicalUrl || '';
+                document.getElementById('seoCampaignMetaTitle').value = s.MetaTitle || '';
+                document.getElementById('seoCampaignMetaDesc').value = s.MetaDescription || '';
+                document.getElementById('seoCampaignKeywords').value = s.MetaKeywords || '';
+                document.getElementById('seoCampaignHtml').value = s.HtmlContent || '';
+                document.getElementById('seoCampaignStartDate').value = s.StartDate;
+                document.getElementById('seoCampaignEndDate').value = s.EndDate;
+                document.getElementById('seoCampaignIsActive').checked = s.IsActive;
+
+                const seoModal = new bootstrap.Modal(document.getElementById('saveSeoCampaignModal'));
+                seoModal.show();
+            });
+        });
+    </script>
+}

@@ -1,0 +1,68 @@
+@model ProductCardDto
+
+<div class="col-6 col-md-4 col-lg-3 mb-4">
+    <div class="tz-product-card shadow-sm">
+        @if (Model.DiscountRate > 0)
+        {
+            <div class="tz-card-badge">-@Model.DiscountRate%</div>
+        }
+        <div class="tz-installment-badge">
+            <i class="bi bi-patch-check-fill text-primary me-1"></i>VN/A
+        </div>
+
+        <div class="tz-product-img-wrapper">
+            <a asp-controller="Catalog" asp-action="Detail" asp-route-slug="@Model.Slug">
+                <img src="@Model.ThumbnailUrl" alt="@Model.Name" class="tz-product-img" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/placeholder.svg';" />
+            </a>
+        </div>
+
+        <div class="tz-specs-pills">
+            @foreach (var spec in Model.HighlightSpecs.Take(2))
+            {
+                <span class="tz-spec-pill">@spec</span>
+            }
+        </div>
+
+        <h3 class="tz-product-title">
+            <a asp-controller="Catalog" asp-action="Detail" asp-route-slug="@Model.Slug" title="@Model.Name">
+                @Model.Name
+            </a>
+        </h3>
+
+        <div class="d-flex align-items-baseline mb-1">
+            <span class="tz-price-current">@Model.Price.ToString("N0")₫</span>
+            @if (Model.OriginalPrice > Model.Price)
+            {
+                <span class="tz-price-old">@Model.OriginalPrice.ToString("N0")₫</span>
+            }
+        </div>
+
+        <div class="d-flex align-items-center gap-1 mb-1">
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.65rem;">
+                <i class="bi bi-shield-lock-fill"></i> Smember
+            </span>
+            <span class="fw-bold text-danger" style="font-size: 0.78rem;">@Model.SmemberPrice.ToString("N0")₫</span>
+        </div>
+
+        <div class="small text-muted mb-2 font-monospace" style="font-size: 0.72rem;">
+            <i class="bi bi-credit-card-2-front text-success me-1"></i>@Model.InstallmentText
+        </div>
+
+        <div class="tz-card-footer mt-auto">
+            <div class="tz-rating-stars">
+                <i class="bi bi-star-fill"></i>
+                <span class="fw-bold text-dark ms-1">@Model.RatingAverage.ToString("0.0")</span>
+                <span class="text-muted small">(@Model.RatingCount)</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-1">
+                <button type="button" class="btn btn-sm btn-light border rounded-pill px-2 py-1 text-secondary" style="font-size: 0.7rem;" title="So sánh sản phẩm này" onclick="addToCompareTray('@Model.Slug', '@Model.Name.Replace("'", "\\'")', '@Model.ThumbnailUrl', '@Model.Price.ToString("N0")₫')">
+                    <i class="bi bi-arrow-left-right"></i> So sánh
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary rounded-circle p-2" title="Thêm vào giỏ hàng" onclick="addToCart('@Model.Id', '@Model.Sku', 1)">
+                    <i class="bi bi-cart-plus"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

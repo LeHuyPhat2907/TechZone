@@ -1,0 +1,1203 @@
+@using System.Text.Json
+@using TechZone.Domain.Enums
+@model TechZone.Web.Areas.Admin.Models.ReportsViewModel
+@{
+    ViewData["Title"] = "Báo Cáo Tài Chính & Phân Tích Hiệu Suất";
+}
+
+<div class="container-fluid px-0">
+    <!-- Header Page -->
+    <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge tz-badge-soft-primary px-2.5 py-1 rounded-pill">
+                    <i class="bi bi-graph-up-arrow me-1"></i>Báo Cáo & Tài Chính (Mục 1.7)
+                </span>
+                <span class="badge bg-dark text-light rounded-pill px-2.5 py-1">Enterprise Analytics & COGS</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-1">Phân Tích Doanh Thu, Lợi Nhuận & Vòng Quay Kho</h2>
+            <p class="text-secondary small mb-0">Theo dõi dòng tiền, biên lợi nhuận sau giá vốn thiết bị, đối soát hàng om đọng và trích xuất dữ liệu RFC 4180 Excel/CSV.</p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Time Filter Range Quick Buttons -->
+            <div class="btn-group btn-group-sm p-1 bg-white border rounded-pill shadow-2xs">
+                <a href="@Url.Action("Index", "Reports", new { tab = Model.ActiveTab, range = "7d", granularity = Model.Granularity })" class="btn btn-sm rounded-pill px-3 @(Model.DateRange == "7d" ? "btn-primary" : "btn-light text-secondary")">7 ngày</a>
+                <a href="@Url.Action("Index", "Reports", new { tab = Model.ActiveTab, range = "30d", granularity = Model.Granularity })" class="btn btn-sm rounded-pill px-3 @(Model.DateRange == "30d" ? "btn-primary" : "btn-light text-secondary")">30 ngày</a>
+                <a href="@Url.Action("Index", "Reports", new { tab = Model.ActiveTab, range = "90d", granularity = Model.Granularity })" class="btn btn-sm rounded-pill px-3 @(Model.DateRange == "90d" ? "btn-primary" : "btn-light text-secondary")">Quý (90d)</a>
+                <a href="@Url.Action("Index", "Reports", new { tab = Model.ActiveTab, range = "year", granularity = Model.Granularity })" class="btn btn-sm rounded-pill px-3 @(Model.DateRange == "year" ? "btn-primary" : "btn-light text-secondary")">Năm nay</a>
+                <a href="@Url.Action("Index", "Reports", new { tab = Model.ActiveTab, range = "all", granularity = Model.Granularity })" class="btn btn-sm rounded-pill px-3 @(Model.DateRange == "all" ? "btn-primary" : "btn-light text-secondary")">Toàn bộ</a>
+            </div>
+
+            <!-- Custom Date Filter Modal Trigger -->
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#customDateModal">
+                <i class="bi bi-calendar3 me-1"></i>Tùy chọn ngày
+            </button>
+
+            <!-- Export CSV Action Direct -->
+            <a href="@Url.Action("ExportFinancialData", "Reports", new { type = "orders", range = Model.DateRange, fromDate = Model.FromDate, toDate = Model.ToDate })" class="btn btn-success rounded-pill px-3.5 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-sm fw-semibold">
+                <i class="bi bi-file-earmark-excel-fill"></i>
+                <span>Xuất Excel/CSV</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 Modules Tabs Navigation -->
+    <ul class="nav nav-pills gap-2 mb-4 p-1.5 bg-white border rounded-4 shadow-2xs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link rounded-3 px-3.5 py-2 fw-semibold @(Model.ActiveTab == "revenue" ? "active" : "text-secondary")" href="@Url.Action("Index", "Reports", new { tab = "revenue", range = Model.DateRange, granularity = Model.Granularity })">
+                <i class="bi bi-currency-dollar me-1.5"></i>1. Biểu Đồ Doanh Thu
+                <span class="badge bg-light text-dark ms-1 font-monospace" style="font-size: 0.7rem;">report.revenue</span>
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link rounded-3 px-3.5 py-2 fw-semibold @(Model.ActiveTab == "profit" ? "active" : "text-secondary")" href="@Url.Action("Index", "Reports", new { tab = "profit", range = Model.DateRange, granularity = Model.Granularity })">
+                <i class="bi bi-piggy-bank me-1.5"></i>2. Lợi Nhuận Gộp & Biên Lãi
+                <span class="badge bg-light text-dark ms-1 font-monospace" style="font-size: 0.7rem;">report.profit_margin</span>
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link rounded-3 px-3.5 py-2 fw-semibold @(Model.ActiveTab == "inventory" ? "active" : "text-secondary")" href="@Url.Action("Index", "Reports", new { tab = "inventory", range = Model.DateRange, granularity = Model.Granularity })">
+                <i class="bi bi-box-seam me-1.5"></i>3. Vòng Quay Kho & Hàng Om
+                @if (Model.Aging60To90Days + Model.AgingOver90Days > 0)
+                {
+                    <span class="badge bg-danger text-white rounded-pill ms-1">@(Model.Aging60To90Days + Model.AgingOver90Days)</span>
+                }
+                <span class="badge bg-light text-dark ms-1 font-monospace" style="font-size: 0.7rem;">report.inventory_turnover</span>
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link rounded-3 px-3.5 py-2 fw-semibold @(Model.ActiveTab == "export" ? "active" : "text-secondary")" href="@Url.Action("Index", "Reports", new { tab = "export", range = Model.DateRange, granularity = Model.Granularity })">
+                <i class="bi bi-cloud-arrow-down me-1.5"></i>4. Xuất Báo Cáo Kế Toán
+                <span class="badge bg-light text-dark ms-1 font-monospace" style="font-size: 0.7rem;">export.financial_data</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- TAB 1: REPORT.REVENUE -->
+    @if (Model.ActiveTab == "revenue")
+    {
+        <!-- KPI Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-primary">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Tổng Doanh Thu Gộp (GMV)</span>
+                        <div class="tz-admin-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; width: 34px; height: 34px;">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-dark font-monospace">@Model.GrossRevenue.ToString("N0")₫</div>
+                    <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.72rem;">
+                        <span>Từ <strong>@Model.TotalOrders</strong> đơn đặt hàng (@Model.CompletedOrders đơn hoàn tất)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-success">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Doanh Thu Thuần (Net Sales)</span>
+                        <div class="tz-admin-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 34px; height: 34px;">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-success font-monospace">@Model.NetRevenue.ToString("N0")₫</div>
+                    <span class="text-muted" style="font-size: 0.72rem;">Đã trừ <strong>@Model.TotalDiscounts.ToString("N0")₫</strong> tiền voucher/chiết khấu</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-warning">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Giá Trị Đơn Trung Bình (AOV)</span>
+                        <div class="tz-admin-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; width: 34px; height: 34px;">
+                            <i class="bi bi-cart-check"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-warning font-monospace">@Model.AverageOrderValue.ToString("N0")₫</div>
+                    <span class="text-muted" style="font-size: 0.72rem;">Bình quân mỗi giỏ hàng thanh toán</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-info">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Tỷ Lệ Giao Thành Công</span>
+                        <div class="tz-admin-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; width: 34px; height: 34px;">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-info font-monospace">@Model.DeliverySuccessRate%</div>
+                    <span class="text-muted" style="font-size: 0.72rem;">Tỷ lệ hủy: <strong>@Model.CancellationRate%</strong> (@Model.CancelledOrders đơn hủy)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chart Section: Daily, Weekly, Monthly, Quarterly -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+                <div>
+                    <h5 class="fw-bold text-dark mb-0">Biểu Đồ Doanh Thu & Số Lượng Đơn Đặt Hàng</h5>
+                    <span class="text-muted small">Thời gian thực theo Ngày / Tuần / Tháng / Quý (Chu kỳ: @Model.DateRange)</span>
+                </div>
+                <!-- Granularity Switcher -->
+                <div class="btn-group btn-group-sm p-1 bg-light border rounded-pill">
+                    <a href="@Url.Action("Index", "Reports", new { tab = "revenue", range = Model.DateRange, granularity = "day" })" class="btn btn-sm rounded-pill px-3 @(Model.Granularity == "day" ? "btn-primary" : "btn-light text-secondary")">Theo Ngày</a>
+                    <a href="@Url.Action("Index", "Reports", new { tab = "revenue", range = Model.DateRange, granularity = "week" })" class="btn btn-sm rounded-pill px-3 @(Model.Granularity == "week" ? "btn-primary" : "btn-light text-secondary")">Theo Tuần</a>
+                    <a href="@Url.Action("Index", "Reports", new { tab = "revenue", range = Model.DateRange, granularity = "month" })" class="btn btn-sm rounded-pill px-3 @(Model.Granularity == "month" ? "btn-primary" : "btn-light text-secondary")">Theo Tháng</a>
+                    <a href="@Url.Action("Index", "Reports", new { tab = "revenue", range = Model.DateRange, granularity = "quarter" })" class="btn btn-sm rounded-pill px-3 @(Model.Granularity == "quarter" ? "btn-primary" : "btn-light text-secondary")">Theo Quý</a>
+                </div>
+            </div>
+
+            <!-- Canvas for Chart.js -->
+            <div style="position: relative; height: 350px;">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Channel & Payment Breakdown Row -->
+        <div class="row g-4 mb-4">
+            <!-- Channel Breakdown -->
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0">Doanh Thu Theo Kênh Bán Hàng (Source Channel)</h6>
+                        <span class="badge tz-badge-soft-primary rounded-pill">Đa kênh Omnichannel</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr class="text-secondary small fw-bold">
+                                    <th>Kênh Bán</th>
+                                    <th class="text-center">Số Đơn</th>
+                                    <th class="text-end">Doanh Số</th>
+                                    <th class="text-end">Tỷ Trọng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.ChannelBreakdowns.Any())
+                                {
+                                    <tr><td colspan="4" class="text-center py-3 text-muted">Chưa có dữ liệu kênh bán</td></tr>
+                                }
+                                else
+                                {
+                                    @foreach (var ch in Model.ChannelBreakdowns)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold text-dark">
+                                                <i class="bi bi-shop me-1.5 text-primary"></i>@ch.ChannelName
+                                            </td>
+                                            <td class="text-center font-monospace">@ch.OrderCount</td>
+                                            <td class="text-end fw-bold font-monospace text-primary">@ch.Revenue.ToString("N0")₫</td>
+                                            <td class="text-end">
+                                                <span class="badge bg-light text-dark border font-monospace">@ch.Percentage%</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Method Breakdown -->
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0">Phương Thức Thanh Toán (Payment Methods)</h6>
+                        <span class="badge tz-badge-soft-success rounded-pill">Dòng tiền thực thu</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr class="text-secondary small fw-bold">
+                                    <th>Phương Thức</th>
+                                    <th class="text-center">Số Đơn</th>
+                                    <th class="text-end">Tổng Tiền</th>
+                                    <th class="text-end">Tỷ Trọng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.PaymentBreakdowns.Any())
+                                {
+                                    <tr><td colspan="4" class="text-center py-3 text-muted">Chưa có dữ liệu thanh toán</td></tr>
+                                }
+                                else
+                                {
+                                    @foreach (var pm in Model.PaymentBreakdowns)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold text-dark">
+                                                <i class="bi bi-credit-card-2-front me-1.5 text-success"></i>@pm.MethodName
+                                            </td>
+                                            <td class="text-center font-monospace">@pm.OrderCount</td>
+                                            <td class="text-end fw-bold font-monospace text-success">@pm.TotalAmount.ToString("N0")₫</td>
+                                            <td class="text-end">
+                                                <span class="badge bg-light text-dark border font-monospace">@pm.Percentage%</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- TAB 2: REPORT.PROFIT_MARGIN -->
+    @if (Model.ActiveTab == "profit")
+    {
+        <!-- KPI Row: Profit & COGS -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-secondary">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Giá Vốn Hàng Bán (COGS)</span>
+                        <div class="tz-admin-icon" style="background: rgba(100, 116, 139, 0.1); color: #64748b; width: 34px; height: 34px;">
+                            <i class="bi bi-receipt-cutoff"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-secondary font-monospace">@Model.TotalCostOfGoodsSold.ToString("N0")₫</div>
+                    <span class="text-muted" style="font-size: 0.72rem;">Tổng giá nhập kho theo serial/lô hàng</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-success">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Lợi Nhuận Gộp (Gross Profit)</span>
+                        <div class="tz-admin-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 34px; height: 34px;">
+                            <i class="bi bi-cash-coin"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-success font-monospace">@Model.GrossProfit.ToString("N0")₫</div>
+                    <div class="text-success small fw-semibold">Biên lãi gộp: @Model.ProfitMarginPercent%</div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-danger">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Chi Phí Vận Hành Trợ Giá</span>
+                        <div class="tz-admin-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; width: 34px; height: 34px;">
+                            <i class="bi bi-tag-fill"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-danger font-monospace">@((Model.TotalOrderVouchers + Model.TotalShippingSubsidy).ToString("N0"))₫</div>
+                    <span class="text-muted" style="font-size: 0.72rem;">Voucher: @Model.TotalOrderVouchers.ToString("N0")₫ | Bù ship: @Model.TotalShippingSubsidy.ToString("N0")₫</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-primary">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Lợi Nhuận Vận Hành Ròng</span>
+                        <div class="tz-admin-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; width: 34px; height: 34px;">
+                            <i class="bi bi-trophy-fill"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-primary font-monospace">@Model.EstimatedOperatingProfit.ToString("N0")₫</div>
+                    <div class="text-primary small fw-semibold">Biên lãi ròng: @Model.OperatingProfitMarginPercent%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profit Breakdown Structure & Chart -->
+        <div class="row g-4 mb-4">
+            <!-- Cost Structure Doughnut Chart -->
+            <div class="col-12 col-lg-5">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0">Cơ Cấu Dòng Tiền & Chi Phí (Cost Breakdown)</h6>
+                        <span class="badge bg-light text-secondary border font-monospace">COGS vs Margin</span>
+                    </div>
+                    <div style="position: relative; height: 260px;">
+                        <canvas id="marginStructureChart"></canvas>
+                    </div>
+                    <div class="mt-3 pt-3 border-top small">
+                        <div class="d-flex justify-content-between py-1">
+                            <span class="text-secondary"><i class="bi bi-circle-fill text-secondary me-1.5" style="font-size: 0.6rem;"></i>Giá vốn nhập kho (COGS):</span>
+                            <strong class="font-monospace">@Model.TotalCostOfGoodsSold.ToString("N0")₫</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span class="text-danger"><i class="bi bi-circle-fill text-danger me-1.5" style="font-size: 0.6rem;"></i>Trợ giá Voucher & Bù Ship:</span>
+                            <strong class="font-monospace text-danger">@((Model.TotalOrderVouchers + Model.TotalShippingSubsidy).ToString("N0"))₫</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span class="text-success"><i class="bi bi-circle-fill text-success me-1.5" style="font-size: 0.6rem;"></i>Lợi nhuận ròng giữ lại:</span>
+                            <strong class="font-monospace text-success">@Model.EstimatedOperatingProfit.ToString("N0")₫</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Profitability -->
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0">Hiệu Suất & Biên Lãi Theo Danh Mục Sản Phẩm</h6>
+                        <span class="badge tz-badge-soft-success rounded-pill">Category Profitability</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr class="text-secondary small fw-bold">
+                                    <th>Danh Mục</th>
+                                    <th class="text-center">Số Lượng Bán</th>
+                                    <th class="text-end">Doanh Số</th>
+                                    <th class="text-end">Giá Vốn</th>
+                                    <th class="text-end">Lợi Nhuận Gộp</th>
+                                    <th class="text-end">Biên Lãi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.CategoryProfits.Any())
+                                {
+                                    <tr><td colspan="6" class="text-center py-3 text-muted">Chưa có giao dịch danh mục</td></tr>
+                                }
+                                else
+                                {
+                                    @foreach (var cp in Model.CategoryProfits)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold text-dark">@cp.CategoryName</td>
+                                            <td class="text-center font-monospace">@cp.UnitsSold</td>
+                                            <td class="text-end font-monospace">@cp.Revenue.ToString("N0")₫</td>
+                                            <td class="text-end font-monospace text-secondary">@cp.CostOfGoodsSold.ToString("N0")₫</td>
+                                            <td class="text-end font-monospace text-success fw-bold">+@cp.GrossProfit.ToString("N0")₫</td>
+                                            <td class="text-end">
+                                                <span class="badge @(cp.MarginPercent >= 20 ? "tz-badge-soft-success" : (cp.MarginPercent >= 10 ? "tz-badge-soft-primary" : "tz-badge-soft-warning")) rounded-pill font-monospace">
+                                                    @cp.MarginPercent%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Profit Generating Products Table -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">Top 10 Sản Phẩm Đóng Góp Lợi Nhuận Gộp Cao Nhất</h6>
+                    <span class="text-muted small">Đối soát tỷ suất sinh lời theo từng dòng thiết bị</span>
+                </div>
+                <span class="badge bg-light text-secondary border font-monospace">product.profit_rank</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold">
+                            <th class="ps-3 py-3">Sản Phẩm & Phiên Bản</th>
+                            <th class="text-center">Số Lượng Bán</th>
+                            <th class="text-end">Doanh Thu Thuần</th>
+                            <th class="text-end">Giá Vốn COGS</th>
+                            <th class="text-end">Lợi Nhuận Gộp</th>
+                            <th class="text-end pe-3">Biên Lợi Nhuận</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.TopProfitProducts.Any())
+                        {
+                            <tr><td colspan="6" class="text-center py-4 text-muted">Chưa có dữ liệu sản phẩm phát sinh doanh thu</td></tr>
+                        }
+                        else
+                        {
+                            @for (int i = 0; i < Model.TopProfitProducts.Count; i++)
+                            {
+                                var tp = Model.TopProfitProducts[i];
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge rounded-circle @(i < 3 ? "bg-warning text-dark" : "bg-light text-secondary border")" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                                                @(i + 1)
+                                            </span>
+                                            <div>
+                                                <div class="fw-bold text-dark">@tp.ProductName</div>
+                                                <span class="text-muted small font-monospace">SKU: @(string.IsNullOrWhiteSpace(tp.VariantSku) ? "STANDARD" : tp.VariantSku)</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center font-monospace">@tp.UnitsSold chiếc</td>
+                                    <td class="text-end font-monospace">@tp.Revenue.ToString("N0")₫</td>
+                                    <td class="text-end font-monospace text-secondary">@tp.CostOfGoodsSold.ToString("N0")₫</td>
+                                    <td class="text-end font-monospace text-success fw-bold">+@tp.GrossProfit.ToString("N0")₫</td>
+                                    <td class="text-end pe-3">
+                                        <span class="badge @(tp.MarginPercent >= 20 ? "tz-badge-soft-success" : "tz-badge-soft-primary") rounded-pill px-2.5 py-1 font-monospace">
+                                            @tp.MarginPercent%
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- TAB 3: REPORT.INVENTORY_TURNOVER -->
+    @if (Model.ActiveTab == "inventory")
+    {
+        <!-- KPI Row: Turnover & Aging Alerts -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-primary">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Vốn Tồn Kho Khả Dụng</span>
+                        <div class="tz-admin-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; width: 34px; height: 34px;">
+                            <i class="bi bi-safe2"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-dark font-monospace">@Model.TotalInventoryAssetValue.ToString("N0")₫</div>
+                    <span class="text-muted" style="font-size: 0.72rem;">@Model.InStockInventoryItems thiết bị nằm trên kệ sẵn sàng xuất bán</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-success">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Hệ Số Quay Vòng (Turnover)</span>
+                        <div class="tz-admin-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 34px; height: 34px;">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-success font-monospace">@Model.InventoryTurnoverRate vòng/năm</div>
+                    <span class="text-muted" style="font-size: 0.72rem;">Đã xuất bán <strong>@Model.SoldInventoryItems</strong> / <strong>@Model.TotalInventoryItems</strong> thiết bị</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 border-warning">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Số Ngày Bán Hết Hàng (DSI)</span>
+                        <div class="tz-admin-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; width: 34px; height: 34px;">
+                            <i class="bi bi-calendar2-week"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-warning font-monospace">~@Model.DaysSalesOfInventory ngày</div>
+                    <span class="text-muted" style="font-size: 0.72rem;">Days Sales of Inventory (Tiêu chuẩn ngành: 30-45 ngày)</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-4 @(Model.Aging60To90Days + Model.AgingOver90Days > 0 ? "border-danger" : "border-info")">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small fw-semibold">Vốn Đọng Trong Hàng Om (&gt;60d)</span>
+                        <div class="tz-admin-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; width: 34px; height: 34px;">
+                            <i class="bi bi-exclamation-octagon-fill"></i>
+                        </div>
+                    </div>
+                    <div class="fs-4 fw-bold text-danger font-monospace">@Model.StaleCapitalLocked.ToString("N0")₫</div>
+                    <span class="text-muted" style="font-size: 0.72rem;">Có <strong>@(Model.Aging60To90Days + Model.AgingOver90Days)</strong> thiết bị cần xả hàng gấp</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aging Distribution & Category Turnover Row -->
+        <div class="row g-4 mb-4">
+            <!-- Aging Pyramid Chart -->
+            <div class="col-12 col-lg-5">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0">Phân Phối Tuổi Thọ Tồn Kho (Aging Pyramid)</h6>
+                        <span class="badge tz-badge-soft-danger rounded-pill">Cảnh báo chậm luân chuyển</span>
+                    </div>
+                    <div style="position: relative; height: 260px;">
+                        <canvas id="inventoryAgingChart"></canvas>
+                    </div>
+                    <div class="row g-2 mt-3 pt-3 border-top text-center" style="font-size: 0.75rem;">
+                        <div class="col-3">
+                            <div class="p-2 bg-light rounded-3">
+                                <div class="text-success fw-bold fs-6 font-monospace">@Model.AgingUnder30Days</div>
+                                <span class="text-muted">&lt; 30 ngày (An toàn)</span>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 bg-light rounded-3">
+                                <div class="text-primary fw-bold fs-6 font-monospace">@Model.Aging30To60Days</div>
+                                <span class="text-muted">30-60 ngày (Bình thường)</span>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 bg-light rounded-3">
+                                <div class="text-warning fw-bold fs-6 font-monospace">@Model.Aging60To90Days</div>
+                                <span class="text-muted">61-90 ngày (Tồn chậm)</span>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 bg-light rounded-3">
+                                <div class="text-danger fw-bold fs-6 font-monospace">@Model.AgingOver90Days</div>
+                                <span class="text-muted">&gt; 90 ngày (Hàng om)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Turnover Table -->
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0">Tỉ Lệ Quay Vòng Kho Theo Nhóm Thiết Bị</h6>
+                        <span class="badge tz-badge-soft-primary rounded-pill">Category Turnover</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr class="text-secondary small fw-bold">
+                                    <th>Danh Mục</th>
+                                    <th class="text-center">Tổng Nhập</th>
+                                    <th class="text-center">Tồn Kho</th>
+                                    <th class="text-center">Đã Xuất</th>
+                                    <th class="text-end">Vốn Kho</th>
+                                    <th class="text-end">Tỉ Lệ Xuất Bán</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.CategoryTurnovers.Any())
+                                {
+                                    <tr><td colspan="6" class="text-center py-3 text-muted">Chưa có dữ liệu tồn kho theo nhóm</td></tr>
+                                }
+                                else
+                                {
+                                    @foreach (var ct in Model.CategoryTurnovers)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold text-dark">@ct.CategoryName</td>
+                                            <td class="text-center font-monospace">@ct.TotalStock</td>
+                                            <td class="text-center font-monospace text-primary">@ct.InStock</td>
+                                            <td class="text-center font-monospace text-success">@ct.SoldUnits</td>
+                                            <td class="text-end font-monospace">@ct.AssetValue.ToString("N0")₫</td>
+                                            <td class="text-end">
+                                                <span class="badge @(ct.TurnoverRate >= 50 ? "tz-badge-soft-success" : "tz-badge-soft-warning") rounded-pill font-monospace">
+                                                    @ct.TurnoverRate%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STALE INVENTORY ALERT TABLE: report.inventory_turnover -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4 border-start border-4 border-danger">
+            <div class="p-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <h6 class="fw-bold text-danger mb-0">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Danh Sách Cảnh Báo Thiết Bị Tồn Lâu Ngày (&gt;60 &amp; &gt;90 Ngày)
+                        </h6>
+                        <span class="badge bg-danger rounded-pill">Cần giải phóng vốn</span>
+                    </div>
+                    <span class="text-muted small">Cảnh báo hàng om, nguy cơ trượt giá linh kiện điện tử - Cần giải pháp khuyến mãi hoặc thanh lý</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/Admin/Marketing" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                        <i class="bi bi-lightning-charge me-1"></i>Tạo Flash Sale / Voucher Xả Kho
+                    </a>
+                    <a href="@Url.Action("ExportFinancialData", "Reports", new { type = "inventory_aging", range = "all" })" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                        <i class="bi bi-download me-1"></i>Xuất Danh Sách Hàng Om
+                    </a>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold">
+                            <th class="ps-3 py-3">Thiết Bị & Model</th>
+                            <th>Mã IMEI / Serial</th>
+                            <th>Vị Trí Kho / NCC</th>
+                            <th class="text-center">Ngày Nhập Kho</th>
+                            <th class="text-center">Số Ngày Tồn</th>
+                            <th class="text-end">Vốn Giam (COGS)</th>
+                            <th>Mức Nguy Cơ</th>
+                            <th class="text-end pe-3">Khuyến Nghị Xử Lý</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.StaleInventoryItems.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-success fw-semibold">
+                                    <i class="bi bi-check-circle-fill me-1.5"></i>Kho hàng hoàn hảo! Không có thiết bị nào bị tồn đọng trên 60 ngày.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var stale in Model.StaleInventoryItems)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="fw-bold text-dark">@stale.ProductName</div>
+                                        <span class="text-muted small font-monospace">SKU: @(string.IsNullOrWhiteSpace(stale.VariantSku) ? "STANDARD" : stale.VariantSku)</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark font-monospace border">@stale.SerialNumber</span>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold text-secondary">@stale.WarehouseLocation</div>
+                                        <span class="text-muted" style="font-size: 0.72rem;">@stale.SupplierName</span>
+                                    </td>
+                                    <td class="text-center small font-monospace">
+                                        @stale.ReceivedDate.ToLocalTime().ToString("dd/MM/yyyy")
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge @(stale.AgingDays > 90 ? "bg-danger" : "bg-warning text-dark") rounded-pill font-monospace px-2.5 py-1">
+                                            @stale.AgingDays ngày
+                                        </span>
+                                    </td>
+                                    <td class="text-end font-monospace fw-bold text-danger">
+                                        @stale.CostPrice.ToString("N0")₫
+                                    </td>
+                                    <td>
+                                        @if (stale.AlertSeverity == "Critical")
+                                        {
+                                            <span class="badge tz-badge-soft-danger rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-fire me-1"></i>Hàng Om &gt;90d
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge tz-badge-soft-warning rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-clock-history me-1"></i>Tồn Chậm 60-90d
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <span class="text-secondary small">@stale.Recommendation</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- TAB 4: EXPORT.FINANCIAL_DATA -->
+    @if (Model.ActiveTab == "export")
+    {
+        <!-- Export Center Cards -->
+        <div class="row g-4 mb-4">
+            <!-- 1. Orders & Invoices -->
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="tz-admin-icon mb-3" style="background: rgba(16, 185, 129, 0.12); color: #059669; width: 44px; height: 44px;">
+                            <i class="bi bi-file-earmark-spreadsheet-fill fs-5"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">Sổ Doanh Thu & Hóa Đơn Bán Lẻ</h6>
+                        <p class="text-muted small mb-3">Toàn bộ giao dịch bán lẻ, khách hàng, kênh bán, chiết khấu và đối soát hóa đơn VAT.</p>
+                    </div>
+                    <a href="@Url.Action("ExportFinancialData", "Reports", new { type = "orders", range = Model.DateRange, fromDate = Model.FromDate, toDate = Model.ToDate })" class="btn btn-success rounded-pill w-100 fw-semibold">
+                        <i class="bi bi-download me-1.5"></i>Tải Sổ Đơn Hàng (CSV)
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2. Profit & COGS -->
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="tz-admin-icon mb-3" style="background: rgba(2, 132, 199, 0.12); color: #0284c7; width: 44px; height: 44px;">
+                            <i class="bi bi-piggy-bank-fill fs-5"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">Báo Cáo Lợi Nhuận & Giá Vốn COGS</h6>
+                        <p class="text-muted small mb-3">Chi tiết doanh số thuần, đơn giá vốn nhập kho và biên lợi nhuận gộp theo từng mã thiết bị.</p>
+                    </div>
+                    <a href="@Url.Action("ExportFinancialData", "Reports", new { type = "profit", range = Model.DateRange, fromDate = Model.FromDate, toDate = Model.ToDate })" class="btn btn-primary rounded-pill w-100 fw-semibold">
+                        <i class="bi bi-download me-1.5"></i>Tải Báo Cáo COGS (CSV)
+                    </a>
+                </div>
+            </div>
+
+            <!-- 3. Inventory Aging & Om Alert -->
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="tz-admin-icon mb-3" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; width: 44px; height: 44px;">
+                            <i class="bi bi-box-seam-fill fs-5"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">Báo Cáo Kiểm Kê & Hàng Om</h6>
+                        <p class="text-muted small mb-3">Danh sách toàn bộ số Serial/IMEI lưu kho, vị trí kệ, số ngày nằm kho và vốn lưu động bị kẹt.</p>
+                    </div>
+                    <a href="@Url.Action("ExportFinancialData", "Reports", new { type = "inventory_aging", range = Model.DateRange, fromDate = Model.FromDate, toDate = Model.ToDate })" class="btn btn-danger rounded-pill w-100 fw-semibold">
+                        <i class="bi bi-download me-1.5"></i>Tải Báo Cáo Hàng Om
+                    </a>
+                </div>
+            </div>
+
+            <!-- 4. Financial Balance Summary -->
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="tz-admin-icon mb-3" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; width: 44px; height: 44px;">
+                            <i class="bi bi-cash-coin fs-5"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">Bảng Cân Đối Tài Chính Tổng Hợp</h6>
+                        <p class="text-muted small mb-3">Bảng tổng kết thu chi, GMV, COGS, trợ giá voucher, phí ship và lợi nhuận ròng chuẩn kiểm toán.</p>
+                    </div>
+                    <a href="@Url.Action("ExportFinancialData", "Reports", new { type = "financial_summary", range = Model.DateRange, fromDate = Model.FromDate, toDate = Model.ToDate })" class="btn btn-warning text-dark rounded-pill w-100 fw-semibold">
+                        <i class="bi bi-download me-1.5"></i>Tải Cân Đối Thu Chi
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Export Filter Box -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+            <h6 class="fw-bold text-dark mb-3">Bộ Lọc Tùy Biến Trích Xuất Dữ Liệu</h6>
+            <form method="get" action="@Url.Action("ExportFinancialData", "Reports")" class="row g-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold text-secondary">Loại Báo Cáo Tài Chính</label>
+                    <select name="type" class="form-select rounded-3">
+                        <option value="orders">Sổ chi tiết đơn hàng &amp; Hóa đơn</option>
+                        <option value="profit">Báo cáo Lợi nhuận gộp &amp; Giá vốn COGS</option>
+                        <option value="inventory_aging">Báo cáo Kiểm kê &amp; Hàng om (&gt;60d)</option>
+                        <option value="financial_summary">Bảng cân đối tài chính tổng hợp</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small fw-semibold text-secondary">Chu Kỳ Mặc Định</label>
+                    <select name="range" class="form-select rounded-3">
+                        <option value="today">Hôm nay</option>
+                        <option value="7d">7 ngày qua</option>
+                        <option value="30d" selected>30 ngày qua</option>
+                        <option value="90d">Quý này (90 ngày)</option>
+                        <option value="year">Năm nay</option>
+                        <option value="all">Toàn bộ lịch sử</option>
+                        <option value="custom">Tùy chọn khoảng ngày</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small fw-semibold text-secondary">Từ Ngày (Nếu tùy chọn)</label>
+                    <input type="date" name="fromDate" class="form-control rounded-3" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small fw-semibold text-secondary">Đến Ngày (Nếu tùy chọn)</label>
+                    <input type="date" name="toDate" class="form-control rounded-3" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-12 col-md-3">
+                    <button type="submit" class="btn btn-primary rounded-3 w-100 fw-semibold">
+                        <i class="bi bi-file-earmark-arrow-down me-1"></i>Tạo &amp; Tải Báo Cáo (CSV)
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Export Security Audit Trail -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">Nhật Ký Kiểm Toán Xuất Dữ Liệu Tài Chính (Export Audit Trail)</h6>
+                    <span class="text-muted small">Lịch sử tải báo cáo của Kế toán &amp; Ban quản trị để giám sát an toàn thông tin</span>
+                </div>
+                <span class="badge bg-light text-secondary border font-monospace">audit.finance</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-secondary small fw-bold">
+                            <th class="ps-3 py-3">Thời Gian</th>
+                            <th>Tài Khoản Thực Hiện</th>
+                            <th>Hành Động &amp; Module</th>
+                            <th class="pe-3">Chi Tiết Báo Cáo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.RecentExportAuditLogs.Any())
+                        {
+                            <tr><td colspan="4" class="text-center py-4 text-muted">Chưa có nhật ký trích xuất tài chính gần đây.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var log in Model.RecentExportAuditLogs)
+                            {
+                                <tr>
+                                    <td class="ps-3 font-monospace small">@log.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">@log.UserEmail</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge tz-badge-soft-primary font-monospace">@log.Action</span>
+                                        <span class="badge bg-light text-secondary border">@log.Module</span>
+                                    </td>
+                                    <td class="pe-3 small text-secondary">
+                                        @log.Details
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- Recent Transactions Table (Always accessible under active tab for audit) -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+        <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="fw-bold text-dark mb-0">Sổ Giao Dịch & Hóa Đơn Bán Lẻ Gần Đây</h6>
+                <span class="text-muted small">Chi tiết các đơn hàng bán lẻ đối soát thanh toán trực tiếp</span>
+            </div>
+            <a href="@Url.Action("ExportFinancialData", "Reports", new { type = "orders", range = Model.DateRange })" class="btn btn-xs btn-outline-success rounded-pill px-3">
+                <i class="bi bi-download me-1"></i>Tải Toàn Bộ Sổ Giao Dịch
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.04em;">
+                        <th class="ps-3 py-3">Mã Đơn / Thời Gian</th>
+                        <th>Khách Hàng & Liên Hệ</th>
+                        <th>Kênh Bán</th>
+                        <th>SL Thiết Bị</th>
+                        <th>Tạm Tính</th>
+                        <th>Giảm Giá</th>
+                        <th>Phí Ship</th>
+                        <th>Tổng Thanh Toán</th>
+                        <th>Phương Thức & TT</th>
+                        <th class="text-end pe-3">Trạng Thái Đơn</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.RecentTransactions.Any())
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-4 text-muted">Chưa có giao dịch phát sinh trong giai đoạn này.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var o in Model.RecentTransactions)
+                        {
+                            <tr>
+                                <td class="ps-3">
+                                    <a href="/Admin/Order/Detail/@o.Id" class="fw-bold font-monospace text-primary text-decoration-none">@o.OrderCode</a>
+                                    <div class="text-muted" style="font-size: 0.72rem;">@o.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@o.CustomerName</div>
+                                    <span class="text-muted small">@o.CustomerPhone</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        @(string.IsNullOrWhiteSpace(o.SourceChannel) ? "Website" : o.SourceChannel)
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace">@o.Items.Sum(i => i.Quantity) chiếc</span>
+                                </td>
+                                <td>
+                                    <span class="text-dark small">@o.Subtotal.ToString("N0")₫</span>
+                                </td>
+                                <td>
+                                    @{
+                                        var totalDiscount = o.OrderDiscountAmount + o.ShippingDiscountAmount;
+                                    }
+                                    @if (totalDiscount > 0)
+                                    {
+                                        <span class="text-danger small font-monospace">-@totalDiscount.ToString("N0")₫</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">0₫</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="text-secondary small">@o.ShippingFee.ToString("N0")₫</span>
+                                </td>
+                                <td>
+                                    <strong class="text-primary font-monospace">@o.TotalAmount.ToString("N0")₫</strong>
+                                </td>
+                                <td>
+                                    <div class="small fw-semibold text-dark">@o.PaymentMethod</div>
+                                    <span class="badge @(o.PaymentStatus == PaymentStatus.Completed ? "tz-badge-soft-success" : "tz-badge-soft-warning")" style="font-size: 0.68rem;">
+                                        @(o.PaymentStatus == PaymentStatus.Completed ? "Đã TT" : "Chờ TT")
+                                    </span>
+                                </td>
+                                <td class="text-end pe-3">
+                                    @{
+                                        var stBadge = o.OrderStatus switch
+                                        {
+                                            OrderStatus.Delivered => "tz-badge-soft-success",
+                                            OrderStatus.Shipping => "tz-badge-soft-primary",
+                                            OrderStatus.Confirmed => "tz-badge-soft-primary",
+                                            OrderStatus.Pending => "tz-badge-soft-warning",
+                                            OrderStatus.Cancelled => "tz-badge-soft-danger",
+                                            _ => "tz-badge-soft-secondary"
+                                        };
+                                        var stText = o.OrderStatus switch
+                                        {
+                                            OrderStatus.Delivered => "Hoàn tất",
+                                            OrderStatus.Shipping => "Đang giao",
+                                            OrderStatus.Confirmed => "Đã duyệt",
+                                            OrderStatus.Pending => "Chờ xử lý",
+                                            OrderStatus.Cancelled => "Đã hủy",
+                                            _ => o.OrderStatus.ToString()
+                                        };
+                                    }
+                                    <span class="badge @stBadge rounded-pill px-2.5 py-1">@stText</span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Custom Date Filter -->
+<div class="modal fade" id="customDateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-calendar3 me-2 text-primary"></i>Chọn Khoảng Thời Gian Tùy Chỉnh
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="get" action="@Url.Action("Index", "Reports")">
+                <div class="modal-body">
+                    <input type="hidden" name="tab" value="@Model.ActiveTab" />
+                    <input type="hidden" name="range" value="custom" />
+                    <input type="hidden" name="granularity" value="@Model.Granularity" />
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Từ Ngày</label>
+                        <input type="date" name="fromDate" class="form-control rounded-3" value="@(Model.FromDate?.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd"))" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Đến Ngày</label>
+                        <input type="date" name="toDate" class="form-control rounded-3" value="@(Model.ToDate?.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.ToString("yyyy-MM-dd"))" required />
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Áp Dụng Lọc</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Include Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. REVENUE CHART (Tab 1: report.revenue)
+            var revenueCanvas = document.getElementById("revenueChart");
+            if (revenueCanvas) {
+                var chartDataPoints = @Html.Raw(JsonSerializer.Serialize(Model.ChartPoints));
+                var labels = chartDataPoints.map(p => p.PeriodLabel);
+                var grossData = chartDataPoints.map(p => p.GrossRevenue);
+                var netData = chartDataPoints.map(p => p.NetRevenue);
+                var profitData = chartDataPoints.map(p => p.Profit);
+                var ordersData = chartDataPoints.map(p => p.OrderCount);
+
+                var ctx = revenueCanvas.getContext("2d");
+                new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                type: "line",
+                                label: "Số lượng đơn đặt",
+                                data: ordersData,
+                                yAxisID: "y1",
+                                borderColor: "#f59e0b",
+                                backgroundColor: "rgba(245, 158, 11, 0.2)",
+                                borderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                fill: false,
+                                tension: 0.3
+                            },
+                            {
+                                type: "bar",
+                                label: "Doanh thu gộp (VND)",
+                                data: grossData,
+                                yAxisID: "y",
+                                backgroundColor: "rgba(2, 132, 199, 0.8)",
+                                borderColor: "#0284c7",
+                                borderWidth: 1,
+                                borderRadius: 6
+                            },
+                            {
+                                type: "line",
+                                label: "Lợi nhuận gộp (VND)",
+                                data: profitData,
+                                yAxisID: "y",
+                                borderColor: "#10b981",
+                                backgroundColor: "rgba(16, 185, 129, 0.15)",
+                                borderWidth: 2.5,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                fill: true,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: "index",
+                            intersect: false
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { family: "system-ui", size: 12 } }
+                            },
+                            y: {
+                                type: "linear",
+                                display: true,
+                                position: "left",
+                                grid: { color: "#f1f5f9" },
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value >= 1000000) return (value / 1000000).toFixed(0) + " tr";
+                                        if (value >= 1000) return (value / 1000).toFixed(0) + " k";
+                                        return value;
+                                    }
+                                }
+                            },
+                            y1: {
+                                type: "linear",
+                                display: true,
+                                position: "right",
+                                grid: { drawOnChartArea: false },
+                                ticks: {
+                                    stepSize: 1,
+                                    callback: function(value) { return value + " đơn"; }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        var label = context.dataset.label || "";
+                                        var val = context.raw;
+                                        if (context.dataset.yAxisID === "y") {
+                                            return label + ": " + new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val);
+                                        }
+                                        return label + ": " + val + " đơn";
+                                    }
+                                }
+                            },
+                            legend: {
+                                position: "top",
+                                labels: { font: { family: "system-ui", size: 12, weight: "bold" } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. PROFIT MARGIN DOUGHNUT CHART (Tab 2: report.profit_margin)
+            var marginCanvas = document.getElementById("marginStructureChart");
+            if (marginCanvas) {
+                var cogs = @Model.TotalCostOfGoodsSold;
+                var vouchers = @(Model.TotalOrderVouchers + Model.TotalShippingSubsidy);
+                var operatingProfit = @Model.EstimatedOperatingProfit;
+
+                var ctxMargin = marginCanvas.getContext("2d");
+                new Chart(ctxMargin, {
+                    type: "doughnut",
+                    data: {
+                        labels: ["Giá vốn hàng bán (COGS)", "Trợ giá Voucher & Bù ship", "Lợi nhuận ròng giữ lại"],
+                        datasets: [{
+                            data: [cogs, vouchers, operatingProfit],
+                            backgroundColor: ["#64748b", "#ef4444", "#10b981"],
+                            borderWidth: 2,
+                            borderColor: "#ffffff"
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: "bottom",
+                                labels: { font: { family: "system-ui", size: 11 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        var val = context.raw;
+                                        return context.label + ": " + new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val);
+                                    }
+                                }
+                            }
+                        },
+                        cutout: "65%"
+                    }
+                });
+            }
+
+            // 3. INVENTORY AGING CHART (Tab 3: report.inventory_turnover)
+            var agingCanvas = document.getElementById("inventoryAgingChart");
+            if (agingCanvas) {
+                var u30 = @Model.AgingUnder30Days;
+                var a30to60 = @Model.Aging30To60Days;
+                var a60to90 = @Model.Aging60To90Days;
+                var o90 = @Model.AgingOver90Days;
+
+                var ctxAging = agingCanvas.getContext("2d");
+                new Chart(ctxAging, {
+                    type: "bar",
+                    data: {
+                        labels: ["< 30 ngày (An toàn)", "30-60 ngày (Bình thường)", "61-90 ngày (Tồn chậm)", "> 90 ngày (Hàng om)"],
+                        datasets: [{
+                            label: "Số lượng thiết bị",
+                            data: [u30, a30to60, a60to90, o90],
+                            backgroundColor: ["#10b981", "#0284c7", "#f59e0b", "#ef4444"],
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: "y",
+                        scales: {
+                            x: {
+                                grid: { color: "#f1f5f9" },
+                                ticks: { stepSize: 1 }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { font: { family: "system-ui", size: 12, weight: "bold" } }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}

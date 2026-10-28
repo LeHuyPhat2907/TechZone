@@ -1,0 +1,1259 @@
+@using TechZone.Domain.Enums
+@using TechZone.Domain.Entities
+@model TechZone.Web.Areas.Admin.Models.WarrantyManagementViewModel
+@{
+    ViewData["Title"] = "Quản lý Bảo hành & Hậu mãi (Warranty & Technical Services)";
+    var isTechOrAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("Technician");
+    var activeTab = Model.ActiveTab;
+}
+
+<div class="container-fluid px-0">
+    <!-- Header Page -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill">
+                    <i class="bi bi-shield-check me-1"></i>Hậu Mãi & Dịch Vụ Kỹ Thuật (Mục 1.4)
+                </span>
+                <span class="badge bg-dark text-light rounded-pill px-2.5 py-1">TechZone Service Center</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-1">Quản Lý Bảo Hành & Dịch Vụ Kỹ Thuật</h2>
+            <p class="text-secondary small mb-0">Cấu hình chính sách bảo hành, tra cứu vòng đời máy theo Serial/IMEI, điều phối kỹ thuật viên và quản lý chi phí linh kiện.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/Warranty" target="_blank" class="btn btn-outline-secondary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-sm">
+                <i class="bi bi-search"></i>
+                <span>Tra cứu Portal Khách</span>
+                <i class="bi bi-box-arrow-up-right small"></i>
+            </a>
+            @if (isTechOrAdmin)
+            {
+                <button type="button" class="btn btn-primary rounded-pill px-3.5 py-2 btn-sm d-flex align-items-center gap-1.5 shadow-sm" data-bs-toggle="modal" data-bs-target="#createRmaModal">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <span class="fw-semibold">Tiếp Nhận RMA Mới</span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Tổng sổ bảo hành</span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary p-2 rounded-3"><i class="bi bi-patch-check-fill fs-6"></i></span>
+                </div>
+                <div class="fs-4 fw-bold text-dark">@Model.TotalWarranties.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Kích hoạt hệ thống</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Đang còn hạn</span>
+                    <span class="badge bg-success bg-opacity-10 text-success p-2 rounded-3"><i class="bi bi-check-circle-fill fs-6"></i></span>
+                </div>
+                <div class="fs-4 fw-bold text-success">@Model.ActiveWarranties.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Bảo hành hợp lệ</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Sắp hết hạn (&le;30d)</span>
+                    <span class="badge bg-warning bg-opacity-10 text-warning p-2 rounded-3"><i class="bi bi-clock-history fs-6"></i></span>
+                </div>
+                <div class="fs-4 fw-bold text-warning">@Model.ExpiringSoonWarranties.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Nhắc gia hạn Care+</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Phiếu RMA xử lý</span>
+                    <span class="badge bg-danger bg-opacity-10 text-danger p-2 rounded-3"><i class="bi bi-tools fs-6"></i></span>
+                </div>
+                <div class="fs-4 fw-bold text-danger">@Model.OpenRmaTickets.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Đang điều phối & sửa</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Đã sửa & bàn giao</span>
+                    <span class="badge bg-indigo bg-opacity-10 text-primary p-2 rounded-3"><i class="bi bi-box-seam fs-6"></i></span>
+                </div>
+                <div class="fs-4 fw-bold text-primary">@Model.CompletedRmaTickets.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Đã trả máy / đổi 1-1</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-secondary small fw-semibold">Chính sách nhóm</span>
+                    <span class="badge bg-secondary bg-opacity-10 text-dark p-2 rounded-3"><i class="bi bi-file-earmark-medical fs-6"></i></span>
+                </div>
+                <div class="fs-4 fw-bold text-dark">@Model.TotalPolicies.ToString("N0")</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Chính sách linh kiện</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs (4 Core Pillars of Section 1.4) -->
+    <ul class="nav nav-pills gap-2 mb-4 bg-white p-2 rounded-4 shadow-sm border" id="warrantyHubTabs">
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(activeTab == "tickets" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Warranty", new { tab = "tickets" })">
+                <i class="bi bi-wrench-adjustable-circle"></i>
+                <span>1. Phiếu Bảo Hành & Điều Phối KTV</span>
+                <span class="badge @(activeTab == "tickets" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.OpenRmaTickets</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(activeTab == "lookup" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Warranty", new { tab = "lookup" })">
+                <i class="bi bi-upc-scan"></i>
+                <span>2. Tra Cứu Vòng Đời Máy (IMEI/Serial)</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(activeTab == "policies" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Warranty", new { tab = "policies" })">
+                <i class="bi bi-file-earmark-ruled"></i>
+                <span>3. Chính Sách Bảo Hành Nhóm Thiết Bị</span>
+                <span class="badge @(activeTab == "policies" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.TotalPolicies</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3.5 py-2 fw-semibold d-flex align-items-center gap-2 @(activeTab == "warranties" ? "active bg-primary text-white" : "text-secondary")"
+               href="@Url.Action("Index", "Warranty", new { tab = "warranties" })">
+                <i class="bi bi-shield-lock"></i>
+                <span>4. Sổ Bảo Hành Điện Tử Toàn Hệ Thống</span>
+                <span class="badge @(activeTab == "warranties" ? "bg-white text-primary" : "bg-light text-secondary border") rounded-pill">@Model.TotalWarranties</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 1: TICKETS & TECHNICIAN DISPATCH (ticket.manage)                      -->
+    <!-- ========================================================================= -->
+    @if (activeTab == "tickets")
+    {
+        <!-- Filter Bar -->
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+            <form method="get" class="row g-2 align-items-center">
+                <input type="hidden" name="tab" value="tickets" />
+
+                <div class="col-12 col-md-5">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0 text-muted ps-3">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control bg-light border-start-0" 
+                               placeholder="Tìm theo Mã RMA, Serial, Tên khách, SĐT, KTV..."
+                               value="@Model.SearchQuery" />
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <select name="rmaStatus" class="form-select form-select-sm bg-light">
+                        <option value="">-- Tất cả trạng thái phiếu --</option>
+                        @foreach (RmaStatus s in Enum.GetValues(typeof(RmaStatus)))
+                        {
+                            <option value="@s" selected="@(Model.RmaStatusFilter == s ? "selected" : null)">
+                                @s switch
+                                {
+                                    RmaStatus.Submitted => "Mới gửi yêu cầu",
+                                    RmaStatus.UnderReview => "Đang thẩm định sơ bộ",
+                                    RmaStatus.DeviceReceived => "Đã nhận máy tại quầy",
+                                    RmaStatus.AssignedToTech => "Đã điều phối KTV",
+                                    RmaStatus.Inspecting => "Đang test kỹ thuật & chẩn đoán",
+                                    RmaStatus.QuotationPending => "Đã báo giá / Chờ khách duyệt",
+                                    RmaStatus.Approved => "Chấp thuận sửa / đổi mới",
+                                    RmaStatus.Repairing => "Đang sửa chữa / thay linh kiện",
+                                    RmaStatus.ReadyForPickup => "Đã sửa xong / Chờ khách nhận",
+                                    RmaStatus.Completed => "Đã hoàn tất bàn giao",
+                                    RmaStatus.Rejected => "Từ chối bảo hành",
+                                    _ => s.ToString()
+                                }
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">
+                        <i class="bi bi-funnel-fill me-1"></i>Lọc Phiếu
+                    </button>
+                    <a href="@Url.Action("Index", "Warranty", new { tab = "tickets" })" class="btn btn-sm btn-light border rounded-pill px-3">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tickets Table Card -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3 text-nowrap">Mã Phiếu & Thời Gian</th>
+                            <th class="text-nowrap">Thiết Bị & Serial</th>
+                            <th class="text-nowrap">Khách Hàng</th>
+                            <th class="text-nowrap">Điều Phối KTV</th>
+                            <th class="text-nowrap">Lỗi Báo / Phương Án</th>
+                            <th class="text-nowrap">Trạng Thái Tiến Độ</th>
+                            <th class="text-nowrap">Chi Phí Thay Thế</th>
+                            <th class="text-end pe-3 text-nowrap">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.RmaRequests.Any())
+                        {
+                            @foreach (var r in Model.RmaRequests)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="fw-bold font-monospace text-primary">@r.RmaCode</div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">@r.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        @if (!string.IsNullOrEmpty(r.PickupCode))
+                                        {
+                                            <span class="badge bg-light text-secondary border mt-1 font-monospace" style="font-size: 0.65rem;">PIN: @r.PickupCode</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark text-truncate" style="max-width: 200px;" title="@r.ProductName">@r.ProductName</div>
+                                        <div class="d-flex align-items-center gap-1 mt-0.5">
+                                            <a href="@Url.Action("Index", "Warranty", new { tab = "lookup", lookupSerial = r.SerialNumber })" class="badge bg-light text-primary border text-decoration-none font-monospace small" title="Tra cứu vòng đời máy">
+                                                <i class="bi bi-search me-1"></i>@r.SerialNumber
+                                            </a>
+                                            @if (r.Priority == "Urgent")
+                                            {
+                                                <span class="badge bg-danger">Khẩn cấp</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-medium text-dark">@r.CustomerName</div>
+                                        <div class="text-secondary small font-monospace">@r.CustomerPhone</div>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(r.AssignedTechnicianName))
+                                        {
+                                            <div class="d-flex align-items-center gap-1.5">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.7rem;">
+                                                    <i class="bi bi-person-fill"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="fw-semibold text-dark small">@r.AssignedTechnicianName</span>
+                                                    @if (r.EstimatedCompletionDate.HasValue)
+                                                    {
+                                                        <div class="text-muted" style="font-size: 0.68rem;">Hẹn trả: @r.EstimatedCompletionDate.Value.ToLocalTime().ToString("dd/MM")</div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 small">
+                                                <i class="bi bi-exclamation-circle me-1"></i>Chưa điều phối
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary-subtle text-dark border small">@r.ReasonType</span>
+                                        <div class="text-muted text-truncate mt-1" style="max-width: 170px; font-size: 0.72rem;" title="@r.CustomerDescription">
+                                            @r.CustomerDescription
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @switch (r.Status)
+                                        {
+                                            case RmaStatus.DeviceReceived:
+                                                <span class="badge bg-secondary">Đã nhận máy</span>
+                                                break;
+                                            case RmaStatus.AssignedToTech:
+                                                <span class="badge bg-info text-dark">Đã giao KTV</span>
+                                                break;
+                                            case RmaStatus.Inspecting:
+                                                <span class="badge bg-warning text-dark">Đang chẩn đoán</span>
+                                                break;
+                                            case RmaStatus.QuotationPending:
+                                                <span class="badge bg-warning text-dark border">Chờ khách duyệt</span>
+                                                break;
+                                            case RmaStatus.Repairing:
+                                                <span class="badge bg-primary">Đang sửa chữa</span>
+                                                break;
+                                            case RmaStatus.ReadyForPickup:
+                                                <span class="badge bg-success bg-opacity-75">Chờ khách lấy</span>
+                                                break;
+                                            case RmaStatus.Completed:
+                                                <span class="badge bg-success"><i class="bi bi-check-all me-1"></i>Hoàn tất</span>
+                                                break;
+                                            case RmaStatus.Rejected:
+                                                <span class="badge bg-danger">Từ chối</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-light text-dark border">@r.Status</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (r.TotalCost > 0)
+                                        {
+                                            <div class="fw-bold text-danger">@r.TotalCost.ToString("N0")₫</div>
+                                            <span class="badge @(r.PaymentStatus == "Paid" ? "bg-success" : "bg-warning text-dark")" style="font-size: 0.65rem;">
+                                                @(r.PaymentStatus == "Paid" ? "Đã thu tiền" : "Chưa thu")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success-subtle text-success border" style="font-size: 0.68rem;">
+                                                <i class="bi bi-shield-fill-check me-1"></i>Bảo hành 0₫
+                                            </span>
+                                        }
+                                        @if (r.ReplacedPartsList.Any())
+                                        {
+                                            <div class="text-muted" style="font-size: 0.68rem;">Thay: @r.ReplacedPartsList.Count linh kiện</div>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary" title="Điều phối Kỹ thuật viên" 
+                                                    onclick="openDispatchModal('@r.Id', '@r.RmaCode', '@r.AssignedTechnicianName', '@(r.EstimatedCompletionDate?.ToString("yyyy-MM-ddTHH:mm") ?? "")', '@r.Priority')">
+                                                <i class="bi bi-person-gear"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success" title="Cập nhật tiến độ & Chi phí"
+                                                    onclick="openProgressModal('@r.Id', '@r.RmaCode', '@r.Status', '@r.ResolutionType', '@r.PartsCost', '@r.LaborCost', '@r.DiscountAmount', '@r.IsCustomerPaid', '@r.PaymentStatus')">
+                                                <i class="bi bi-tools"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" title="In biên nhận bảo hành"
+                                                    onclick="printRmaReceipt('@r.Id')">
+                                                <i class="bi bi-printer"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                                    Không tìm thấy phiếu tiếp nhận RMA nào phù hợp.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="card-footer bg-white border-0 py-3 text-center">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            @for (int p = 1; p <= Model.TotalPages; p++)
+                            {
+                                <li class="page-item @(p == Model.Page ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", "Warranty", new { tab = "tickets", page = p, search = Model.SearchQuery, rmaStatus = Model.RmaStatusFilter })">@p</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: DEVICE LIFECYCLE & WARRANTY LOOKUP (warranty.lookup)               -->
+    <!-- ========================================================================= -->
+    @if (activeTab == "lookup")
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-upc-scan text-primary me-2"></i>Tra Cứu Vòng Đời Máy & Hạn Bảo Hành Điện Tử</h4>
+            <p class="text-secondary small mb-3">Tra cứu toàn diện lịch sử: Lô nhập kho, Hóa đơn xuất bán, Thời hạn bảo hành E-Warranty và Lịch sử các lần sửa chữa RMA.</p>
+
+            <!-- Search Bar for Serial/IMEI -->
+            <form method="get" class="row g-2 align-items-center mb-4">
+                <input type="hidden" name="tab" value="lookup" />
+                <div class="col-12 col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-primary border-end-0"><i class="bi bi-qr-code fs-5"></i></span>
+                        <input type="text" name="lookupSerial" class="form-control form-control-lg font-monospace text-uppercase" 
+                               placeholder="Nhập số IMEI (15 chữ số) hoặc Serial Number thiết bị..." 
+                               value="@Model.LookupSerialQuery" required />
+                    </div>
+                </div>
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 fw-bold w-100 shadow-sm">
+                        <i class="bi bi-search me-1"></i>Tra Cứu Vòng Đời
+                    </button>
+                </div>
+            </form>
+
+            <!-- Quick Demo Serial Tags -->
+            <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+                <small class="text-muted fw-semibold">Gợi ý thử nhanh:</small>
+                <a href="@Url.Action("Index", "Warranty", new { tab = "lookup", lookupSerial = "IP16P-VN-009124" })" class="badge bg-light text-dark border font-monospace text-decoration-none py-1.5 px-2">
+                    iPhone 16 Pro Max: IP16P-VN-009124
+                </a>
+                <a href="@Url.Action("Index", "Warranty", new { tab = "lookup", lookupSerial = "MACM3-VN-883192" })" class="badge bg-light text-dark border font-monospace text-decoration-none py-1.5 px-2">
+                    MacBook Pro M3: MACM3-VN-883192
+                </a>
+                <a href="@Url.Action("Index", "Warranty", new { tab = "lookup", lookupSerial = "SAM-S24U-771239" })" class="badge bg-light text-dark border font-monospace text-decoration-none py-1.5 px-2">
+                    Galaxy S24 Ultra: SAM-S24U-771239
+                </a>
+            </div>
+
+            <!-- Lookup Result Timeline Section -->
+            @if (Model.LookupLifecycleResult != null)
+            {
+                var d = Model.LookupLifecycleResult;
+                <div class="border rounded-4 p-4 bg-light mb-4 shadow-2xs">
+                    <!-- Machine Top Badge -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 pb-3 border-bottom mb-4">
+                        <div>
+                            <span class="badge @d.BadgeCssClass fs-6 px-3 py-1.5 rounded-pill mb-2">
+                                <i class="bi bi-record-circle me-1"></i>@d.CurrentStageText
+                            </span>
+                            <h3 class="fw-bold text-dark m-0">@d.ProductName</h3>
+                            <div class="text-secondary small mt-1">
+                                Phiên bản: <strong>@d.VariantName</strong> | SKU: <code>@d.VariantSku</code>
+                            </div>
+                        </div>
+                        <div class="text-md-end">
+                            <div class="text-muted small">Mã định danh duy nhất:</div>
+                            <div class="fs-5 font-monospace fw-bold text-primary">S/N: @d.SerialNumber</div>
+                            @if (!string.IsNullOrEmpty(d.Imei))
+                            {
+                                <div class="font-monospace text-secondary small">IMEI: @d.Imei</div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Visual Timeline (4 Milestones) -->
+                    <div class="row g-4">
+                        <!-- Milestone 1: Warehouse & Distributor -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-box-seam-fill"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark m-0">1. Nhập Kho Hãng</h6>
+                                </div>
+                                @if (d.HasInventoryRecord)
+                                {
+                                    <ul class="list-unstyled small text-secondary mb-0 d-flex flex-column gap-1.5">
+                                        <li><strong>Nhà phân phối:</strong> <span class="text-dark">@d.SupplierName</span></li>
+                                        <li><strong>Lô nhập GRN:</strong> <code class="text-primary">@d.ImportBatchCode</code></li>
+                                        <li><strong>Ngày nhập kho:</strong> @(d.ReceivedDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "N/A")</li>
+                                        <li><strong>Vị trí lưu kho:</strong> @d.WarehouseLocation</li>
+                                        <li><strong>Giá vốn nhập:</strong> <span class="fw-bold text-danger">@d.CostPrice.ToString("N0")₫</span></li>
+                                        @if (!string.IsNullOrEmpty(d.ExportSlipCode))
+                                        {
+                                            <li><strong>Phiếu xuất GDN:</strong> <code>@d.ExportSlipCode</code></li>
+                                        }
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <p class="small text-muted mb-0">Chưa ghi nhận mã nhập kho vật lý trực tiếp.</p>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Milestone 2: Sold Commercial Order -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div class="rounded-circle bg-success bg-opacity-10 text-success p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-receipt"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark m-0">2. Xuất Bán Khách</h6>
+                                </div>
+                                @if (d.HasOrderRecord)
+                                {
+                                    <ul class="list-unstyled small text-secondary mb-0 d-flex flex-column gap-1.5">
+                                        <li><strong>Mã đơn:</strong> <a href="/Admin/Order/Detail/@d.OrderId" class="fw-bold text-primary font-monospace">#@d.OrderCode</a></li>
+                                        <li><strong>Khách hàng:</strong> <span class="text-dark fw-semibold">@d.CustomerName</span></li>
+                                        <li><strong>Điện thoại:</strong> <code>@d.CustomerPhone</code></li>
+                                        <li><strong>Ngày xuất bán:</strong> @(d.OrderDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "N/A")</li>
+                                        <li><strong>Giá bán hóa đơn:</strong> <strong class="text-danger">@d.SalePrice.ToString("N0")₫</strong></li>
+                                        <li><strong>Kênh bán:</strong> <span class="badge bg-light text-dark border">@d.SourceChannel</span></li>
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <p class="small text-muted mb-0">Chưa ghi nhận đơn hàng xuất bán.</p>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Milestone 3: Electronic Warranty -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div class="rounded-circle bg-info bg-opacity-10 text-info p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-shield-check"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark m-0">3. Bảo Hành Điện Tử</h6>
+                                </div>
+                                @if (d.HasWarrantyRecord)
+                                {
+                                    <ul class="list-unstyled small text-secondary mb-0 d-flex flex-column gap-1.5">
+                                        <li>
+                                            <strong>Trạng thái:</strong> 
+                                            <span class="badge @(d.IsWarrantyActive ? "bg-success" : "bg-secondary")">@d.WarrantyStatus</span>
+                                        </li>
+                                        <li><strong>Thời hạn:</strong> @d.WarrantyMonths tháng chính hãng</li>
+                                        <li><strong>Ngày kích hoạt:</strong> @(d.WarrantyStartDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "N/A")</li>
+                                        <li><strong>Hạn bảo hành:</strong> <span class="fw-bold text-dark">@(d.WarrantyEndDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "N/A")</span></li>
+                                        <li>
+                                            <strong>Số ngày còn lại:</strong> 
+                                            <span class="fw-bold @(d.DaysRemaining > 30 ? "text-success" : "text-danger")">@d.DaysRemaining ngày</span>
+                                        </li>
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <p class="small text-muted mb-0">Chưa có sổ bảo hành điện tử kích hoạt.</p>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Milestone 4: RMA History -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div class="rounded-circle bg-danger bg-opacity-10 text-danger p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-tools"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark m-0">4. Lịch Sử Sửa Chữa RMA</h6>
+                                </div>
+                                @if (d.RmaTickets.Any())
+                                {
+                                    <div class="small text-secondary mb-2">Đã ghi nhận <strong>@d.RmaTickets.Count</strong> lần tiếp nhận:</div>
+                                    <div class="d-flex flex-column gap-2 overflow-auto" style="max-height: 140px;">
+                                        @foreach (var t in d.RmaTickets)
+                                        {
+                                            <div class="p-2 rounded-2 bg-light border">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <strong class="font-monospace text-primary">@t.RmaCode</strong>
+                                                    <span class="badge bg-secondary" style="font-size: 0.65rem;">@t.Status</span>
+                                                </div>
+                                                <div class="text-truncate" style="font-size: 0.72rem;">Lỗi: @t.CustomerDescription</div>
+                                                <div class="text-muted" style="font-size: 0.68rem;">KTV: @t.AssignedTechnicianName | Phí: @t.TotalCost.ToString("N0")₫</div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="small text-muted mb-0">Thiết bị chưa từng phải sửa chữa hoặc đổi mới RMA.</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Bar -->
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <button type="button" class="btn btn-primary rounded-pill px-4 fw-semibold" 
+                                onclick="openCreateRmaWithPrefill('@d.OrderCode', '@d.ProductName', '@d.SerialNumber', '@d.CustomerName', '@d.CustomerPhone')">
+                            <i class="bi bi-plus-circle me-1"></i>Tạo Phiếu Tiếp Nhận RMA Ngay Cho Máy Này
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: WARRANTY POLICIES CONFIGURATION (warranty.policy_manage)          -->
+    <!-- ========================================================================= -->
+    @if (activeTab == "policies")
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                <div>
+                    <h4 class="fw-bold text-dark m-0"><i class="bi bi-file-earmark-ruled text-primary me-2"></i>Cấu Hình Chính Sách Bảo Hành Nhóm Thiết Bị & Linh Kiện</h4>
+                    <small class="text-muted">Thiết lập quy định bảo hành tiêu chuẩn, số ngày đổi mới DOA, điều kiện điểm chết màn hình và chai pin</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <form asp-action="ResetDefaultPolicies" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-secondary rounded-pill btn-sm px-3" onclick="return confirm('Khôi phục lại toàn bộ chính sách bảo hành mẫu chuẩn Apple, Asus, Synnex FPT?')">
+                            <i class="bi bi-arrow-repeat me-1"></i>Áp Dụng Mẫu Chuẩn Công Nghiệp
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-primary rounded-pill btn-sm px-3.5 fw-semibold" data-bs-toggle="modal" data-bs-target="#policyModal" onclick="openPolicyCreateModal()">
+                        <i class="bi bi-plus-lg me-1"></i>Thêm Chính Sách Mới
+                    </button>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                @foreach (var pol in Model.WarrantyPolicies)
+                {
+                    <div class="col-12 col-lg-6">
+                        <div class="card border rounded-4 p-4 shadow-sm h-100 bg-white position-relative">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill small mb-1">
+                                        Nhóm: @pol.CategoryGroup
+                                    </span>
+                                    <h5 class="fw-bold text-dark m-0">@pol.PolicyName</h5>
+                                    <code class="text-muted small">Mã: @pol.PolicyCode</code>
+                                </div>
+                                <span class="badge @(pol.IsActive ? "bg-success" : "bg-secondary") rounded-pill px-3 py-1.5">
+                                    @(pol.IsActive ? "Đang áp dụng" : "Tạm ngưng")
+                                </span>
+                            </div>
+
+                            <!-- Policy Key Badges -->
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="badge bg-light text-dark border p-2">
+                                    <i class="bi bi-calendar-check text-primary me-1"></i>Bảo hành: <strong>@pol.StandardWarrantyMonths tháng</strong>
+                                </span>
+                                <span class="badge bg-light text-dark border p-2">
+                                    <i class="bi bi-arrow-left-right text-success me-1"></i>DOA 1 đổi 1: <strong>@pol.DoaPeriodDays ngày</strong>
+                                </span>
+                                @if (pol.ScreenDeadPixelThreshold > 0)
+                                {
+                                    <span class="badge bg-light text-dark border p-2">
+                                        <i class="bi bi-display text-info me-1"></i>Điểm chết: <strong>&ge;@pol.ScreenDeadPixelThreshold điểm</strong>
+                                    </span>
+                                }
+                                @if (pol.BatteryHealthThreshold > 0)
+                                {
+                                    <span class="badge bg-light text-dark border p-2">
+                                        <i class="bi bi-battery-charging text-warning me-1"></i>Chai pin: <strong>&lt;@pol.BatteryHealthThreshold%</strong>
+                                    </span>
+                                }
+                                @if (pol.ExtendedWarrantySupported)
+                                {
+                                    <span class="badge bg-primary-subtle text-primary border p-2">
+                                        <i class="bi bi-star-fill me-1"></i>Hỗ trợ Care+
+                                    </span>
+                                }
+                            </div>
+
+                            <!-- Terms and Conditions Preview -->
+                            <div class="p-3 bg-light rounded-3 small mb-3">
+                                <div class="text-muted fw-semibold mb-1"><i class="bi bi-check-circle-fill text-success me-1"></i>Điều kiện bảo hành hợp lệ:</div>
+                                <p class="text-secondary mb-2" style="font-size: 0.8rem;">@pol.TermsAndConditions</p>
+                                <div class="text-muted fw-semibold mb-1"><i class="bi bi-x-circle-fill text-danger me-1"></i>Điều khoản từ chối (Loại trừ):</div>
+                                <p class="text-danger mb-0" style="font-size: 0.8rem;">@pol.ExclusionClauses</p>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(pol.Notes))
+                            {
+                                <small class="text-muted d-block mb-3" style="font-size: 0.75rem;">
+                                    <i class="bi bi-info-circle me-1"></i>Ghi chú: @pol.Notes
+                                </small>
+                            }
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-end gap-2 mt-auto pt-2 border-top">
+                                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" 
+                                        onclick="openPolicyEditModal('@pol.Id', '@pol.PolicyCode', '@pol.PolicyName', '@pol.CategoryGroup', '@pol.StandardWarrantyMonths', '@pol.DoaPeriodDays', '@pol.ScreenDeadPixelThreshold', '@pol.BatteryHealthThreshold', '@pol.ExtendedWarrantySupported', '@pol.IsActive', '@Html.Raw(pol.TermsAndConditions.Replace("'", "\\'"))', '@Html.Raw(pol.ExclusionClauses.Replace("'", "\\'"))')">
+                                    <i class="bi bi-pencil-square me-1"></i>Chỉnh Sửa
+                                </button>
+                                @if (User.IsInRole("SuperAdmin"))
+                                {
+                                    <form asp-action="DeletePolicy" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa chính sách bảo hành này?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@pol.Id" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- ========================================================================= -->
+    <!-- TAB 4: ELECTRONIC WARRANTY REGISTRY (warranties)                          -->
+    <!-- ========================================================================= -->
+    @if (activeTab == "warranties")
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+            <form method="get" class="row g-2 align-items-center">
+                <input type="hidden" name="tab" value="warranties" />
+                <div class="col-12 col-md-5">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0 text-muted ps-3"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control bg-light border-start-0" 
+                               placeholder="Tìm theo Serial, IMEI, Mã đơn, Tên khách, SĐT..." 
+                               value="@Model.SearchQuery" />
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <select name="warrantyStatus" class="form-select form-select-sm bg-light">
+                        <option value="">-- Tất cả trạng thái --</option>
+                        @foreach (WarrantyStatus ws in Enum.GetValues(typeof(WarrantyStatus)))
+                        {
+                            <option value="@ws" selected="@(Model.WarrantyStatusFilter == ws ? "selected" : null)">@ws</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">
+                        <i class="bi bi-funnel-fill me-1"></i>Lọc Hồ Sơ
+                    </button>
+                    <a href="@Url.Action("Index", "Warranty", new { tab = "warranties" })" class="btn btn-sm btn-light border rounded-pill px-3">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Serial Number / IMEI</th>
+                            <th>Thiết Bị</th>
+                            <th>Khách Hàng & SĐT</th>
+                            <th>Mã Đơn Hàng</th>
+                            <th>Thời Gian Bảo Hành</th>
+                            <th>Trạng Thái</th>
+                            <th>Lịch Sử Claims</th>
+                            <th class="text-end pe-3">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Warranties.Any())
+                        {
+                            @foreach (var w in Model.Warranties)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <a href="@Url.Action("Index", "Warranty", new { tab = "lookup", lookupSerial = w.SerialNumber })" class="fw-bold font-monospace text-primary text-decoration-none">
+                                            @w.SerialNumber
+                                        </a>
+                                        @if (!string.IsNullOrEmpty(w.Imei))
+                                        {
+                                            <div class="text-muted font-monospace" style="font-size: 0.72rem;">IMEI: @w.Imei</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark text-truncate" style="max-width: 200px;">@w.ProductName</div>
+                                        <span class="text-muted small">@w.VariantName</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-medium">@w.CustomerName</div>
+                                        <code class="small text-muted">@w.CustomerPhone</code>
+                                    </td>
+                                    <td>
+                                        <span class="font-monospace">#@w.OrderCode</span>
+                                    </td>
+                                    <td>
+                                        <div>@w.StartDate.ToLocalTime().ToString("dd/MM/yyyy") - <strong>@w.EndDate.ToLocalTime().ToString("dd/MM/yyyy")</strong></div>
+                                        <small class="text-muted">(@w.WarrantyMonths tháng - Còn @w.DaysRemaining ngày)</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(w.IsActive ? "bg-success" : (w.Status == WarrantyStatus.ExpiringSoon ? "bg-warning text-dark" : "bg-secondary"))">
+                                            @w.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">@w.Claims.Count lần sửa</span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="openClaimModal('@w.Id', '@w.SerialNumber')">
+                                            <i class="bi bi-wrench me-1"></i>Thêm Lần Sửa
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">Không tìm thấy sổ bảo hành nào.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODALS                                                                    -->
+<!-- ========================================================================= -->
+
+<!-- MODAL: Create RMA Ticket -->
+<div class="modal fade" id="createRmaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form asp-action="CreateRmaTicket" method="post" class="modal-content rounded-4 border-0 shadow">
+            @Html.AntiForgeryToken()
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-tools text-primary me-2"></i>Tiếp Nhận Máy Bảo Hành & Sửa Chữa (Tạo Phiếu RMA)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Họ tên khách hàng <span class="text-danger">*</span></label>
+                        <input name="CustomerName" id="rmaCustName" class="form-control form-control-sm" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Số điện thoại liên hệ <span class="text-danger">*</span></label>
+                        <input name="CustomerPhone" id="rmaCustPhone" class="form-control form-control-sm" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Tên thiết bị <span class="text-danger">*</span></label>
+                        <input name="ProductName" id="rmaProdName" class="form-control form-control-sm" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Số Serial / IMEI <span class="text-danger">*</span></label>
+                        <input name="SerialNumber" id="rmaSerial" class="form-control form-control-sm font-monospace text-uppercase" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Mã đơn hàng gốc (nếu có)</label>
+                        <input name="OrderCode" id="rmaOrderCode" class="form-control form-control-sm font-monospace" placeholder="VD: TZ-20261014-9841" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Phân loại lỗi</label>
+                        <select name="ReasonType" class="form-select form-select-sm">
+                            <option value="HardwareDefect">Lỗi phần cứng NSX</option>
+                            <option value="ScreenFault">Lỗi màn hình / sọc / điểm chết</option>
+                            <option value="BatteryIssue">Lỗi pin / chai pin / không nhận sạc</option>
+                            <option value="DOA">DOA - Hỏng ngay khi mở hộp</option>
+                            <option value="DamagedInTransit">Hư hại do vận chuyển</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Điều phối Kỹ thuật viên phụ trách</label>
+                        <select name="AssignedTechnicianName" class="form-select form-select-sm">
+                            <option value="">-- Để phân công sau --</option>
+                            @foreach (var t in Model.AvailableTechnicians)
+                            {
+                                <option value="@t.FullName">@t.FullName (@t.Email)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Mức độ ưu tiên</label>
+                        <select name="Priority" class="form-select form-select-sm">
+                            <option value="Normal">Bình thường</option>
+                            <option value="Urgent">Khẩn cấp (24h)</option>
+                            <option value="VIP">Khách VIP Diamond</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Hạn hẹn trả máy</label>
+                        <input type="datetime-local" name="EstimatedCompletionDate" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Mô tả tình trạng lỗi của khách <span class="text-danger">*</span></label>
+                        <textarea name="CustomerDescription" class="form-control form-control-sm" rows="2" placeholder="Ví dụ: Máy cắm sạc không lên nguồn, màn hình nhấp nháy sọc tím..." required></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Ghi chú ngoại quan & Tiếp nhận</label>
+                        <textarea name="StaffNotes" class="form-control form-control-sm" rows="2" placeholder="Ngoại quan: Thân máy trầy nhẹ viền dưới, quỳ tím còn trắng, không cấn móp kính..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Tạo Phiếu Tiếp Nhận</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Dispatch Technician -->
+<div class="modal fade" id="dispatchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="DispatchTechnician" method="post" class="modal-content rounded-4 border-0 shadow">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="RmaId" id="dispatchRmaId" />
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-person-gear text-primary me-2"></i>Điều Phối Kỹ Thuật Viên Cho Phiếu <span id="dispatchRmaCode" class="text-primary font-monospace"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Chọn Kỹ thuật viên:</label>
+                    <select name="TechnicianName" id="dispatchTechSelect" class="form-select" required>
+                        @foreach (var t in Model.AvailableTechnicians)
+                        {
+                            <option value="@t.FullName">@t.FullName (@t.Email)</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Mức độ ưu tiên xử lý:</label>
+                    <select name="Priority" id="dispatchPriority" class="form-select">
+                        <option value="Normal">Bình thường (Standard)</option>
+                        <option value="Urgent">Khẩn cấp (Ưu tiên xử lý ngay)</option>
+                        <option value="VIP">Khách VIP Care+</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Hạn hẹn hoàn tất dự kiến:</label>
+                    <input type="datetime-local" name="EstimatedCompletionDate" id="dispatchEstDate" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Chỉ đạo kỹ thuật / Hướng xử lý:</label>
+                    <textarea name="Instructions" class="form-control" rows="2" placeholder="Test hiển thị panel OLED, đo điện áp chân sạc..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Xác Nhận Điều Phối</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Update Ticket Progress & Cost -->
+<div class="modal fade" id="progressModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form asp-action="UpdateTicketProgress" method="post" class="modal-content rounded-4 border-0 shadow">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="RmaId" id="progressRmaId" />
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-tools text-primary me-2"></i>Cập Nhật Tiến Độ & Chi Phí Sửa Chữa <span id="progressRmaCode" class="text-primary font-monospace"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Trạng thái tiến độ mới:</label>
+                        <select name="NewStatus" id="progressNewStatus" class="form-select form-select-sm">
+                            @foreach (RmaStatus s in Enum.GetValues(typeof(RmaStatus)))
+                            {
+                                <option value="@s">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Phương án xử lý:</label>
+                        <select name="ResolutionType" id="progressResolution" class="form-select form-select-sm">
+                            <option value="FreeRepair">Sửa chữa / Thay linh kiện</option>
+                            <option value="ExchangeNew">Đổi mới 1-1 sản phẩm tương đương</option>
+                            <option value="Refund">Hoàn tiền lại cho khách</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Serial máy đổi mới (nếu đổi 1-1):</label>
+                        <input name="ReplacementSerialNumber" class="form-control form-control-sm font-monospace" placeholder="S/N máy mới xuất từ kho" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Trạng thái thanh toán chi phí:</label>
+                        <select name="PaymentStatus" id="progressPaymentStatus" class="form-select form-select-sm">
+                            <option value="FreeUnderWarranty">Bảo hành 0₫ (TechZone chịu 100%)</option>
+                            <option value="Unpaid">Chưa thanh toán (Chờ thu tiền khách)</option>
+                            <option value="Paid">Đã thanh toán đủ</option>
+                        </select>
+                    </div>
+
+                    <!-- Cost Configuration -->
+                    <div class="col-12">
+                        <div class="card border p-3 rounded-3 bg-light">
+                            <h6 class="fw-bold text-dark mb-2">Chi Phí Thay Thế & Công Sửa Chữa</h6>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label small">Tiền linh kiện (₫):</label>
+                                    <input type="number" name="PartsCost" id="progressPartsCost" class="form-control form-control-sm" value="0" oninput="calcProgressTotal()" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Tiền công thợ (₫):</label>
+                                    <input type="number" name="LaborCost" id="progressLaborCost" class="form-control form-control-sm" value="0" oninput="calcProgressTotal()" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Giảm trừ ưu đãi (₫):</label>
+                                    <input type="number" name="DiscountAmount" id="progressDiscount" class="form-control form-control-sm" value="0" oninput="calcProgressTotal()" />
+                                </div>
+                                <div class="col-12 mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" name="IsCustomerPaid" value="true" id="progressCustomerPaidCheck" onchange="onCustomerPaidToggle(this.checked)">
+                                        <label class="form-check-label small fw-bold" for="progressCustomerPaidCheck">Sửa chữa tính phí (Khách hàng trả)</label>
+                                    </div>
+                                    <div>
+                                        <span class="small text-muted me-2">Tổng thu khách:</span>
+                                        <strong class="fs-5 text-danger" id="progressTotalDisplay">0₫</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Ghi chú kỹ thuật viên / Báo cáo sửa chữa:</label>
+                        <textarea name="TechnicianNotes" class="form-control form-control-sm" rows="3" placeholder="Đã thay panel OLED chính hãng, vệ sinh quỳ tím, test hiển thị đạt chuẩn 100%..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold">Lưu Cập Nhật Tiến Độ</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Policy Create/Edit -->
+<div class="modal fade" id="policyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form asp-action="SavePolicy" method="post" class="modal-content rounded-4 border-0 shadow">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" id="policyId" />
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-file-earmark-ruled text-primary me-2"></i><span id="policyModalTitle">Chính Sách Bảo Hành Nhóm Thiết Bị</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Mã chính sách <span class="text-danger">*</span></label>
+                        <input name="PolicyCode" id="polCode" class="form-control form-control-sm font-monospace text-uppercase" placeholder="POL-PHONE-APPLE" required />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small fw-semibold">Tên chính sách hiển thị <span class="text-danger">*</span></label>
+                        <input name="PolicyName" id="polName" class="form-control form-control-sm" placeholder="Chính sách bảo hành iPhone" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Nhóm thiết bị</label>
+                        <select name="CategoryGroup" id="polGroup" class="form-select form-select-sm">
+                            <option value="Điện thoại">Điện thoại</option>
+                            <option value="Laptop">Laptop</option>
+                            <option value="Linh kiện PC">Linh kiện PC</option>
+                            <option value="Màn hình">Màn hình</option>
+                            <option value="Phụ kiện">Phụ kiện</option>
+                            <option value="Tablet">Tablet</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Thời hạn chuẩn (tháng)</label>
+                        <input type="number" name="StandardWarrantyMonths" id="polMonths" class="form-control form-control-sm" value="12" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">1 đổi 1 DOA (ngày)</label>
+                        <input type="number" name="DoaPeriodDays" id="polDoa" class="form-control form-control-sm" value="30" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Điểm chết màn hình (&ge;)</label>
+                        <input type="number" name="ScreenDeadPixelThreshold" id="polDeadPixel" class="form-control form-control-sm" value="3" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Tiêu chuẩn pin (&lt; %)</label>
+                        <input type="number" name="BatteryHealthThreshold" id="polBattery" class="form-control form-control-sm" value="80" />
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex gap-4 p-2.5 bg-light rounded-3 border">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" name="ExtendedWarrantySupported" value="true" id="polCareCheck" checked>
+                                <label class="form-check-label small fw-semibold" for="polCareCheck">Hỗ trợ gói TechZone Care+ (Rơi vỡ / Ngập nước)</label>
+                            </div>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="polActiveCheck" checked>
+                                <label class="form-check-label small fw-semibold" for="polActiveCheck">Kích hoạt áp dụng chính sách này</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Điều kiện bảo hành hợp lệ:</label>
+                        <textarea name="TermsAndConditions" id="polTerms" class="form-control form-control-sm" rows="3" placeholder="Quy định điều kiện máy còn nguyên vẹn, tem niêm phong..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Điều khoản loại trừ (Từ chối bảo hành):</label>
+                        <textarea name="ExclusionClauses" id="polExclusion" class="form-control form-control-sm" rows="3" placeholder="Rơi vỡ cấn móp, ngấm nước quỳ tím đổi màu..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Lưu Chính Sách</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Add Warranty Claim -->
+<div class="modal fade" id="claimModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="AddClaim" method="post" class="modal-content rounded-4 border-0 shadow">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="WarrantyId" id="claimWarrantyId" />
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-wrench text-primary me-2"></i>Ghi Nhận Lần Sửa Chữa (S/N: <span id="claimSerial" class="text-primary font-monospace"></span>)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Mô tả lỗi của máy <span class="text-danger">*</span>:</label>
+                    <textarea name="FaultDescription" class="form-control form-control-sm" rows="2" placeholder="VD: Pin bị chai nhanh, màn hình chớp sáng..." required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Linh kiện đã thay thế (ngăn cách bởi dấu phẩy):</label>
+                    <input name="ReplacedParts" class="form-control form-control-sm" placeholder="VD: Pin dung lượng cao, Ron kháng nước" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Ghi chú của Kỹ thuật viên:</label>
+                    <textarea name="TechnicianNotes" class="form-control form-control-sm" rows="2" placeholder="Đã kiểm tra dòng sạc, quỳ tím hợp lệ..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Kết quả:</label>
+                    <select name="Status" class="form-select form-select-sm">
+                        <option value="Repaired">Đã sửa chữa xong (Repaired)</option>
+                        <option value="ReplacedDevice">Đổi mới thiết bị (ReplacedDevice)</option>
+                        <option value="Processing">Đang chờ linh kiện (Processing)</option>
+                        <option value="Rejected">Từ chối bảo hành (Rejected)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Lưu Hồ Sơ</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Printable Receipt Preview -->
+<div class="modal fade" id="receiptModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-printer text-primary me-2"></i>Biên Nhận Tiếp Nhận Bảo Hành</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="receiptModalBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="window.print()">
+                    <i class="bi bi-printer-fill me-1"></i>In Biên Nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openDispatchModal(rmaId, rmaCode, techName, estDate, priority) {
+        document.getElementById('dispatchRmaId').value = rmaId;
+        document.getElementById('dispatchRmaCode').innerText = '#' + rmaCode;
+        if (techName) {
+            document.getElementById('dispatchTechSelect').value = techName;
+        }
+        if (estDate) {
+            document.getElementById('dispatchEstDate').value = estDate;
+        }
+        if (priority) {
+            document.getElementById('dispatchPriority').value = priority;
+        }
+        new bootstrap.Modal(document.getElementById('dispatchModal')).show();
+    }
+
+    function openProgressModal(rmaId, rmaCode, status, resolution, partsCost, laborCost, discount, isPaid, payStatus) {
+        document.getElementById('progressRmaId').value = rmaId;
+        document.getElementById('progressRmaCode').innerText = '#' + rmaCode;
+        document.getElementById('progressNewStatus').value = status;
+        document.getElementById('progressResolution').value = resolution;
+        document.getElementById('progressPartsCost').value = partsCost;
+        document.getElementById('progressLaborCost').value = laborCost;
+        document.getElementById('progressDiscount').value = discount;
+        document.getElementById('progressCustomerPaidCheck').checked = isPaid === 'True' || isPaid === true;
+        document.getElementById('progressPaymentStatus').value = payStatus || 'FreeUnderWarranty';
+        calcProgressTotal();
+        new bootstrap.Modal(document.getElementById('progressModal')).show();
+    }
+
+    function calcProgressTotal() {
+        const parts = parseFloat(document.getElementById('progressPartsCost').value) || 0;
+        const labor = parseFloat(document.getElementById('progressLaborCost').value) || 0;
+        const discount = parseFloat(document.getElementById('progressDiscount').value) || 0;
+        const total = Math.max(0, parts + labor - discount);
+        document.getElementById('progressTotalDisplay').innerText = total.toLocaleString() + '₫';
+    }
+
+    function onCustomerPaidToggle(isChecked) {
+        const paySelect = document.getElementById('progressPaymentStatus');
+        if (!isChecked) {
+            paySelect.value = 'FreeUnderWarranty';
+        } else {
+            paySelect.value = 'Unpaid';
+        }
+    }
+
+    function openCreateRmaWithPrefill(orderCode, prodName, serial, custName, custPhone) {
+        document.getElementById('rmaOrderCode').value = orderCode || '';
+        document.getElementById('rmaProdName').value = prodName || '';
+        document.getElementById('rmaSerial').value = serial || '';
+        document.getElementById('rmaCustName').value = custName || '';
+        document.getElementById('rmaCustPhone').value = custPhone || '';
+        new bootstrap.Modal(document.getElementById('createRmaModal')).show();
+    }
+
+    function openPolicyCreateModal() {
+        document.getElementById('policyId').value = '';
+        document.getElementById('policyModalTitle').innerText = 'Thêm Chính Sách Bảo Hành Mới';
+        document.getElementById('polCode').value = '';
+        document.getElementById('polName').value = '';
+        document.getElementById('polMonths').value = '12';
+        document.getElementById('polDoa').value = '30';
+        document.getElementById('polDeadPixel').value = '3';
+        document.getElementById('polBattery').value = '80';
+        document.getElementById('polTerms').value = '';
+        document.getElementById('polExclusion').value = '';
+    }
+
+    function openPolicyEditModal(id, code, name, group, months, doa, deadPixel, battery, care, active, terms, exclusions) {
+        document.getElementById('policyId').value = id;
+        document.getElementById('policyModalTitle').innerText = 'Chỉnh Sửa Chính Sách #' + code;
+        document.getElementById('polCode').value = code;
+        document.getElementById('polName').value = name;
+        document.getElementById('polGroup').value = group;
+        document.getElementById('polMonths').value = months;
+        document.getElementById('polDoa').value = doa;
+        document.getElementById('polDeadPixel').value = deadPixel;
+        document.getElementById('polBattery').value = battery;
+        document.getElementById('polCareCheck').checked = care === 'True' || care === true;
+        document.getElementById('polActiveCheck').checked = active === 'True' || active === true;
+        document.getElementById('polTerms').value = terms;
+        document.getElementById('polExclusion').value = exclusions;
+        new bootstrap.Modal(document.getElementById('policyModal')).show();
+    }
+
+    function openClaimModal(warrantyId, serial) {
+        document.getElementById('claimWarrantyId').value = warrantyId;
+        document.getElementById('claimSerial').innerText = serial;
+        new bootstrap.Modal(document.getElementById('claimModal')).show();
+    }
+
+    async function printRmaReceipt(rmaId) {
+        const body = document.getElementById('receiptModalBody');
+        body.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
+        new bootstrap.Modal(document.getElementById('receiptModal')).show();
+
+        try {
+            const resp = await fetch(`/Admin/Warranty/PrintReceipt?rmaId=${encodeURIComponent(rmaId)}`);
+            const html = await resp.text();
+            body.innerHTML = html;
+        } catch (err) {
+            body.innerHTML = '<div class="alert alert-danger m-3">Không thể tải biên nhận: ' + err.message + '</div>';
+        }
+    }
+</script>

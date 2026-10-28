@@ -1,0 +1,108 @@
+@model LoginDto
+@{
+    ViewData["Title"] = "Đăng Nhập Tài Khoản - TechZone";
+}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 rounded-4 shadow-sm p-4 p-md-5 bg-white">
+                <div class="text-center mb-4">
+                    <a asp-controller="Home" asp-action="Index" class="d-inline-flex align-items-center gap-2 text-decoration-none mb-2">
+                        <i class="bi bi-cpu-fill text-primary fs-2"></i>
+                        <span class="fw-bold fs-3 text-dark">TECH<span class="text-primary">ZONE</span></span>
+                    </a>
+                    <h4 class="fw-bold text-dark">Đăng Nhập Hệ Thống</h4>
+                    <p class="text-muted small">Chào mừng bạn quay trở lại với TechZone</p>
+                </div>
+
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success rounded-3 small">
+                        @TempData["SuccessMessage"]
+                    </div>
+                }
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger rounded-3 small">
+                        <div asp-validation-summary="All" class="mb-0"></div>
+                    </div>
+                }
+
+                <form asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Địa chỉ Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                            <input id="loginEmail" asp-for="Email" type="email" class="form-control" placeholder="name@domain.com" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-semibold text-secondary mb-0">Mật khẩu</label>
+                            <a href="#" class="small text-decoration-none">Quên mật khẩu?</a>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                            <input id="loginPassword" asp-for="Password" type="password" class="form-control" placeholder="••••••••" required />
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input asp-for="RememberMe" class="form-check-input" type="checkbox" id="rememberMe" />
+                        <label class="form-check-label small text-secondary" for="rememberMe">
+                            Ghi nhớ phiên đăng nhập (30 ngày)
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 rounded-3 mb-3">
+                        Đăng Nhập <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </form>
+
+                <!-- Quick-Fill Demo Accounts Box for Thesis Defense & RBAC Specification -->
+                <div class="p-3 bg-light rounded-4 border mb-3 small">
+                    <div class="fw-bold text-dark mb-1 d-flex align-items-center justify-content-between">
+                        <span><i class="bi bi-shield-lock-fill text-primary me-1"></i>Tài khoản Test Phân Quyền RBAC:</span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">1-Click Fill</span>
+                    </div>
+                    <div class="text-muted mb-2" style="font-size: 0.72rem;">Click vào vai trò để tự động điền tài khoản thử nghiệm theo Đặc tả:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-xs btn-outline-dark rounded-pill px-2 py-1" onclick="fillAccount('admin@techzone.vn', 'Admin@123')" title="Quản trị viên toàn quyền hệ thống">
+                            👑 SuperAdmin
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" onclick="fillAccount('sales@techzone.vn', 'Staff@123')" title="Nhân viên Bán hàng & Xử lý đơn">
+                            💼 Sales Staff
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-warning text-dark rounded-pill px-2 py-1" onclick="fillAccount('kho@techzone.vn', 'Staff@123')" title="Thủ kho & Quản lý IMEI thiết bị">
+                            📦 Thủ Kho
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-info text-dark rounded-pill px-2 py-1" onclick="fillAccount('baohanh@techzone.vn', 'Staff@123')" title="Kỹ thuật viên & Bảo hành RMA">
+                            🔧 Kỹ Thuật
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-success rounded-pill px-2 py-1" onclick="fillAccount('khachhang@techzone.vn', 'Customer@123')" title="Khách hàng thành viên VIP">
+                            👤 Khách Hàng
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center small text-muted">
+                    Chưa có tài khoản? <a asp-action="Register" class="text-primary fw-semibold text-decoration-none">Đăng ký ngay</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function fillAccount(email, pass) {
+            document.getElementById('loginEmail').value = email;
+            document.getElementById('loginPassword').value = pass;
+        }
+    </script>
+}

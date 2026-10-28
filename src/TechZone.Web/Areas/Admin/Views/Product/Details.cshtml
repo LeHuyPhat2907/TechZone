@@ -1,0 +1,401 @@
+@model ProductDetailsViewModel
+@{
+    var p = Model.Product;
+    ViewData["Title"] = $"Chi Tiết Thiết Bị: {p.Name}";
+    var discountRate = p.OriginalPrice > p.Price && p.OriginalPrice > 0
+        ? (int)Math.Round((p.OriginalPrice - p.Price) / p.OriginalPrice * 100)
+        : 0;
+}
+
+<!-- Page Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="/Admin/Product" class="text-decoration-none">Quản Lý Sản Phẩm</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Chi tiết thiết bị</li>
+            </ol>
+        </nav>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h3 class="fw-bold text-dark m-0">@p.Name</h3>
+            @if (p.IsActive)
+            {
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 small">
+                    <i class="bi bi-check-circle-fill me-1"></i>Đang mở bán
+                </span>
+            }
+            else
+            {
+                <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1 small">
+                    <i class="bi bi-eye-slash-fill me-1"></i>Tạm ẩn
+                </span>
+            }
+            @if (p.IsFeatured)
+            {
+                <span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-2 py-1 small">
+                    <i class="bi bi-star-fill text-warning me-1"></i>Featured
+                </span>
+            }
+            @if (p.IsNewArrival)
+            {
+                <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-2 py-1 small">
+                    <i class="bi bi-lightning-charge-fill me-1"></i>New Arrival
+                </span>
+            }
+            @if (p.IsBestSeller)
+            {
+                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 small">
+                    <i class="bi bi-fire me-1"></i>Best Seller
+                </span>
+            }
+        </div>
+        <small class="text-muted">SKU: <strong class="text-dark">@p.Sku</strong> | Hãng: <span class="badge bg-light text-dark border">@(Model.Brand?.Name ?? p.BrandName)</span> | Danh mục: <span class="badge bg-light text-dark border">@(Model.Category?.Name ?? p.CategoryName)</span></small>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a href="/Admin/Product" class="btn btn-outline-secondary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1 shadow-2xs">
+            <i class="bi bi-arrow-left"></i>
+            <span>Danh Sách</span>
+        </a>
+        <a href="/Admin/Attributes?productId=@p.Id" class="btn btn-outline-info rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1 shadow-2xs">
+            <i class="bi bi-sliders"></i>
+            <span>Cấu Hình Thông Số</span>
+        </a>
+        <a href="/Admin/Review?productId=@p.Id" class="btn btn-outline-warning rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1 shadow-2xs">
+            <i class="bi bi-star-half text-warning"></i>
+            <span>Đánh Giá (@p.RatingCount)</span>
+        </a>
+        <a href="/product/@p.Slug" target="_blank" class="btn btn-outline-primary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1 shadow-2xs">
+            <i class="bi bi-box-arrow-up-right"></i>
+            <span>Xem Storefront</span>
+        </a>
+        <a href="/Admin/Product/Edit/@p.Id" class="btn btn-primary rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1 shadow-sm fw-bold">
+            <i class="bi bi-pencil-square"></i>
+            <span>Chỉnh Sửa</span>
+        </a>
+        @if (User.IsInRole("SuperAdmin"))
+        {
+            <button type="button" class="btn btn-outline-danger rounded-pill px-3 py-2 btn-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#deleteProductModal">
+                <i class="bi bi-trash"></i>
+                <span>Xóa</span>
+            </button>
+        }
+    </div>
+</div>
+
+<!-- Commercial & Inventory KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100" style="border-left: 4px solid #ef4444 !important;">
+            <div class="text-muted small fw-bold text-uppercase">Giá Bán Lẻ</div>
+            <div class="fs-4 fw-bold text-danger my-1">@p.Price.ToString("N0") ₫</div>
+            <div class="small text-muted">
+                Niêm yết: <span class="text-decoration-line-through">@p.OriginalPrice.ToString("N0") ₫</span>
+                @if (discountRate > 0)
+                {
+                    <span class="badge bg-danger-subtle text-danger ms-1">-@discountRate%</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100" style="border-left: 4px solid #0284c7 !important;">
+            <div class="text-muted small fw-bold text-uppercase">Giá Bán Buôn / Sỉ (B2B)</div>
+            <div class="fs-4 fw-bold text-primary my-1">
+                @(p.WholesalePrice.HasValue ? p.WholesalePrice.Value.ToString("N0") + " ₫" : "Chưa thiết lập")
+            </div>
+            <div class="small text-muted">Theo quyền <code>product.price_override</code></div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100" style="border-left: 4px solid #10b981 !important;">
+            <div class="text-muted small fw-bold text-uppercase">Tồn Kho Vật Lý</div>
+            <div class="fs-4 fw-bold text-success my-1">@p.StockQuantity chiếc</div>
+            <div class="small text-muted">
+                Khả dụng: <strong class="text-dark">@p.AvailableQuantity</strong> | Giữ hàng: <strong class="text-warning">@p.ReservedQuantity</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100" style="border-left: 4px solid #f59e0b !important;">
+            <div class="text-muted small fw-bold text-uppercase">Hiệu Suất Kinh Doanh</div>
+            <div class="fs-4 fw-bold text-dark my-1">@p.SoldCount <small class="fs-6 fw-normal text-muted">đã bán</small></div>
+            <div class="small text-muted d-flex align-items-center gap-1">
+                <i class="bi bi-star-fill text-warning"></i>
+                <strong>@p.RatingAverage.ToString("0.0")</strong>
+                <span>(@p.RatingCount đánh giá) | @p.ViewCount xem</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column (8 cols): Media, Video, Description, Specs -->
+    <div class="col-lg-8">
+        <!-- 1. Thư Viện Ảnh & Video Unbox -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-images text-warning"></i>
+                <span>Thư Viện Ảnh & Video Mở Hộp (Unbox / Review)</span>
+            </h5>
+
+            <div class="row g-3 mb-4">
+                <!-- Thumbnail -->
+                <div class="col-md-5 text-center">
+                    <div class="p-3 border rounded-4 bg-light position-relative">
+                        <img id="detailMainImg" src="@p.ThumbnailUrl" alt="@p.Name" class="img-fluid" style="max-height: 250px; object-fit: contain;" onerror="this.src='/images/placeholder.svg';" />
+                        <span class="position-absolute bottom-0 start-50 translate-middle-x mb-2 badge bg-dark bg-opacity-75 small">Ảnh đại diện chính</span>
+                    </div>
+                </div>
+
+                <!-- Gallery Thumbnails -->
+                <div class="col-md-7">
+                    <h6 class="fw-semibold small text-muted text-uppercase mb-2">Thư viện ảnh chi tiết (@(p.Images.Count) ảnh):</h6>
+                    @if (p.Images.Count > 0)
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var img in p.Images)
+                            {
+                                <div class="border rounded-3 p-1 position-relative" style="width: 80px; height: 80px; cursor: pointer;" onclick="document.getElementById('detailMainImg').src='@img.Url'">
+                                    <img src="@img.Url" class="w-100 h-100 object-fit-contain rounded" alt="gallery image" onerror="this.src='/images/placeholder.svg';" />
+                                    @if (!string.IsNullOrEmpty(img.ColorTag))
+                                    {
+                                        <span class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-75 text-white text-truncate text-center" style="font-size: 0.62rem; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;">@img.ColorTag</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-3 bg-light rounded-3 text-muted small">
+                            Chưa có ảnh phụ trong thư viện. Bạn có thể bấm <a href="/Admin/Product/Edit/@p.Id">Chỉnh sửa</a> để bổ sung ảnh các góc máy.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Video Unbox / Review Player -->
+            @if (!string.IsNullOrWhiteSpace(p.VideoUrl))
+            {
+                <div class="border-top pt-3">
+                    <h6 class="fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                        <i class="bi bi-youtube text-danger"></i>
+                        <span>Video Mở Hộp & Trải Nghiệm Thực Tế (Unbox / Review):</span>
+                    </h6>
+                    <div class="ratio ratio-16x9 rounded-4 overflow-hidden shadow-sm bg-dark" style="max-height: 380px;">
+                        @{
+                            var vidUrl = p.VideoUrl;
+                            var embedUrl = vidUrl;
+                            if (vidUrl.Contains("watch?v="))
+                            {
+                                embedUrl = vidUrl.Replace("watch?v=", "embed/");
+                            }
+                            else if (vidUrl.Contains("youtu.be/"))
+                            {
+                                embedUrl = vidUrl.Replace("youtu.be/", "www.youtube.com/embed/");
+                            }
+                        }
+                        <iframe src="@embedUrl" title="Video unbox & review" allowfullscreen></iframe>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="border-top pt-3">
+                    <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Chưa cập nhật link video unbox. Bạn có thể thêm link YouTube unbox trong trang Chỉnh sửa.</span>
+                </div>
+            }
+        </div>
+
+        <!-- 2. Bài Viết Mô Tả Sản Phẩm Chuyên Sâu -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-richtext-fill text-info"></i>
+                <span>Bài Viết Mô Tả & Đánh Giá Sản Phẩm</span>
+            </h5>
+
+            @if (!string.IsNullOrWhiteSpace(p.ShortDescription))
+            {
+                <div class="p-3 bg-light rounded-3 mb-3 border-start border-4 border-primary">
+                    <div class="fw-bold small text-muted text-uppercase mb-1">Mô tả tóm tắt:</div>
+                    <p class="mb-0 text-dark small">@p.ShortDescription</p>
+                </div>
+            }
+
+            <div class="fw-bold small text-muted text-uppercase mb-2">Nội dung bài viết chi tiết:</div>
+            @if (!string.IsNullOrWhiteSpace(p.Description))
+            {
+                <div class="text-secondary leading-relaxed p-3 border rounded-3 bg-white" style="line-height: 1.7;">
+                    @Html.Raw(p.Description.Replace("\n", "<br/>"))
+                </div>
+            }
+            else
+            {
+                <p class="text-muted small">Chưa có bài viết mô tả chi tiết cho sản phẩm này.</p>
+            }
+        </div>
+
+        <!-- 3. Thông Số Kỹ Thuật (Specifications) -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-cpu text-primary"></i>
+                    <span>Bảng Thông Số Kỹ Thuật Chi Tiết</span>
+                </h5>
+                <a href="/Admin/Attributes?productId=@p.Id" class="btn btn-xs btn-outline-info rounded-pill px-3 py-1">
+                    <i class="bi bi-sliders me-1"></i>Sửa thông số
+                </a>
+            </div>
+
+            @if (p.Specifications.Count > 0)
+            {
+                <div class="row g-3">
+                    @foreach (var group in p.Specifications)
+                    {
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 bg-light h-100">
+                                <h6 class="fw-bold text-primary small text-uppercase mb-2 border-bottom pb-1">@group.GroupName</h6>
+                                <table class="table table-sm table-borderless small mb-0">
+                                    <tbody>
+                                        @foreach (var item in group.Items)
+                                        {
+                                            <tr>
+                                                <td class="text-muted" style="width: 45%;">@item.Name</td>
+                                                <td class="fw-semibold text-dark">@item.Value</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="p-3 bg-light rounded-3 text-center">
+                    <p class="text-muted small mb-2">Chưa thiết lập bảng thông số kỹ thuật (RAM, CPU, Pin, Màn hình...) cho thiết bị này.</p>
+                    <a href="/Admin/Attributes?productId=@p.Id" class="btn btn-sm btn-info rounded-pill px-3 fw-bold text-white">
+                        <i class="bi bi-magic me-1"></i>Áp dụng 1-Click Template Thông Số Chuẩn
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Right Column (4 cols): Meta, Specs Pills, Tags, Warranty -->
+    <div class="col-lg-4">
+        <!-- Thông Số Nổi Bật (Highlight Specs) -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-stars text-warning"></i>
+                <span>Thông Số Nổi Bật (Pills)</span>
+            </h6>
+            @if (p.HighlightSpecs.Count > 0)
+            {
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var spec in p.HighlightSpecs)
+                    {
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2 small fw-semibold">
+                            <i class="bi bi-check2 me-1"></i>@spec
+                        </span>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-muted small mb-0">Chưa thiết lập thông số nổi bật.</p>
+            }
+        </div>
+
+        <!-- Thẻ Tags -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-hash text-secondary"></i>
+                <span>Thẻ Tìm Kiếm (Tags)</span>
+            </h6>
+            @if (p.Tags.Count > 0)
+            {
+                <div class="d-flex flex-wrap gap-1">
+                    @foreach (var tag in p.Tags)
+                    {
+                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small">#@tag</span>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-muted small mb-0">Chưa gắn thẻ tìm kiếm.</p>
+            }
+        </div>
+
+        <!-- Bảo Hành & Vận Hành -->
+        <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+            <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-shield-check text-success"></i>
+                <span>Chính Sách & Bảo Hành</span>
+            </h6>
+            <ul class="list-unstyled small mb-0 d-flex flex-column gap-2 text-dark">
+                <li><i class="bi bi-clock-history text-muted me-2"></i>Bảo hành chính hãng: <strong>@p.WarrantyMonths tháng</strong></li>
+                <li><i class="bi bi-qr-code text-muted me-2"></i>Quản lý: <strong>IMEI / Serial Number điện tử</strong></li>
+                <li><i class="bi bi-calendar3 text-muted me-2"></i>Ngày tạo: @p.CreatedAt.ToString("HH:mm dd/MM/yyyy")</li>
+                <li><i class="bi bi-arrow-repeat text-muted me-2"></i>Cập nhật: @(p.UpdatedAt?.ToString("HH:mm dd/MM/yyyy") ?? "Chưa cập nhật")</li>
+            </ul>
+        </div>
+
+        <!-- Sản Phẩm Cùng Nhóm -->
+        @if (Model.RelatedProducts.Count > 0)
+        {
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-grid-3x3-gap text-muted"></i>
+                    <span>Sản Phẩm Liên Quan</span>
+                </h6>
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var rel in Model.RelatedProducts)
+                    {
+                        <a href="/Admin/Product/Details/@rel.Id" class="text-decoration-none d-flex align-items-center gap-2 p-2 rounded-3 hover-bg-light">
+                            <img src="@rel.ThumbnailUrl" alt="@rel.Name" class="rounded border" style="width: 42px; height: 42px; object-fit: contain;" onerror="this.src='/images/placeholder.svg';" />
+                            <div class="flex-grow-1 text-truncate">
+                                <div class="text-dark small fw-semibold text-truncate">@rel.Name</div>
+                                <div class="text-danger small fw-bold">@rel.Price.ToString("N0") ₫</div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal (SuperAdmin only) -->
+@if (User.IsInRole("SuperAdmin"))
+{
+    <div class="modal fade" id="deleteProductModal" tabindex="-1" aria-labelledby="deleteProductModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h6 class="modal-title fw-bold text-danger" id="deleteProductModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Xác Nhận Xóa
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start py-3 small text-muted">
+                    Bạn có chắc chắn muốn xóa sản phẩm <strong>@p.Name</strong> (SKU: @p.Sku) không? Sản phẩm sẽ bị ngừng mở bán ngay lập tức.
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold">Xóa Sản Phẩm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
