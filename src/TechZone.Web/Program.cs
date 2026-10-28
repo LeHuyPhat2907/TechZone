@@ -34,7 +34,9 @@ builder.Host.UseSerilog();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownIPNetworks.Clear();
+#pragma warning disable ASPDEPR005
+    options.KnownNetworks.Clear();
+#pragma warning restore ASPDEPR005
     options.KnownProxies.Clear();
 });
 
